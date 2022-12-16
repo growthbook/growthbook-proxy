@@ -1,4 +1,5 @@
 import express, {Request, Response, NextFunction} from 'express';
+import longpoll from "./longpoll";
 import dotenv from 'dotenv';
 import {createProxyMiddleware, responseInterceptor} from "http-proxy-middleware";
 dotenv.config({ path: "./.env.local" });
@@ -9,6 +10,7 @@ const API_URL = process.env?.API_URL ?? "http://localhost:3100";
 
 // Routes:
 const RE_API_KEY = /api\/.+\/([^\/]*)\/?$/;
+const RE_LONGPOLL_API_KEY = /.+\/([^\/]*)\/?$/;
 const RE_FEATURES_ROUTE = /api\/features\/(?:[^\/]*)\/?(?:\?[^\/]*)?$/;
 
 // In-memory cache:
@@ -16,10 +18,26 @@ let cachedDefinitions: {[apiKey: string]: any} = {};
 
 
 const app = express();
+const lp = longpoll(app);
 
 app.listen(PROXY_PORT, () => {
   console.log(`GrowthBook proxy running at https://localhost:${PROXY_PORT}`);
 });
+
+lp.create("/poll/*", (req: Request, res: Response, next: NextFunction) => {
+  const apiKey = req.originalUrl.match(RE_LONGPOLL_API_KEY)?.[1] ?? "";
+  console.log("longpoll endpoint...", req.originalUrl, apiKey)
+  res.header("Access-Control-Allow-Origin", "*");
+  if (apiKey) {
+    res.locals.apiKey = apiKey;
+    next();
+  } else {
+    return res.status(401).send("invalid API key");
+  }
+});
+// setInterval(function () {
+//   longpoll.publish("/poll", "publishing something: "+Math.random());
+// }, 10000);
 
 const proxyMiddleware = createProxyMiddleware({
   target: API_URL,
@@ -71,6 +89,7 @@ app.post('/proxyfeatures', express.json(), (req: Request, res: Response, next: N
         dateUpdated: req.body.dateUpdated,
         features: req.body.features,
       };
+      lp.publish(`/poll/*`, cachedDefinitions[key]);
     } catch(e) {
       console.error("Unable to update features", key);
     }
