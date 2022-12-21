@@ -14,5 +14,5 @@
     "strictPropertyInitialization": true,
     "incremental": true
   },
-//  "include": ["src/**/*", "types/**/*.d.ts", "typings/**/*.d.ts"]
+  "include": ["src/**/*"]
 }
