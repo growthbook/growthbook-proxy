@@ -30,7 +30,6 @@ export class MemoryCache {
   }
 
   public async dangerouslySetAll(payload: any, keyedCallback?: (key: string) => void) {
-    console.log("set", payload)
     if (!this.store.size) {
       // todo: set empty store
     }
@@ -39,9 +38,7 @@ export class MemoryCache {
         payload,
         expires: new Date(Date.now() + this.ttl),
       });
-      console.log('set key', key);
       if (keyedCallback !== undefined) {
-        console.log("try callback")
         keyedCallback(key);
       }
     }

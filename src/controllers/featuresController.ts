@@ -10,25 +10,21 @@ export const getFeatures = async (req: Request, res: Response, next: NextFunctio
   const features = entry?.payload;
 
   if (features === undefined) {
-    console.log("api url", API_URL)
     return readThroughCacheMiddleware({
       targetUrl: API_URL,
       cache: featuresCache,
     })(req, res, next);
   } else {
     console.log("cache HIT")
-    res.header("Access-Control-Allow-Origin", "*");
-    return res.send(JSON.stringify(features.payload));
+    return res.send(JSON.stringify(features));
   }
 };
 
 // TODO: use a webhook with apiKey scoped features
 // TODO: implement check using sharedSecret
 export const postFeatures = async (req: Request, res: Response, next: NextFunction) => {
-  console.log(req.body)
   try {
     await featuresCache.dangerouslySetAll(req.body, (apiKey) => {
-      console.log("cool....", apiKey)
       channelManager.publish(apiKey, "features", req.body);
     })
   } catch(e) {

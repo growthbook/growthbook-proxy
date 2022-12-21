@@ -49,7 +49,6 @@ export default function longpoll(app: Express, opts = {
     // Publishes to everyone listening to this long poll
     publish: function (url: string, data: any) {
       return new Promise<void>(function (resolve, reject) {
-        console.log('publish update...', url, express_longpoll_emitters)
         if (express_longpoll_emitters[url]) {
           express_longpoll_emitters[url].emit('longpoll', data);
           resolve();
