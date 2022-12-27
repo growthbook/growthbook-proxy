@@ -1,6 +1,7 @@
 import {Request, Response} from 'express';
 const SSEChannel = require('sse-pubsub');
 
+// hacky TS binding for sse-pubsub
 interface SSEChannel {
   constructor: (options: any) => void;
   publish: (data: any, eventName: string) => number;
@@ -61,3 +62,4 @@ export class ChannelManager {
 }
 
 export const channelManager = new ChannelManager();
+Object.freeze(channelManager);

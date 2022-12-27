@@ -24,9 +24,9 @@ export const getFeatures = async (req: Request, res: Response, next: NextFunctio
 // TODO: implement check using sharedSecret
 export const postFeatures = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await featuresCache.dangerouslySetAll(req.body, (apiKey) => {
-      channelManager.publish(apiKey, "features", req.body);
-    })
+    const apiKey = res.locals.apiKey;
+    await featuresCache.set(apiKey, req.body);
+    channelManager.publish(apiKey, "features", req.body);
   } catch(e) {
     console.error("Unable to update features");
   }

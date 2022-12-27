@@ -1,19 +1,21 @@
 import express from "express";
 import * as spdy from "spdy";
-
-// Proxy configuration:
-const USE_HTTP2 = process.env?.USE_HTTP2 ?? false;
-const HTTPS_CERT = process.env?.HTTPS_CERT ?? "";
-const HTTPS_KEY = process.env?.HTTPS_KEY ?? "";
+import * as Registrar from "./services/registrar";
 
 // todo: may need to be dynamic based on apiKey
 export const API_URL = process.env?.API_URL ?? "http://localhost:3100";
-const PROXY_PORT = process.env?.PORT ?? 3200;
-
 
 export default () => {
+  // Proxy configuration consts:
+  const USE_HTTP2 = process.env?.USE_HTTP2 ?? false;
+  const HTTPS_CERT = process.env?.HTTPS_CERT ?? "";
+  const HTTPS_KEY = process.env?.HTTPS_KEY ?? "";
+  const PROXY_PORT = process.env?.PORT ?? 3200;
+
+  // Start express
   const app = express();
 
+  // Start app
   if (USE_HTTP2) {
     const server = spdy.createServer( {
       key: HTTPS_KEY,
