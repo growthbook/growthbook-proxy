@@ -1,47 +1,59 @@
 import dotenv from "dotenv";
 dotenv.config({ path: "./.env.local" });
 
-export interface WebhookEntry {
+export interface EndpointsEntry {
   apiKey: string;
-  url: string;
-  secret: string;
+  sdkUrl: string;
+  sdkBaseUrl: string;
+  webhookUrl: string;
+  webhookSecret: string;
 }
 
 export interface Settings {
-  initialWebhooks?: WebhookEntry[];
+  initialEndpoints?: Partial<EndpointsEntry>[];
 }
 
 export class Registrar {
-  private apiKeyWebhooks: Map<string, WebhookEntry>;
+  private endpoints: Map<string, EndpointsEntry>;
 
   constructor() {
-    this.apiKeyWebhooks = new Map();
+    this.endpoints = new Map();
     const settings = this.getInitialSettings();
-    if (settings?.initialWebhooks) {
-      settings.initialWebhooks.forEach(w => this.apiKeyWebhooks.set(w.apiKey, w));
+    if (settings?.initialEndpoints) {
+      settings.initialEndpoints.forEach(e => {
+        try {
+          if (e.apiKey && e.sdkUrl && e.webhookUrl && e.webhookSecret) {
+            const u = new URL(e.sdkUrl);
+            e.sdkBaseUrl = u.origin;
+            this.endpoints.set(e.apiKey, e as EndpointsEntry);
+          }
+        } catch(e) {
+          console.error(e);
+        }
+      });
     }
   }
 
-  public getWebhook(apiKey: string): WebhookEntry|undefined {
-    return this.apiKeyWebhooks.get(apiKey);
+  public getEndpointsByApiKey(apiKey: string): EndpointsEntry|undefined {
+    return this.endpoints.get(apiKey);
   }
 
-  public setWebhook(apiKey: string, webhookEntry: WebhookEntry) {
-    this.apiKeyWebhooks.set(apiKey, webhookEntry);
+  public setEndpointsByApiKey(apiKey: string, endpointEntry: EndpointsEntry) {
+    this.endpoints.set(apiKey, endpointEntry);
   }
 
   private getInitialSettings() {
-    const WEBHOOKS_JSON = process.env?.WEBHOOKS_JSON ?? null;
+    const ENDPOINTS = process.env?.ENDPOINTS ?? null;
 
     let registrarSettings: Settings = {};
-    if (WEBHOOKS_JSON) {
+    if (ENDPOINTS) {
       try {
-        let o = JSON.parse(WEBHOOKS_JSON);
+        let o = JSON.parse(ENDPOINTS);
         if (o.length) {
-          registrarSettings.initialWebhooks = [];
-          o.forEach((we: any) => {
-            if (we.apiKey && we.url && we.secret) {
-              registrarSettings?.initialWebhooks?.push(we);
+          registrarSettings.initialEndpoints = [];
+          o.forEach((e: any) => {
+            if (e.apiKey && e.sdkUrl && e.webhookUrl && e.webhookSecret) {
+              registrarSettings?.initialEndpoints?.push(e);
             }
           });
         }

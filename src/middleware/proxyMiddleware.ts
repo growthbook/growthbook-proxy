@@ -1,11 +1,15 @@
+import {NextFunction, Request, Response} from "express";
 import {createProxyMiddleware} from "http-proxy-middleware";
+import {registrar} from "../services/registrar";
 
-export default ({
-  targetUrl
-}: {
-  targetUrl: string;
-}) => createProxyMiddleware({
-  target: targetUrl,
-  changeOrigin: true,
-  selfHandleResponse: true,
-});
+export default (req: Request, res: Response, next: NextFunction) => {
+  const endpoints = registrar.getEndpointsByApiKey(res.locals.apiKey);
+  if (!endpoints?.sdkBaseUrl) {
+    return res.status(400).json({message: "Missing SDK endpoint"});
+  }
+
+  return createProxyMiddleware({
+    target: endpoints.sdkBaseUrl,
+    changeOrigin: true,
+  })(req, res, next);
+}

@@ -3,11 +3,11 @@ import crypto from "crypto";
 import {registrar} from "../services/registrar";
 
 export default (req: Request, res: Response, next: NextFunction) => {
-  const webhook = registrar.getWebhook(res.locals.apiKey);
+  const endpoints = registrar.getEndpointsByApiKey(res.locals.apiKey);
   const sig = req.get("X-GrowthBook-Signature") || "";
 
   const computed = crypto
-    .createHmac("sha256", webhook?.secret || "")
+    .createHmac("sha256", endpoints?.webhookSecret || "")
     .update(res.locals.rawBody || new Buffer(""))
     .digest("hex");
 

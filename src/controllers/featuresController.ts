@@ -1,17 +1,21 @@
 import {NextFunction, Request, Response} from "express";
 import readThroughCacheMiddleware from "../middleware/readThroughCacheMiddleware";
 import {featuresCache} from "../services/cache";
-import {API_URL} from "../init";
 import {channelManager} from "../services/sse";
+import {registrar} from "../services/registrar";
 
 
 export const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
+  const endpoints = registrar.getEndpointsByApiKey(res.locals.apiKey);
+  if (!endpoints?.sdkBaseUrl) {
+    return res.status(400).json({message: "Missing SDK endpoint"});
+  }
   let entry = await featuresCache.get(res.locals.apiKey);
   const features = entry?.payload;
 
   if (features === undefined) {
     return readThroughCacheMiddleware({
-      targetUrl: API_URL,
+      proxyTarget: endpoints.sdkBaseUrl,
       cache: featuresCache,
     })(req, res, next);
   } else {
@@ -20,8 +24,6 @@ export const getFeatures = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-// TODO: use a webhook with apiKey scoped features
-// TODO: implement check using sharedSecret
 export const postFeatures = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const apiKey = res.locals.apiKey;

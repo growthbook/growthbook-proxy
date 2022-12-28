@@ -1,9 +1,5 @@
 import express from "express";
 import * as spdy from "spdy";
-import * as Registrar from "./services/registrar";
-
-// todo: may need to be dynamic based on apiKey
-export const API_URL = process.env?.API_URL ?? "http://localhost:3100";
 
 export default () => {
   // Proxy configuration consts:

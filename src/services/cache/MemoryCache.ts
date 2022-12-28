@@ -4,7 +4,7 @@ export interface CacheEntry {
 }
 
 export class MemoryCache {
-  private store: Map<string, CacheEntry>;
+  private readonly store: Map<string, CacheEntry>;
   private readonly ttl: number;
 
   public constructor(

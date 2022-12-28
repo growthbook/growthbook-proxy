@@ -3,13 +3,13 @@ import {Request, Response} from "express";
 import {MemoryCache} from "../services/cache/MemoryCache";
 
 export default ({
-  targetUrl,
+  proxyTarget,
   cache,
 }: {
-  targetUrl: string;
+  proxyTarget: string;
   cache: MemoryCache;
 }) => createProxyMiddleware({
-  target: targetUrl,
+  target: proxyTarget,
   changeOrigin: true,
   selfHandleResponse: true,
   onProxyRes: responseInterceptor(async (responseBuffer, proxyRes, req: Request, res: Response) => {
