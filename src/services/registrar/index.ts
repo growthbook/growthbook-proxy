@@ -4,6 +4,7 @@ dotenv.config({ path: "./.env.local" });
 export interface EndpointsEntry {
   apiKey: string;
   sdkUrl: string;
+  sdkEncryptionSecret?: string;
   sdkBaseUrl: string;
   webhookUrl: string;
   webhookSecret: string;

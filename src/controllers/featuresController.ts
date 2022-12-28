@@ -3,6 +3,7 @@ import readThroughCacheMiddleware from "../middleware/readThroughCacheMiddleware
 import {featuresCache} from "../services/cache";
 import {channelManager} from "../services/sse";
 import {registrar} from "../services/registrar";
+import {encrypt} from "../services/encryption";
 
 
 export const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
@@ -27,8 +28,13 @@ export const getFeatures = async (req: Request, res: Response, next: NextFunctio
 export const postFeatures = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const apiKey = res.locals.apiKey;
-    await featuresCache.set(apiKey, req.body);
     channelManager.publish(apiKey, "features", req.body);
+    const endpoints = registrar.getEndpointsByApiKey(res.locals.apiKey);
+    if (endpoints?.sdkEncryptionSecret) {
+      req.body.encryptedFeatures = await encrypt(JSON.stringify(req.body.features), endpoints.sdkEncryptionSecret);
+      req.body.features = {};
+    }
+    await featuresCache.set(apiKey, req.body);
   } catch(e) {
     console.error("Unable to update features");
   }

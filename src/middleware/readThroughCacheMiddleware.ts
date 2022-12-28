@@ -14,6 +14,7 @@ export default ({
   selfHandleResponse: true,
   onProxyRes: responseInterceptor(async (responseBuffer, proxyRes, req: Request, res: Response) => {
     console.log('cache MISS, setting cache...');
+    console.log(req.originalUrl)
     const response = responseBuffer.toString('utf-8');
     if (res.statusCode === 200) {
       // refresh the cache
