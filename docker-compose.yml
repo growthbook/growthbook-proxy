@@ -1,0 +1,9 @@
+version: "3"
+services:
+  proxy:
+    build: .
+#    image: "growthbook/growthbook_proxy:latest"
+    ports:
+      - "3200:3200"
+    environment:
+      - ENDPOINTS=${ENDPOINTS}
