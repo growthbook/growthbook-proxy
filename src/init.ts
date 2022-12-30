@@ -1,5 +1,7 @@
 import express from "express";
 import * as spdy from "spdy";
+import dotenv from "dotenv";
+dotenv.config({ path: "./.env" });
 
 export default () => {
   // Proxy configuration consts:

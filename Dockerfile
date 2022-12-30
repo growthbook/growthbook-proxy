@@ -5,7 +5,9 @@ COPY package.json ./package.json
 COPY yarn.lock ./yarn.lock
 RUN yarn install --frozen-lockfile --ignore-optional
 # Build the app and do a clean install with only production dependencies
-COPY . .
+COPY src ./src
+COPY tsconfig.json ./tsconfig.json
+COPY .env ./.env
 RUN \
   yarn build \
   && rm -rf node_modules \

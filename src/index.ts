@@ -10,7 +10,7 @@ import webhookVerificationMiddleware from "./middleware/webhookVerificationMiddl
 import dotenv from 'dotenv';
 import {broadcastSseMiddleware} from "./middleware/broadcastSseMiddleware";
 import {reencryptionMiddleware} from "./middleware/reencryptionMiddleware";
-dotenv.config({ path: "./.env.local" });
+dotenv.config({ path: "./.env" });
 
 const { app } = init();
 
