@@ -1,12 +1,20 @@
 import dotenv from "dotenv";
 dotenv.config({ path: "./.env.local" });
 
+const envToEntryVarMap: Record<string, string> = {
+  API_KEY: "apiKey",
+  SDK_API: "sdkApi",
+  SDK_ENCRYPTION_KEY: "sdkEncryptionKey",
+  WEBHOOK: "webhook",
+  WEBHOOK_SECRET: "webhookSecret",
+};
+
 export interface EndpointsEntry {
   apiKey: string;
-  sdkUrl: string;
-  sdkEncryptionSecret?: string;
+  sdkApi: string;
   sdkBaseUrl: string;
-  webhookUrl: string;
+  sdkEncryptionKey?: string;
+  webhook: string;
   webhookSecret: string;
 }
 
@@ -17,22 +25,15 @@ export interface Settings {
 export class Registrar {
   private endpoints: Map<string, EndpointsEntry>;
 
-  constructor() {
+  constructor(settings: Settings = {}) {
     this.endpoints = new Map();
-    const settings = this.getInitialSettings();
-    if (settings?.initialEndpoints) {
-      settings.initialEndpoints.forEach(e => {
-        try {
-          if (e.apiKey && e.sdkUrl && e.webhookUrl && e.webhookSecret) {
-            const u = new URL(e.sdkUrl);
-            e.sdkBaseUrl = u.origin;
-            this.endpoints.set(e.apiKey, e as EndpointsEntry);
-          }
-        } catch(e) {
-          console.error(e);
-        }
-      });
-    }
+    settings.initialEndpoints = this.getEndpointsFromEnv();
+    settings.initialEndpoints.forEach(e => {
+      if (e.apiKey && e.sdkApi && e.webhook && e.webhookSecret) {
+        e.sdkBaseUrl= new URL(e.sdkApi).origin;
+        this.endpoints.set(e.apiKey, e as EndpointsEntry);
+      }
+    });
   }
 
   public getEndpointsByApiKey(apiKey: string): EndpointsEntry|undefined {
@@ -43,26 +44,40 @@ export class Registrar {
     this.endpoints.set(apiKey, endpointEntry);
   }
 
-  private getInitialSettings() {
-    const ENDPOINTS = process.env?.ENDPOINTS ?? null;
-
-    let registrarSettings: Settings = {};
-    if (ENDPOINTS) {
-      try {
-        let o = JSON.parse(ENDPOINTS);
-        if (o.length) {
-          registrarSettings.initialEndpoints = [];
-          o.forEach((e: any) => {
-            if (e.apiKey && e.sdkUrl && e.webhookUrl && e.webhookSecret) {
-              registrarSettings?.initialEndpoints?.push(e);
-            }
-          });
+  private getEndpointsFromEnv(): Partial<EndpointsEntry>[] {
+    const initialEndpoints: Partial<EndpointsEntry>[] = [];
+    // Scan the env vars for ENDPOINT. or ENDPOINT.1. prefixes, return them as prefix groups
+    const groupedEndpointVars = this.groupVarsByPrefix(Object.keys(process.env));
+    for (const prefix in groupedEndpointVars) {
+      const group = groupedEndpointVars[prefix];
+      const entry: any = {};
+      Object.entries(group).forEach(v => {
+        const [key, val] = v;
+        const entryKey = envToEntryVarMap[key];
+        if (entryKey) {
+          entry[entryKey] = val;
         }
-      } catch (e) {
-        console.error(e);
+      });
+      if (Object.keys(entry).length) {
+        initialEndpoints.push(entry as Partial<EndpointsEntry>);
       }
     }
-    return registrarSettings;
+    return initialEndpoints;
+  }
+
+  /** Arrange vars like [ENDPOINT.API_KEY, ENDPOINT.SDK_API] or [ENDPOINT.2.API_KEY, ENDPOINT.2.SDK_API] into [prefix, suffix[]] groups */
+  private groupVarsByPrefix(strings: string[]): Record<string, Record<string, string>> {
+    return strings.reduce((groups: Record<string, Record<string, string>>, str) => {
+      const prefixMatch = str.match(/^(ENDPOINT(?:\.\d+)?\.)(.*)/);
+      if (prefixMatch) {
+        if (!groups[prefixMatch[1]]) {
+          groups[prefixMatch[1]] = {};
+        }
+        // @ts-ignore
+        groups[prefixMatch[1]][prefixMatch[2]] = process.env[prefixMatch[0]];
+      }
+      return groups;
+    }, {});
   }
 }
 

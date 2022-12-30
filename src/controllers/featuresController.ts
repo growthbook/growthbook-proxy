@@ -25,12 +25,6 @@ export const getFeatures = async (req: Request, res: Response, next: NextFunctio
 
 export const postFeatures = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const endpoints = registrar.getEndpointsByApiKey(res.locals.apiKey);
-    // when updating cache, decrypt payload if encrypted
-    if (endpoints?.sdkEncryptionSecret) {
-      req.body.encryptedFeatures = await encrypt(JSON.stringify(req.body.features), endpoints.sdkEncryptionSecret);
-      req.body.features = {};
-    }
     await featuresCache.set(res.locals.apiKey, req.body);
   } catch(e) {
     console.error("Unable to update features", e);

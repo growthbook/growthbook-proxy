@@ -9,6 +9,7 @@ import webhookVerificationMiddleware from "./middleware/webhookVerificationMiddl
 // import telemetryMiddleware from "./middleware/telemetryMiddleware";
 import dotenv from 'dotenv';
 import {broadcastSseMiddleware} from "./middleware/broadcastSseMiddleware";
+import {reencryptionMiddleware} from "./middleware/reencryptionMiddleware";
 dotenv.config({ path: "./.env.local" });
 
 const { app } = init();
@@ -29,6 +30,7 @@ app.post('/proxy/features',
     verify: (req: Request, res: Response, buf: Buffer) => res.locals.rawBody = buf
   }),
   webhookVerificationMiddleware,
+  reencryptionMiddleware,
   broadcastSseMiddleware,
   postFeatures,
 );
