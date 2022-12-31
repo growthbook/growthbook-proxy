@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
-dotenv.config({ path: "./.env" });
+
+dotenv.config({ path: "./.env.local" });
 
 const envToEntryVarMap: Record<string, string> = {
   API_KEY: "apiKey",
@@ -8,6 +9,14 @@ const envToEntryVarMap: Record<string, string> = {
   WEBHOOK: "webhook",
   WEBHOOK_SECRET: "webhookSecret",
 };
+
+const EndpointEntryFields: Set<string> = new Set([
+  "apiKey",
+  "sdkApi",
+  "sdkEncryptionKey",
+  "webhook",
+  "webhookSecret",
+]);
 
 export interface EndpointsEntry {
   apiKey: string;
@@ -40,8 +49,20 @@ export class Registrar {
     return this.endpoints.get(apiKey);
   }
 
-  public setEndpointsByApiKey(apiKey: string, endpointEntry: EndpointsEntry) {
-    this.endpoints.set(apiKey, endpointEntry);
+  public getAllEndpoints(): Record<string, EndpointsEntry> {
+    return Object.fromEntries(this.endpoints);
+  }
+
+  public setEndpointsByApiKey(apiKey: string, payload: any) {
+    const e = this.getEndpointsFromPayload(payload);
+    if (!e) {
+      throw new Error('invalid payload');
+    }
+    this.endpoints.set(apiKey, e as EndpointsEntry);
+  }
+
+  public deleteEndpointsByApiKey(apiKey: string): boolean {
+    return this.endpoints.delete(apiKey);
   }
 
   private getEndpointsFromEnv(): Partial<EndpointsEntry>[] {
@@ -63,6 +84,20 @@ export class Registrar {
       }
     }
     return initialEndpoints;
+  }
+
+  private getEndpointsFromPayload(payload: any): EndpointsEntry|null {
+    const e: any = {};
+    for (const key in payload) {
+      if (EndpointEntryFields.has(key) && payload[key]) {
+        e[key] = payload[key];
+      }
+    }
+    if (e.apiKey && e.sdkApi && e.webhook && e.webhookSecret) {
+      e.sdkBaseUrl= new URL(e.sdkApi).origin;
+      return e as EndpointsEntry;
+    }
+    return null;
   }
 
   /** Arrange vars like [ENDPOINT.API_KEY, ENDPOINT.SDK_API] or [ENDPOINT.2.API_KEY, ENDPOINT.2.SDK_API] into [prefix, suffix[]] groups */

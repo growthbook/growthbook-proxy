@@ -1,41 +1,17 @@
-import express, {Request, Response} from "express";
 import cors from 'cors';
-import {getFeatures, postFeatures} from "./controllers/featuresController";
-import {getSubscribeToSse} from "./controllers/streamEventsController";
-import apiKeyMiddleware from "./middleware/apiKeyMiddleware";
+import {adminRouter} from "./controllers/adminController";
+import {featuresRouter} from "./controllers/featuresController";
+import {streamEventsRouter} from "./controllers/streamEventsController";
 import proxyMiddleware from "./middleware/proxyMiddleware";
 import init from "./init";
-import webhookVerificationMiddleware from "./middleware/webhookVerificationMiddleware";
-// import telemetryMiddleware from "./middleware/telemetryMiddleware";
-import dotenv from 'dotenv';
-import {broadcastSseMiddleware} from "./middleware/broadcastSseMiddleware";
-import {reencryptionMiddleware} from "./middleware/reencryptionMiddleware";
-dotenv.config({ path: "./.env" });
 
 const { app } = init();
 
-app.use(cors())
+app.use(cors());
 
-app.use(apiKeyMiddleware);
-
-// proxy clients' "get features" endpoint call to GrowthBook, with cache layer
-app.get('/api/features/*', getFeatures);
-
-// subscribe clients to streaming updates
-app.get('/sub/:apiKey', getSubscribeToSse);
-
-// subscribe to GrowthBook's "post features" updates, refresh cache, publish to subscribed clients
-app.post('/proxy/features',
-  express.json({
-    verify: (req: Request, res: Response, buf: Buffer) => res.locals.rawBody = buf
-  }),
-  webhookVerificationMiddleware,
-  reencryptionMiddleware,
-  broadcastSseMiddleware,
-  postFeatures,
-);
-
-// app.use(telemetryMiddleware);
+app.use('/admin', adminRouter);
+app.use('/sub', streamEventsRouter);
+app.use('/', featuresRouter);
 
 // proxy anything else through to GrowthBook
 app.all('/*', proxyMiddleware);

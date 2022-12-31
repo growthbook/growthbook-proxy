@@ -1,11 +1,14 @@
-import {NextFunction, Request, Response} from "express";
+import express, {NextFunction, Request, Response} from "express";
 import readThroughCacheMiddleware from "../middleware/readThroughCacheMiddleware";
 import {featuresCache} from "../services/cache";
 import {registrar} from "../services/registrar";
-import {encrypt} from "../services/encryption";
+import {apiKeyMiddleware} from "../middleware/apiKeyMiddleware";
+import webhookVerificationMiddleware from "../middleware/webhookVerificationMiddleware";
+import {reencryptionMiddleware} from "../middleware/reencryptionMiddleware";
+import {broadcastSseMiddleware} from "../middleware/broadcastSseMiddleware";
 
 
-export const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
+const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   const endpoints = registrar.getEndpointsByApiKey(res.locals.apiKey);
   if (!endpoints?.sdkBaseUrl) {
     return res.status(400).json({message: "Missing SDK endpoint"});
@@ -23,7 +26,7 @@ export const getFeatures = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-export const postFeatures = async (req: Request, res: Response, next: NextFunction) => {
+const postFeatures = async (req: Request, res: Response, next: NextFunction) => {
   try {
     await featuresCache.set(res.locals.apiKey, req.body);
   } catch(e) {
@@ -32,3 +35,22 @@ export const postFeatures = async (req: Request, res: Response, next: NextFuncti
   }
   return res.status(200).json({message: "success"});
 }
+
+
+export const featuresRouter = express.Router();
+featuresRouter.use(apiKeyMiddleware);
+
+// proxy clients' "get features" endpoint call to GrowthBook, with cache layer
+featuresRouter.get('/api/features/*', getFeatures);
+
+// subscribe to GrowthBook's "post features" updates, refresh cache, publish to subscribed clients
+featuresRouter.post(
+  '/proxy/features',
+  express.json({
+    verify: (req: Request, res: Response, buf: Buffer) => res.locals.rawBody = buf
+  }),
+  webhookVerificationMiddleware,
+  reencryptionMiddleware,
+  broadcastSseMiddleware,
+  postFeatures,
+);
