@@ -1,6 +1,6 @@
 import {createProxyMiddleware, responseInterceptor} from "http-proxy-middleware";
 import {Request, Response} from "express";
-import {featuresCache} from "../services/cache";
+import {featuresCache} from "../../services/cache";
 
 export default ({
   proxyTarget,

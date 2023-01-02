@@ -32,11 +32,13 @@ export interface Settings {
 }
 
 export class Registrar {
-  private endpoints: Map<string, EndpointsEntry>;
+  private readonly endpoints: Map<string, EndpointsEntry>;
 
   constructor(settings: Settings = {}) {
     this.endpoints = new Map();
-    settings.initialEndpoints = this.getEndpointsFromEnv();
+    if (!settings?.initialEndpoints) {
+      settings.initialEndpoints = this.getEndpointsFromEnv();
+    }
     settings.initialEndpoints.forEach(e => {
       if (e.apiKey && e.sdkApi && e.webhook && e.webhookSecret) {
         e.sdkBaseUrl= new URL(e.sdkApi).origin;
