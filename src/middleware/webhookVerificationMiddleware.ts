@@ -1,6 +1,6 @@
-import {NextFunction, Request, Response} from "express";
 import crypto from "crypto";
-import {registrar} from "../services/registrar";
+import { NextFunction, Request, Response } from "express";
+import { registrar } from "../services/registrar";
 
 export default (req: Request, res: Response, next: NextFunction) => {
   const endpoints = registrar.getEndpointsByApiKey(res.locals.apiKey);
@@ -12,7 +12,7 @@ export default (req: Request, res: Response, next: NextFunction) => {
     .digest("hex");
 
   if (!crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(sig))) {
-    return res.status(401).json({message: "Signatures do not match!"});
+    return res.status(401).json({ message: "Signatures do not match!" });
   }
   next();
-}
+};

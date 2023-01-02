@@ -1,14 +1,23 @@
-import {Request, Response} from 'express';
-const SSEChannel = require('sse-pubsub');
+import { Request, Response } from "express";
+const SSEChannel = require("sse-pubsub");
 
 // hacky TS binding for sse-pubsub
 interface SSEChannel {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   constructor: (options: any) => void;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   publish: (data: any, eventName: string) => number;
-  subscribe: (req: Request, res: Response, events?: any[]) => {req: Request, res: Response, events?: any[]};
-  unsubscribe: (c: {req: Request, res: Response, events?: any[]}) => void;
+  subscribe: (
+    req: Request,
+    res: Response,
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    events?: any[]
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+  ) => { req: Request; res: Response; events?: any[] };
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  unsubscribe: (c: { req: Request; res: Response; events?: any[] }) => void;
   close: () => void;
-  listClients: () => {[ip: string]: number};
+  listClients: () => { [ip: string]: number };
   getSubscriberCount: () => number;
 }
 
@@ -26,13 +35,13 @@ export class ChannelManager {
       let scopedChannel;
       try {
         scopedChannel = this.getScopedChannel(apiKey);
-      } catch(e) {
+      } catch (e) {
         console.error("Unable to get SSE channel", e);
       }
       if (scopedChannel) {
         try {
           scopedChannel.channel.subscribe(req, res);
-        } catch(e) {
+        } catch (e) {
           console.error("Unable to subscribe to SSE channel", e);
         }
       } else {

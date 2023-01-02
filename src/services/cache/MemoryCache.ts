@@ -1,5 +1,5 @@
 export interface CacheEntry {
-  payload: any;
+  payload: unknown;
   staleOn: Date;
   expiresOn: Date;
 }
@@ -17,10 +17,10 @@ export class MemoryCache {
   public readonly allowStale: boolean;
 
   public constructor({
-    staleTTL = 60,        // 1 minute
+    staleTTL = 60, // 1 minute
     expiresTTL = 10 * 60, // 10 minutes
     allowStale = true,
-  } : Settings = {}) {
+  }: Settings = {}) {
     this.store = new Map();
     this.staleTTL = staleTTL * 1000;
     this.expiresTTL = expiresTTL * 1000;
@@ -41,7 +41,7 @@ export class MemoryCache {
     return entry;
   }
 
-  public async set(key: string, payload: any) {
+  public async set(key: string, payload: unknown) {
     this.store.set(key, {
       payload,
       staleOn: new Date(Date.now() + this.staleTTL),
@@ -49,8 +49,11 @@ export class MemoryCache {
     });
   }
 
-  public async dangerouslySetAll(payload: any, keyedCallback?: (key: string) => void) {
-    for (const [key, value] of this.store) {
+  public async dangerouslySetAll(
+    payload: unknown,
+    keyedCallback?: (key: string) => void
+  ) {
+    for (const [key] of this.store) {
       this.store.set(key, {
         payload,
         staleOn: new Date(Date.now() + this.staleTTL),

@@ -1,4 +1,4 @@
-import {webcrypto as crypto} from "node:crypto";
+import { webcrypto as crypto } from "node:crypto";
 
 export async function encrypt(
   plainText: string,

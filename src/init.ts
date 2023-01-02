@@ -15,18 +15,23 @@ export default () => {
 
   // Start app
   if (USE_HTTP2) {
-    const server = spdy.createServer( {
-      key: HTTPS_KEY,
-      cert: HTTPS_CERT,
-    }, app);
+    const server = spdy.createServer(
+      {
+        key: HTTPS_KEY,
+        cert: HTTPS_CERT,
+      },
+      app
+    );
     server.listen(PROXY_PORT, () => {
-      console.log(`GrowthBook proxy running over HTTP2, port ${PROXY_PORT}`);
+      console.debug(`GrowthBook proxy running over HTTP2, port ${PROXY_PORT}`);
     });
   } else {
     app.listen(PROXY_PORT, () => {
-      console.log(`GrowthBook proxy running over HTTP1.1, port ${PROXY_PORT}`);
+      console.debug(
+        `GrowthBook proxy running over HTTP1.1, port ${PROXY_PORT}`
+      );
     });
   }
 
   return { app };
-}
+};

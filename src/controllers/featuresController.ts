@@ -1,20 +1,19 @@
-import express, {NextFunction, Request, Response} from "express";
+import express, { NextFunction, Request, Response } from "express";
 import readThroughCacheMiddleware from "../middleware/cache/readThroughCacheMiddleware";
-import {featuresCache} from "../services/cache";
-import {registrar} from "../services/registrar";
-import {apiKeyMiddleware} from "../middleware/apiKeyMiddleware";
+import { featuresCache } from "../services/cache";
+import { registrar } from "../services/registrar";
+import { apiKeyMiddleware } from "../middleware/apiKeyMiddleware";
 import webhookVerificationMiddleware from "../middleware/webhookVerificationMiddleware";
-import {reencryptionMiddleware} from "../middleware/reencryptionMiddleware";
-import {broadcastSseMiddleware} from "../middleware/broadcastSseMiddleware";
+import { reencryptionMiddleware } from "../middleware/reencryptionMiddleware";
+import { broadcastSseMiddleware } from "../middleware/broadcastSseMiddleware";
 import refreshStaleCacheMiddleware from "../middleware/cache/refreshStaleCacheMiddleware";
-
 
 const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   const endpoints = registrar.getEndpointsByApiKey(res.locals.apiKey);
   if (!endpoints?.sdkBaseUrl) {
-    return res.status(400).json({message: "Missing SDK endpoint"});
+    return res.status(400).json({ message: "Missing SDK endpoint" });
   }
-  let entry = await featuresCache.get(res.locals.apiKey);
+  const entry = await featuresCache.get(res.locals.apiKey);
   const features = entry?.payload;
 
   if (features === undefined) {
@@ -25,47 +24,49 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
     })(req, res, next);
   }
 
-  if (featuresCache.allowStale &&
-    entry?.staleOn && entry.staleOn < new Date()
+  if (
+    featuresCache.allowStale &&
+    entry?.staleOn &&
+    entry.staleOn < new Date()
   ) {
     // stale. refresh in background, return stale response
     // todo: add lock for setting cache?
     refreshStaleCacheMiddleware({
       proxyTarget: endpoints.sdkBaseUrl,
-    })(req, res, next).catch((e) => {
+    })(req, res).catch((e) => {
       console.error("Unable to refresh stale cache", e);
     });
   }
 
-  console.debug("cache HIT")
+  console.debug("cache HIT");
   return res.status(200).json(features);
 };
 
-const postFeatures = async (req: Request, res: Response, next: NextFunction) => {
+const postFeatures = async (req: Request, res: Response) => {
   try {
     await featuresCache.set(res.locals.apiKey, req.body);
-  } catch(e) {
+  } catch (e) {
     console.error("Unable to update features", e);
-    return res.status(500).json({message: "Unable to update features"});
+    return res.status(500).json({ message: "Unable to update features" });
   }
-  return res.status(200).json({message: "success"});
-}
-
+  return res.status(200).json({ message: "success" });
+};
 
 export const featuresRouter = express.Router();
 featuresRouter.use(apiKeyMiddleware);
 
 // proxy clients' "get features" endpoint call to GrowthBook, with cache layer
-featuresRouter.get('/api/features/*', getFeatures);
+featuresRouter.get("/api/features/*", getFeatures);
 
 // subscribe to GrowthBook's "post features" updates, refresh cache, publish to subscribed clients
 featuresRouter.post(
-  '/proxy/features',
+  "/proxy/features",
   express.json({
-    verify: (req: Request, res: Response, buf: Buffer) => res.locals.rawBody = buf
+    verify: (req: Request, res: Response, buf: Buffer) =>
+      (res.locals.rawBody = buf),
   }),
   webhookVerificationMiddleware,
   reencryptionMiddleware,
   broadcastSseMiddleware,
-  postFeatures,
+  postFeatures
 );
