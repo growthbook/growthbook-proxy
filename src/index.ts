@@ -5,7 +5,7 @@ import { streamEventsRouter } from "./controllers/streamEventsController";
 import proxyMiddleware from "./middleware/proxyMiddleware";
 import init from "./init";
 
-(async ()=> {
+(async () => {
   const { app } = await init();
 
   app.use(cors());

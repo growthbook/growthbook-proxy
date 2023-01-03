@@ -1,4 +1,4 @@
-import {CacheEntry, Settings} from "./index";
+import { CacheEntry, Settings } from "./index";
 
 export class MemoryCache {
   private readonly store: Map<string, CacheEntry>;

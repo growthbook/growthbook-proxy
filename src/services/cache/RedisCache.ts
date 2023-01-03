@@ -1,9 +1,9 @@
-import {createClient, RedisClientType} from "redis";
-import {CacheEntry, Settings} from "./index";
+import { createClient } from "redis";
+import { CacheEntry, Settings } from "./index";
 
 export class RedisCache {
   private client: ReturnType<typeof createClient> | undefined;
-  private connectionUrl: string | undefined;
+  private readonly connectionUrl: string | undefined;
   private readonly staleTTL: number;
   private readonly expiresTTL: number;
   public readonly allowStale: boolean;
@@ -21,9 +21,12 @@ export class RedisCache {
   }
 
   public async connect() {
-    this.client = this.connectionUrl ? createClient({ url: this.connectionUrl }) : createClient();
+    this.client = this.connectionUrl
+      ? createClient({ url: this.connectionUrl })
+      : createClient();
     if (this.client) {
-      this.client.on('error', (e: any) => {
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      this.client.on("error", (e: any) => {
         console.error("Error connecting to redis client", e);
       });
       await this.client.connect();
@@ -63,6 +66,8 @@ export class RedisCache {
       staleOn: new Date(Date.now() + this.staleTTL),
       expiresOn: new Date(Date.now() + this.expiresTTL),
     };
-    await this.client.set(key, JSON.stringify(entry), { EX: this.expiresTTL/1000 });
+    await this.client.set(key, JSON.stringify(entry), {
+      EX: this.expiresTTL / 1000,
+    });
   }
 }

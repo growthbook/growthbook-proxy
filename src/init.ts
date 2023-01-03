@@ -1,8 +1,8 @@
 import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
-import {featuresCache} from "./services/cache";
-import {RedisCache} from "./services/cache/RedisCache";
+import { featuresCache } from "./services/cache";
+import { RedisCache } from "./services/cache/RedisCache";
 dotenv.config({ path: "./.env.local" });
 
 export default async () => {
