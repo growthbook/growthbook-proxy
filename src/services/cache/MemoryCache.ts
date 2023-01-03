@@ -1,14 +1,4 @@
-export interface CacheEntry {
-  payload: unknown;
-  staleOn: Date;
-  expiresOn: Date;
-}
-
-export interface Settings {
-  staleTTL?: number;
-  expiresTTL?: number;
-  allowStale?: boolean;
-}
+import {CacheEntry, Settings} from "./index";
 
 export class MemoryCache {
   private readonly store: Map<string, CacheEntry>;

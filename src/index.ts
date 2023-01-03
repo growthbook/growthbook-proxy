@@ -5,13 +5,15 @@ import { streamEventsRouter } from "./controllers/streamEventsController";
 import proxyMiddleware from "./middleware/proxyMiddleware";
 import init from "./init";
 
-const { app } = init();
+(async ()=> {
+  const { app } = await init();
 
-app.use(cors());
+  app.use(cors());
 
-app.use("/admin", adminRouter);
-app.use("/sub", streamEventsRouter);
-app.use("/", featuresRouter);
+  app.use("/admin", adminRouter);
+  app.use("/sub", streamEventsRouter);
+  app.use("/", featuresRouter);
 
-// proxy anything else through to GrowthBook
-app.all("/*", proxyMiddleware);
+  // proxy anything else through to GrowthBook
+  app.all("/*", proxyMiddleware);
+})();

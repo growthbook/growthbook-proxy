@@ -35,6 +35,7 @@
     "http-proxy-middleware": "^2.0.6",
     "nodemon": "^2.0.20",
     "prettier": "^2.8.1",
+    "redis": "^4.5.1",
     "rimraf": "^3.0.2",
     "spdy": "^4.0.2",
     "sse-pubsub": "^1.4.1",

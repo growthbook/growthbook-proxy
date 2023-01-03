@@ -1,9 +1,16 @@
 import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
+import {featuresCache} from "./services/cache";
+import {RedisCache} from "./services/cache/RedisCache";
 dotenv.config({ path: "./.env.local" });
 
-export default () => {
+export default async () => {
+  // Set up cache:
+  if (featuresCache instanceof RedisCache) {
+    await featuresCache.connect();
+  }
+
   // Proxy configuration consts:
   const USE_HTTP2 = process.env?.USE_HTTP2 ?? false;
   const HTTPS_CERT = process.env?.HTTPS_CERT ?? "";
