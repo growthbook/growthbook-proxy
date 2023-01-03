@@ -7,7 +7,7 @@
   "settings": {
     "import/parsers": {
       "@typescript-eslint/parser": [
-        ".ts",
+        ".ts"
       ]
     },
     "import/resolver": {
@@ -57,8 +57,8 @@
         "argsIgnorePattern": "^_"
       }
     ],
-    "@typescript-eslint/ban-ts-comment": "warn",
-    "@typescript-eslint/no-var-requires": "warn",
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/no-var-requires": "off",
     "import/order": [
       "error",
       {

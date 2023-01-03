@@ -1,7 +1,6 @@
-import dotenv from "dotenv";
+import { Context } from "../../app";
 import { MemoryCache } from "./MemoryCache";
 import { RedisCache } from "./RedisCache";
-dotenv.config({ path: "./.env.local" });
 
 export interface CacheEntry {
   payload: unknown;
@@ -16,27 +15,15 @@ export interface Settings {
   connectionUrl?: string;
 }
 
-let c: RedisCache | MemoryCache;
-const s: Settings = {
-  staleTTL: process.env?.CACHE_STALE_TTL
-    ? parseInt(process.env.CACHE_STALE_TTL)
-    : undefined,
-  expiresTTL: process.env?.CACHE_EXPIRES_TTL
-    ? parseInt(process.env.CACHE_EXPIRES_TTL)
-    : undefined,
-  allowStale:
-    "CACHE_ALLOW_STALE" in process.env
-      ? ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? "")
-      : undefined,
-};
-if (process.env?.CACHE_ENGINE === "redis") {
-  if (process.env?.REDIS_CONNECTION_URL) {
-    s.connectionUrl = process.env.REDIS_CONNECTION_URL;
+export let featuresCache: MemoryCache | RedisCache | null = null;
+
+export const initializeCache = async (context: Context) => {
+  if (context.cacheSettings.cacheEngine === "redis") {
+    console.debug("using Redis cache");
+    featuresCache = new RedisCache(context.cacheSettings);
+    await featuresCache.connect();
+  } else {
+    console.debug("using in-memory cache");
+    featuresCache = new MemoryCache(context.cacheSettings);
   }
-  c = new RedisCache(s);
-  console.debug("using Redis cache");
-} else {
-  c = new MemoryCache(s);
-  console.debug("using in-memory cache");
-}
-export const featuresCache = c;
+};

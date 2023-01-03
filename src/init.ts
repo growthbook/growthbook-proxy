@@ -1,15 +1,25 @@
 import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
-import { featuresCache } from "./services/cache";
-import { RedisCache } from "./services/cache/RedisCache";
+import { Context } from "./app";
 dotenv.config({ path: "./.env.local" });
 
 export default async () => {
-  // Set up cache:
-  if (featuresCache instanceof RedisCache) {
-    await featuresCache.connect();
-  }
+  const context: Partial<Context> = {
+    cacheSettings: {
+      cacheEngine: process.env?.CACHE_ENGINE === "redis" ? "redis" : "memory",
+      staleTTL: process.env?.CACHE_STALE_TTL
+        ? parseInt(process.env.CACHE_STALE_TTL)
+        : 60,
+      expiresTTL: process.env?.CACHE_EXPIRES_TTL
+        ? parseInt(process.env.CACHE_EXPIRES_TTL)
+        : 60 * 10,
+      allowStale:
+        "CACHE_ALLOW_STALE" in process.env
+          ? ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? "")
+          : true,
+    },
+  };
 
   // Proxy configuration consts:
   const USE_HTTP2 = process.env?.USE_HTTP2 ?? false;
@@ -40,5 +50,5 @@ export default async () => {
     });
   }
 
-  return { app };
+  return { app, context };
 };

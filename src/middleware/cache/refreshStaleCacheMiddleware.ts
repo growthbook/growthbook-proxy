@@ -7,8 +7,9 @@ export default ({ proxyTarget }: { proxyTarget: string }) =>
     const url = proxyTarget + req.originalUrl;
     const responseJson = await got.get(url).json();
     if (responseJson) {
-      console.debug("cache STALE, refreshing cache...");
-      await featuresCache.set(res.locals.apiKey, responseJson);
+      featuresCache && console.debug("cache STALE, refreshing cache...");
+      featuresCache &&
+        (await featuresCache.set(res.locals.apiKey, responseJson));
     } else {
       console.error("Unable to parse response");
     }
