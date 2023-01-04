@@ -4,8 +4,19 @@ import { adminRouter } from "./controllers/adminController";
 import { streamEventsRouter } from "./controllers/streamEventsController";
 import { featuresRouter } from "./controllers/featuresController";
 import proxyMiddleware from "./middleware/proxyMiddleware";
-import { initializeCache } from "./services/cache";
-import { EndpointsEntry, initializeRegistrar } from "./services/registrar";
+import {featuresCache, initializeCache} from "./services/cache";
+import {EndpointsEntry, initializeRegistrar, Registrar, registrar} from "./services/registrar";
+import {EventStreamManager, eventStreamManager} from "./services/sse";
+
+export interface GrowthBookProxy {
+  app: Express;
+  context: Context;
+  services: {
+    featuresCache: typeof featuresCache;
+    registrar: Registrar;
+    eventStreamManager: EventStreamManager
+  }
+}
 
 export interface Context {
   endpoints?: Partial<EndpointsEntry>;
@@ -43,7 +54,7 @@ const defaultContext: Context = {
 export const growthBookProxy = async (
   app: Express,
   context?: Partial<Context>
-) => {
+): Promise<GrowthBookProxy> => {
   const ctx: Context = { ...defaultContext, ...context };
 
   // initialize
@@ -56,4 +67,14 @@ export const growthBookProxy = async (
   ctx.enableSsePush && app.use("/sub", streamEventsRouter);
   app.use("/", featuresRouter);
   ctx.proxyAllRequests && app.all("/*", proxyMiddleware);
+
+  return {
+    app,
+    context: ctx,
+    services: {
+      featuresCache,
+      registrar,
+      eventStreamManager,
+    }
+  };
 };

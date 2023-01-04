@@ -26,7 +26,7 @@ interface ScopedChannel {
   channel: SSEChannel;
 }
 
-export class ChannelManager {
+export class EventStreamManager {
   private scopedChannels = new Map<string, ScopedChannel>();
 
   public subscribe(req: Request, res: Response) {
@@ -70,5 +70,5 @@ export class ChannelManager {
   }
 }
 
-export const channelManager = new ChannelManager();
-Object.freeze(channelManager);
+export const eventStreamManager = new EventStreamManager();
+Object.freeze(eventStreamManager);

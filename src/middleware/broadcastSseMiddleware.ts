@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { channelManager } from "../services/sse";
+import { eventStreamManager } from "../services/sse";
 
 export const broadcastSseMiddleware = (
   req: Request,
@@ -7,6 +7,6 @@ export const broadcastSseMiddleware = (
   next: NextFunction
 ) => {
   const apiKey = res.locals.apiKey;
-  channelManager.publish(apiKey, "features", req.body);
+  eventStreamManager.publish(apiKey, "features", req.body);
   next();
 };

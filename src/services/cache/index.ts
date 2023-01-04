@@ -27,4 +27,5 @@ export const initializeCache = async (context: Context) => {
     console.debug("using in-memory cache");
     featuresCache = new MemoryCache(context.cacheSettings);
   }
+  Object.freeze(featuresCache);
 };
