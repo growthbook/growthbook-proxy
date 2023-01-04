@@ -1,23 +1,34 @@
 import { createClient } from "redis";
 import { CacheEntry, Settings } from "./index";
+import {MemoryCache} from "./MemoryCache";
 
 export class RedisCache {
   private client: ReturnType<typeof createClient> | undefined;
+  private readonly memoryCacheClient: MemoryCache | undefined;
   private readonly connectionUrl: string | undefined;
   private readonly staleTTL: number;
   private readonly expiresTTL: number;
   public readonly allowStale: boolean;
 
   public constructor({
-    staleTTL = 60, // 1 minute
-    expiresTTL = 10 * 60, // 10 minutes
+    staleTTL = 60, //         1 minute
+    expiresTTL = 10 * 60, //  10 minutes
     allowStale = true,
     connectionUrl,
+    useAdditionalMemoryCache,
   }: Settings = {}) {
     this.connectionUrl = connectionUrl;
     this.staleTTL = staleTTL * 1000;
     this.expiresTTL = expiresTTL * 1000;
     this.allowStale = allowStale;
+
+    // wrap the RedisCache in a MemoryCache to avoid hitting Redis on every request
+    if (useAdditionalMemoryCache) {
+      this.memoryCacheClient = new MemoryCache({
+        expiresTTL: 1, //  1 second,
+        allowStale: false,
+      });
+    }
   }
 
   public async connect() {
@@ -37,22 +48,40 @@ export class RedisCache {
     if (!this.client) {
       throw new Error("No redis client");
     }
-    const entryRaw = await this.client.get(key);
-    if (!entryRaw) {
-      return undefined;
-    }
     let entry = undefined;
-    try {
-      entry = JSON.parse(entryRaw);
-    } catch (e) {
-      console.error("unable to parse cache json");
-      return undefined;
+
+    // try fetching from MemoryCache first
+    if (this.memoryCacheClient) {
+      const memoryCacheEntry = await this.memoryCacheClient.get(key);
+      if (memoryCacheEntry && memoryCacheEntry.expiresOn > new Date()) {
+        entry = memoryCacheEntry.payload as CacheEntry;
+      }
     }
+
+    // if cache miss from MemoryCache, fetch from Redis
+    if (!entry) {
+      const entryRaw = await this.client.get(key);
+      if (!entryRaw) {
+        return undefined;
+      }
+      try {
+        entry = JSON.parse(entryRaw);
+      } catch (e) {
+        console.error("unable to parse cache json");
+        return undefined;
+      }
+    }
+
     if (!this.allowStale && entry.staleOn < new Date()) {
       return undefined;
     }
     if (entry.expiresOn < new Date()) {
       return undefined;
+    }
+
+    // refresh MemoryCache
+    if (this.memoryCacheClient) {
+      await this.memoryCacheClient.set(key, entry);
     }
     return entry;
   }
@@ -69,5 +98,10 @@ export class RedisCache {
     await this.client.set(key, JSON.stringify(entry), {
       EX: this.expiresTTL / 1000,
     });
+
+    // refresh MemoryCache
+    if (this.memoryCacheClient) {
+      await this.memoryCacheClient.set(key, entry);
+    }
   }
 }

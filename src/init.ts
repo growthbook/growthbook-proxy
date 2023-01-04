@@ -18,6 +18,7 @@ export default async () => {
         "CACHE_ALLOW_STALE" in process.env
           ? ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? "")
           : true,
+      useAdditionalMemoryCache: process.env?.CACHE_ENGINE === "redis",
     },
   };
 

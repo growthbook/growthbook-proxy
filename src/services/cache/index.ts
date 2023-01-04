@@ -13,6 +13,7 @@ export interface Settings {
   expiresTTL?: number;
   allowStale?: boolean;
   connectionUrl?: string;
+  useAdditionalMemoryCache?: boolean;
 }
 
 export let featuresCache: MemoryCache | RedisCache | null = null;

@@ -17,6 +17,7 @@ export interface Context {
     expiresTTL: number;
     allowStale: boolean;
     connectionUrl?: string;
+    useAdditionalMemoryCache?: boolean;
   };
   enableCors: boolean;
   enableAdmin: boolean;
