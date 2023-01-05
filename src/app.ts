@@ -32,11 +32,13 @@ export interface Context {
   createConnectionsFromEnv: boolean;
   enableCache: boolean;
   cacheSettings: {
-    cacheEngine: "memory" | "redis";
+    cacheEngine: "memory" | "redis" | "mongo";
     staleTTL: number;
     expiresTTL: number;
     allowStale: boolean;
     connectionUrl?: string;
+    databaseName?: string;
+    collectionName?: string;
     useAdditionalMemoryCache?: boolean;
   };
   enableCors: boolean;

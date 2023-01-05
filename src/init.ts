@@ -7,7 +7,11 @@ dotenv.config({ path: "./.env.local" });
 export default async () => {
   const context: Partial<Context> = {
     cacheSettings: {
-      cacheEngine: process.env?.CACHE_ENGINE === "redis" ? "redis" : "memory",
+      cacheEngine: (process.env?.CACHE_ENGINE || "memory") as
+        | "memory"
+        | "redis"
+        | "mongo",
+      connectionUrl: process.env?.CACHE_CONNECTION_URL,
       staleTTL: process.env?.CACHE_STALE_TTL
         ? parseInt(process.env.CACHE_STALE_TTL)
         : 60,

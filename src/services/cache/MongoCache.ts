@@ -1,11 +1,14 @@
-import { createClient } from "redis";
+import { Collection, MongoClient } from "mongodb";
 import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, Settings } from "./index";
 
-export class RedisCache {
-  private client: ReturnType<typeof createClient> | undefined;
+export class MongoCache {
+  private client: MongoClient | undefined;
+  private collection: Collection | undefined;
   private readonly memoryCacheClient: MemoryCache | undefined;
   private readonly connectionUrl: string | undefined;
+  private readonly databaseName: string | undefined;
+  private readonly collectionName: string | undefined;
   private readonly staleTTL: number;
   private readonly expiresTTL: number;
   public readonly allowStale: boolean;
@@ -15,9 +18,13 @@ export class RedisCache {
     expiresTTL = 10 * 60, //  10 minutes
     allowStale = true,
     connectionUrl,
+    databaseName = "proxy",
+    collectionName = "cache",
     useAdditionalMemoryCache,
   }: Settings = {}) {
     this.connectionUrl = connectionUrl;
+    this.databaseName = databaseName;
+    this.collectionName = collectionName;
     this.staleTTL = staleTTL * 1000;
     this.expiresTTL = expiresTTL * 1000;
     this.allowStale = allowStale;
@@ -32,20 +39,28 @@ export class RedisCache {
   }
 
   public async connect() {
-    this.client = this.connectionUrl
-      ? createClient({ url: this.connectionUrl })
-      : createClient();
+    if (!this.databaseName || !this.collectionName) {
+      throw new Error("No database or collection name");
+    }
+    this.client = new MongoClient(this.connectionUrl ?? "");
     if (this.client) {
       this.client.on("error", (e: Error) => {
-        console.error("Error connecting to redis client", e);
+        console.error("Error connecting to mongo client", e);
       });
       await this.client.connect();
+      const db = this.client.db(this.databaseName);
+      this.collection = db.collection(this.collectionName);
+      await this.collection.createIndex({ key: 1 }, { unique: true });
+      await this.collection.createIndex(
+        { "entry.expiresOn": 1 },
+        { expireAfterSeconds: this.expiresTTL / 1000 }
+      );
     }
   }
 
   public async get(key: string): Promise<CacheEntry | undefined> {
-    if (!this.client) {
-      throw new Error("No redis client");
+    if (!this.collection) {
+      throw new Error("No mongo collection");
     }
     let entry = undefined;
 
@@ -57,18 +72,17 @@ export class RedisCache {
       }
     }
 
-    // if cache miss from MemoryCache, fetch from Redis
+    // if cache miss from MemoryCache, fetch from Mongo
     if (!entry) {
-      const entryRaw = await this.client.get(key);
-      if (!entryRaw) {
+      const doc = await this.collection.findOne({ key });
+      if (!doc) {
         return undefined;
       }
-      try {
-        entry = JSON.parse(entryRaw);
-      } catch (e) {
+      if (!doc.entry) {
         console.error("unable to parse cache json");
         return undefined;
       }
+      entry = doc.entry;
     }
 
     if (!this.allowStale && entry.staleOn < new Date()) {
@@ -86,16 +100,17 @@ export class RedisCache {
   }
 
   public async set(key: string, payload: unknown) {
-    if (!this.client) {
-      throw new Error("No redis client");
+    if (!this.collection) {
+      throw new Error("No mongo client");
     }
     const entry = {
       payload,
       staleOn: new Date(Date.now() + this.staleTTL),
       expiresOn: new Date(Date.now() + this.expiresTTL),
     };
-    await this.client.set(key, JSON.stringify(entry), {
-      EX: this.expiresTTL / 1000,
+    const doc = { key, entry };
+    await this.collection.replaceOne({ key }, doc, {
+      upsert: true,
     });
 
     // refresh MemoryCache

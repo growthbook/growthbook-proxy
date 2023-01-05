@@ -10,6 +10,6 @@ import { growthBookProxy } from "./app";
 
   // example: use the public interface to do something trivial:
   setTimeout(() => {
-    console.log( proxy.services.registrar.getAllConnections() );
+    console.log(proxy.services.registrar.getAllConnections());
   }, 5000);
 })();
