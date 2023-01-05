@@ -38,20 +38,4 @@ export class MemoryCache {
       expiresOn: new Date(Date.now() + this.expiresTTL),
     });
   }
-
-  public async dangerouslySetAll(
-    payload: unknown,
-    keyedCallback?: (key: string) => void
-  ) {
-    for (const [key] of this.store) {
-      this.store.set(key, {
-        payload,
-        staleOn: new Date(Date.now() + this.staleTTL),
-        expiresOn: new Date(Date.now() + this.expiresTTL),
-      });
-      if (keyedCallback !== undefined) {
-        keyedCallback(key);
-      }
-    }
-  }
 }

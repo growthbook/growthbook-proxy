@@ -1,56 +1,54 @@
 import { Context } from "../../app";
-import { getEndpointsFromEnv } from "./helper";
+import { getApiHostFromEnv, getConnectionsFromEnv } from "./helper";
 
-const EndpointEntryFields: Set<string> = new Set([
+const ConnectionFields: Set<string> = new Set([
   "apiKey",
-  "apiHost",
   "signingKey",
   "encryptionKey",
 ]);
 
-export interface EndpointsEntry {
+export type ApiKey = string;
+export interface Connection {
   apiKey: string;
-  apiHost: string;
   signingKey: string;
   encryptionKey?: string;
 }
 
 export class Registrar {
-  private readonly endpoints: Map<string, EndpointsEntry> = new Map();
+  public apiHost = "";
+  private readonly connections: Map<ApiKey, Connection> = new Map();
 
-  public getEndpointsByApiKey(apiKey: string): EndpointsEntry | undefined {
-    return this.endpoints.get(apiKey);
+  public getConnectionByApiKey(apiKey: ApiKey): Connection | undefined {
+    return this.connections.get(apiKey);
   }
 
-  public getAllEndpoints(): Record<string, EndpointsEntry> {
-    return Object.fromEntries(this.endpoints);
+  public getAllConnections(): Record<ApiKey, Connection> {
+    return Object.fromEntries(this.connections);
   }
 
-  public setEndpointsByApiKey(apiKey: string, payload: unknown) {
-    const e = this.getEndpointsFromPayload(payload);
-    if (!e) {
+  public setConnectionByApiKey(apiKey: ApiKey, payload: unknown) {
+    const connection = this.getConnectionFromPayload(payload);
+    if (!connection) {
       throw new Error("invalid payload");
     }
-    this.endpoints.set(apiKey, e as EndpointsEntry);
+    this.connections.set(apiKey, connection as Connection);
   }
 
-  public deleteEndpointsByApiKey(apiKey: string): boolean {
-    return this.endpoints.delete(apiKey);
+  public deleteConnectionByApiKey(apiKey: ApiKey): boolean {
+    return this.connections.delete(apiKey);
   }
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  private getEndpointsFromPayload(payload: any): EndpointsEntry | null {
+  private getConnectionFromPayload(payload: any): Connection | null {
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    const e: any = {};
+    const connection: any = {};
     for (const key in payload) {
-      if (EndpointEntryFields.has(key) && payload[key]) {
-        e[key] = payload[key];
+      if (ConnectionFields.has(key) && payload[key]) {
+        connection[key] = payload[key];
       }
     }
-    // if (e.apiKey && e.sdkApi && e.webhook && e.webhookSecret) {
-    if (e.apiKey && e.apiHost && e.signingKey) {
-      // e.sdkBaseUrl = new URL(e.sdkApi).origin;
-      return e as EndpointsEntry;
+    if (connection.apiKey && connection.signingKey) {
+      return connection as Connection;
     }
     return null;
   }
@@ -59,17 +57,23 @@ export class Registrar {
 export const registrar = new Registrar();
 
 export const initializeRegistrar = (context: Context) => {
-  if (context?.endpoints?.apiKey) {
-    registrar.setEndpointsByApiKey(context.endpoints.apiKey, context.endpoints);
+  if (context?.apiHost) {
+    registrar.apiHost = context.apiHost;
+  }
+  if (context?.connections?.length) {
+    for (const connection of context.connections) {
+      registrar.setConnectionByApiKey(connection.apiKey, connection);
+    }
   }
 
-  if (context.createEndpointsFromEnv) {
-    const envEndpoints = getEndpointsFromEnv();
-    envEndpoints.forEach((e) => {
-      if (!e.apiKey) {
+  if (context.createConnectionsFromEnv) {
+    registrar.apiHost = getApiHostFromEnv();
+    const envConnections = getConnectionsFromEnv();
+    envConnections.forEach((connection) => {
+      if (!connection.apiKey) {
         return;
       }
-      registrar.setEndpointsByApiKey(e.apiKey, e);
+      registrar.setConnectionByApiKey(connection.apiKey, connection);
     });
   }
 

@@ -1,6 +1,6 @@
 import { createClient } from "redis";
+import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, Settings } from "./index";
-import {MemoryCache} from "./MemoryCache";
 
 export class RedisCache {
   private client: ReturnType<typeof createClient> | undefined;

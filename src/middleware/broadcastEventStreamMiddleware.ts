@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { eventStreamManager } from "../services/sse";
+import { eventStreamManager } from "../services/eventStreamManager";
 
-export const broadcastSseMiddleware = (
+export const broadcastEventStreamMiddleware = (
   req: Request,
   res: Response,
   next: NextFunction

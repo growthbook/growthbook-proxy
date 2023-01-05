@@ -5,12 +5,11 @@ import { registrar } from "../services/registrar";
 import { apiKeyMiddleware } from "../middleware/apiKeyMiddleware";
 import webhookVerificationMiddleware from "../middleware/webhookVerificationMiddleware";
 import { reencryptionMiddleware } from "../middleware/reencryptionMiddleware";
-import { broadcastSseMiddleware } from "../middleware/broadcastSseMiddleware";
+import { broadcastEventStreamMiddleware } from "../middleware/broadcastEventStreamMiddleware";
 import refreshStaleCacheMiddleware from "../middleware/cache/refreshStaleCacheMiddleware";
 
 const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
-  const endpoints = registrar.getEndpointsByApiKey(res.locals.apiKey);
-  if (!endpoints?.apiHost) {
+  if (!registrar?.apiHost) {
     return res.status(400).json({ message: "Missing API host" });
   }
   const entry = featuresCache
@@ -22,7 +21,7 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
     // expired or unset
     // todo: add lock for setting cache?
     return readThroughCacheMiddleware({
-      proxyTarget: endpoints.apiHost,
+      proxyTarget: registrar.apiHost,
     })(req, res, next);
   }
 
@@ -34,7 +33,7 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
     // stale. refresh in background, return stale response
     // todo: add lock for setting cache?
     refreshStaleCacheMiddleware({
-      proxyTarget: endpoints.apiHost,
+      proxyTarget: registrar.apiHost,
     })(req, res).catch((e) => {
       console.error("Unable to refresh stale cache", e);
     });
@@ -69,6 +68,6 @@ featuresRouter.post(
   }),
   webhookVerificationMiddleware,
   reencryptionMiddleware,
-  broadcastSseMiddleware,
+  broadcastEventStreamMiddleware,
   postFeatures
 );

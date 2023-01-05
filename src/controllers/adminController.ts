@@ -2,13 +2,13 @@ import express, { Request, Response } from "express";
 import { registrar } from "../services/registrar";
 import { adminMiddleware } from "../middleware/adminMiddleware";
 
-const postEndpointsEntry = (req: Request, res: Response) => {
+const postConnection = (req: Request, res: Response) => {
   const apiKey = req.body.apiKey;
   if (!apiKey) {
     return res.status(400).json({ message: "API key required" });
   }
   try {
-    registrar.setEndpointsByApiKey(apiKey, req.body);
+    registrar.setConnectionByApiKey(apiKey, req.body);
   } catch (e) {
     console.error(e);
     return res.status(400).json({ message: "API key required" });
@@ -16,35 +16,35 @@ const postEndpointsEntry = (req: Request, res: Response) => {
   return res.status(200).json({ message: "Success" });
 };
 
-const getEndpointsEntry = (req: Request, res: Response) => {
+const getConnection = (req: Request, res: Response) => {
   const apiKey = req.params.apiKey;
   if (!apiKey) {
     return res.status(400).json({ message: "API key required" });
   }
-  const data = registrar.getEndpointsByApiKey(apiKey);
+  const data = registrar.getConnectionByApiKey(apiKey);
   if (!data) {
     return res
       .status(404)
-      .json({ message: "No endpoints found for that API key" });
+      .json({ message: "No connection found for that API key" });
   }
   return res.status(200).json(data);
 };
 
-const getAllEndpointsEntries = (req: Request, res: Response) => {
-  const data = registrar.getAllEndpoints();
+const getAllConnections = (req: Request, res: Response) => {
+  const data = registrar.getAllConnections();
   return res.status(200).json(data);
 };
 
-const deleteEndpointsEntry = (req: Request, res: Response) => {
+const deleteConnection = (req: Request, res: Response) => {
   const apiKey = req.params.apiKey;
   if (!apiKey) {
     return res.status(400).json({ message: "API key required" });
   }
-  const status = registrar.deleteEndpointsByApiKey(apiKey);
+  const status = registrar.deleteConnectionByApiKey(apiKey);
   if (!status) {
     return res
       .status(404)
-      .json({ message: "No endpoints found for that API key" });
+      .json({ message: "No connection found for that API key" });
   }
   // todo: cleanup cache, sse
   return res.status(200).json({ message: "Success" });
@@ -53,14 +53,14 @@ const deleteEndpointsEntry = (req: Request, res: Response) => {
 export const adminRouter = express.Router();
 
 adminRouter.post(
-  "/endpoint",
+  "/connection",
   adminMiddleware,
   express.json(),
-  postEndpointsEntry
+  postConnection
 );
 
-adminRouter.get("/endpoint/:apiKey", adminMiddleware, getEndpointsEntry);
+adminRouter.get("/connection/:apiKey", adminMiddleware, getConnection);
 
-adminRouter.get("/endpoints", adminMiddleware, getAllEndpointsEntries);
+adminRouter.get("/connections", adminMiddleware, getAllConnections);
 
-adminRouter.delete("/endpoint/:apiKey", adminMiddleware, deleteEndpointsEntry);
+adminRouter.delete("/connection/:apiKey", adminMiddleware, deleteConnection);

@@ -1,43 +1,50 @@
 import dotenv from "dotenv";
-import { EndpointsEntry } from "./index";
+import { Connection } from "./index";
 dotenv.config({ path: "./.env.local" });
 
-export const envToEntryVarMap: Record<string, string> = {
+export const envToConnectionVarMap: Record<string, string> = {
   API_KEY: "apiKey",
-  API_HOST: "apiHost",
   SIGNING_KEY: "signingKey",
   ENCRYPTION_KEY: "encryptionKey",
 };
 
-export const getEndpointsFromEnv = (): Partial<EndpointsEntry>[] => {
-  const initialEndpoints: Partial<EndpointsEntry>[] = [];
-  // Scan the env vars for ENDPOINT. or ENDPOINT.1. prefixes, return them as prefix groups
-  const groupedEndpointVars = groupEnvVarsByPrefix(Object.keys(process.env));
-  for (const prefix in groupedEndpointVars) {
-    const group = groupedEndpointVars[prefix];
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    const entry: any = {};
-    Object.entries(group).forEach((v) => {
-      const [key, val] = v;
-      const entryKey = envToEntryVarMap[key];
-      if (entryKey) {
-        entry[entryKey] = val;
-      }
-    });
-    if (Object.keys(entry).length) {
-      initialEndpoints.push(entry as Partial<EndpointsEntry>);
-    }
-  }
-  return initialEndpoints;
+export const getApiHostFromEnv = (): string => {
+  return process.env.API_HOST || "";
 };
 
-/** Arrange vars like [ENDPOINT.API_KEY, ENDPOINT.SDK_API] or [ENDPOINT.2.API_KEY, ENDPOINT.2.SDK_API] into [prefix, suffix[]] groups */
+export const getConnectionsFromEnv = (): Connection[] => {
+  const initialConnections: Connection[] = [];
+  // Scan the env vars for CONNECTION. or CONNECTION.1. prefixes, return them as prefix groups
+  const groupedConnectionVars = groupEnvVarsByPrefix(Object.keys(process.env));
+  for (const prefix in groupedConnectionVars) {
+    const group = groupedConnectionVars[prefix];
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const connection: any = {};
+    Object.entries(group).forEach((v) => {
+      const [key, val] = v;
+      const entryKey = envToConnectionVarMap[key];
+      if (entryKey) {
+        connection[entryKey] = val;
+      }
+    });
+    if (Object.keys(connection).length) {
+      initialConnections.push(connection as Connection);
+    }
+  }
+  return initialConnections;
+};
+
+/**
+ * Arrange vars like [CONNECTION.API_KEY, CONNECTION.SIGNING_KEY]
+ * or [CONNECTION.2.API_KEY, CONNECTION.2.SIGNING_KEY]
+ * into { prefix: suffix[] } groups
+ * */
 const groupEnvVarsByPrefix = (
   strings: string[]
 ): Record<string, Record<string, string>> => {
   return strings.reduce(
     (groups: Record<string, Record<string, string>>, str) => {
-      const prefixMatch = str.match(/^(ENDPOINT(?:\.\d+)?\.)(.*)/);
+      const prefixMatch = str.match(/^(CONNECTION(?:\.\d+)?\.)(.*)/);
       if (prefixMatch) {
         if (!groups[prefixMatch[1]]) {
           groups[prefixMatch[1]] = {};

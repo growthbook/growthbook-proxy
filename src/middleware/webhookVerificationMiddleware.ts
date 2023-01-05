@@ -3,14 +3,14 @@ import { NextFunction, Request, Response } from "express";
 import { registrar } from "../services/registrar";
 
 export default (req: Request, res: Response, next: NextFunction) => {
-  const endpoints = registrar.getEndpointsByApiKey(res.locals.apiKey);
-  if (!endpoints?.signingKey) {
+  const connection = registrar.getConnectionByApiKey(res.locals.apiKey);
+  if (!connection?.signingKey) {
     return res.status(400).json({ message: "Missing signing key" });
   }
   const sig = req.get("X-GrowthBook-Signature") || "";
 
   const computed = crypto
-    .createHmac("sha256", endpoints?.signingKey || "")
+    .createHmac("sha256", connection?.signingKey || "")
     .update(res.locals.rawBody || new Buffer(""))
     .digest("hex");
 

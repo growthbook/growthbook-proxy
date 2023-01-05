@@ -1,12 +1,20 @@
 import { Express } from "express";
 import cors from "cors";
 import { adminRouter } from "./controllers/adminController";
-import { streamEventsRouter } from "./controllers/streamEventsController";
+import { eventStreamRouter } from "./controllers/eventStreamController";
 import { featuresRouter } from "./controllers/featuresController";
 import proxyMiddleware from "./middleware/proxyMiddleware";
-import {featuresCache, initializeCache} from "./services/cache";
-import {EndpointsEntry, initializeRegistrar, Registrar, registrar} from "./services/registrar";
-import {EventStreamManager, eventStreamManager} from "./services/sse";
+import { featuresCache, initializeCache } from "./services/cache";
+import {
+  Connection,
+  initializeRegistrar,
+  Registrar,
+  registrar,
+} from "./services/registrar";
+import {
+  EventStreamManager,
+  eventStreamManager,
+} from "./services/eventStreamManager";
 
 export interface GrowthBookProxy {
   app: Express;
@@ -14,13 +22,14 @@ export interface GrowthBookProxy {
   services: {
     featuresCache: typeof featuresCache;
     registrar: Registrar;
-    eventStreamManager: EventStreamManager
-  }
+    eventStreamManager: EventStreamManager;
+  };
 }
 
 export interface Context {
-  endpoints?: Partial<EndpointsEntry>;
-  createEndpointsFromEnv: boolean;
+  apiHost?: string;
+  connections?: Connection[];
+  createConnectionsFromEnv: boolean;
   enableCache: boolean;
   cacheSettings: {
     cacheEngine: "memory" | "redis";
@@ -32,12 +41,12 @@ export interface Context {
   };
   enableCors: boolean;
   enableAdmin: boolean;
-  enableSsePush: boolean;
+  enableEventStream: boolean;
   proxyAllRequests: boolean;
 }
 
 const defaultContext: Context = {
-  createEndpointsFromEnv: true,
+  createConnectionsFromEnv: true,
   enableCache: true,
   cacheSettings: {
     cacheEngine: "memory",
@@ -47,7 +56,7 @@ const defaultContext: Context = {
   },
   enableCors: true,
   enableAdmin: true,
-  enableSsePush: true,
+  enableEventStream: true,
   proxyAllRequests: false,
 };
 
@@ -64,7 +73,7 @@ export const growthBookProxy = async (
   // set up handlers
   ctx.enableCors && app.use(cors());
   ctx.enableAdmin && app.use("/admin", adminRouter);
-  ctx.enableSsePush && app.use("/sub", streamEventsRouter);
+  ctx.enableEventStream && app.use("/sub", eventStreamRouter);
   app.use("/", featuresRouter);
   ctx.proxyAllRequests && app.all("/*", proxyMiddleware);
 
@@ -75,6 +84,6 @@ export const growthBookProxy = async (
       featuresCache,
       registrar,
       eventStreamManager,
-    }
+    },
   };
 };
