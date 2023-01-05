@@ -3,19 +3,16 @@ import { getEndpointsFromEnv } from "./helper";
 
 const EndpointEntryFields: Set<string> = new Set([
   "apiKey",
-  "sdkApi",
-  "sdkEncryptionKey",
-  "webhook",
-  "webhookSecret",
+  "apiHost",
+  "signingKey",
+  "encryptionKey",
 ]);
 
 export interface EndpointsEntry {
   apiKey: string;
-  sdkApi: string;
-  sdkBaseUrl: string;
-  sdkEncryptionKey?: string;
-  webhook: string;
-  webhookSecret: string;
+  apiHost: string;
+  signingKey: string;
+  encryptionKey?: string;
 }
 
 export class Registrar {
@@ -50,8 +47,9 @@ export class Registrar {
         e[key] = payload[key];
       }
     }
-    if (e.apiKey && e.sdkApi && e.webhook && e.webhookSecret) {
-      e.sdkBaseUrl = new URL(e.sdkApi).origin;
+    // if (e.apiKey && e.sdkApi && e.webhook && e.webhookSecret) {
+    if (e.apiKey && e.apiHost && e.signingKey) {
+      // e.sdkBaseUrl = new URL(e.sdkApi).origin;
       return e as EndpointsEntry;
     }
     return null;

@@ -10,8 +10,8 @@ import refreshStaleCacheMiddleware from "../middleware/cache/refreshStaleCacheMi
 
 const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   const endpoints = registrar.getEndpointsByApiKey(res.locals.apiKey);
-  if (!endpoints?.sdkBaseUrl) {
-    return res.status(400).json({ message: "Missing SDK endpoint" });
+  if (!endpoints?.apiHost) {
+    return res.status(400).json({ message: "Missing API host" });
   }
   const entry = featuresCache
     ? await featuresCache.get(res.locals.apiKey)
@@ -22,7 +22,7 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
     // expired or unset
     // todo: add lock for setting cache?
     return readThroughCacheMiddleware({
-      proxyTarget: endpoints.sdkBaseUrl,
+      proxyTarget: endpoints.apiHost,
     })(req, res, next);
   }
 
@@ -34,7 +34,7 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
     // stale. refresh in background, return stale response
     // todo: add lock for setting cache?
     refreshStaleCacheMiddleware({
-      proxyTarget: endpoints.sdkBaseUrl,
+      proxyTarget: endpoints.apiHost,
     })(req, res).catch((e) => {
       console.error("Unable to refresh stale cache", e);
     });
@@ -51,7 +51,7 @@ const postFeatures = async (req: Request, res: Response) => {
     console.error("Unable to update features", e);
     return res.status(500).json({ message: "Unable to update features" });
   }
-  return res.status(200).json({ message: "success" });
+  return res.status(200).json({ message: "Success" });
 };
 
 export const featuresRouter = express.Router();

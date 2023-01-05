@@ -4,10 +4,13 @@ import { registrar } from "../services/registrar";
 
 export default (req: Request, res: Response, next: NextFunction) => {
   const endpoints = registrar.getEndpointsByApiKey(res.locals.apiKey);
+  if (!endpoints?.signingKey) {
+    return res.status(400).json({ message: "Missing signing key" });
+  }
   const sig = req.get("X-GrowthBook-Signature") || "";
 
   const computed = crypto
-    .createHmac("sha256", endpoints?.webhookSecret || "")
+    .createHmac("sha256", endpoints?.signingKey || "")
     .update(res.locals.rawBody || new Buffer(""))
     .digest("hex");
 

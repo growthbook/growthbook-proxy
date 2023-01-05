@@ -13,7 +13,7 @@ const postEndpointsEntry = (req: Request, res: Response) => {
     console.error(e);
     return res.status(400).json({ message: "API key required" });
   }
-  return res.status(200).json({ message: "success" });
+  return res.status(200).json({ message: "Success" });
 };
 
 const getEndpointsEntry = (req: Request, res: Response) => {
@@ -25,7 +25,7 @@ const getEndpointsEntry = (req: Request, res: Response) => {
   if (!data) {
     return res
       .status(404)
-      .json({ message: "no endpoints found for that api key" });
+      .json({ message: "No endpoints found for that API key" });
   }
   return res.status(200).json(data);
 };
@@ -44,10 +44,10 @@ const deleteEndpointsEntry = (req: Request, res: Response) => {
   if (!status) {
     return res
       .status(404)
-      .json({ message: "no endpoints found for that api key" });
+      .json({ message: "No endpoints found for that API key" });
   }
   // todo: cleanup cache, sse
-  return res.status(200).json({ message: "success" });
+  return res.status(200).json({ message: "Success" });
 };
 
 export const adminRouter = express.Router();

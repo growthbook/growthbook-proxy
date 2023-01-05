@@ -4,10 +4,9 @@ dotenv.config({ path: "./.env.local" });
 
 export const envToEntryVarMap: Record<string, string> = {
   API_KEY: "apiKey",
-  SDK_API: "sdkApi",
-  SDK_ENCRYPTION_KEY: "sdkEncryptionKey",
-  WEBHOOK: "webhook",
-  WEBHOOK_SECRET: "webhookSecret",
+  API_HOST: "apiHost",
+  SIGNING_KEY: "signingKey",
+  ENCRYPTION_KEY: "encryptionKey",
 };
 
 export const getEndpointsFromEnv = (): Partial<EndpointsEntry>[] => {
