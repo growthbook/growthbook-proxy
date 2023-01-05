@@ -15,6 +15,7 @@ import {
   EventStreamManager,
   eventStreamManager,
 } from "./services/eventStreamManager";
+import { version } from "../package.json";
 
 export interface GrowthBookProxy {
   app: Express;
@@ -41,6 +42,7 @@ export interface Context {
     collectionName?: string;
     useAdditionalMemoryCache?: boolean;
   };
+  enableHealthCheck: boolean;
   enableCors: boolean;
   enableAdmin: boolean;
   enableEventStream: boolean;
@@ -56,6 +58,7 @@ const defaultContext: Context = {
     expiresTTL: 10 * 60, // 10 min,
     allowStale: true,
   },
+  enableHealthCheck: true,
   enableCors: true,
   enableAdmin: true,
   enableEventStream: true,
@@ -74,6 +77,10 @@ export const growthBookProxy = async (
 
   // set up handlers
   ctx.enableCors && app.use(cors());
+  ctx.enableHealthCheck &&
+    app.get("/health", (req, res) =>
+      res.status(200).json({ ok: true, version })
+    );
   ctx.enableAdmin && app.use("/admin", adminRouter);
   ctx.enableEventStream && app.use("/sub", eventStreamRouter);
   app.use("/", featuresRouter);
