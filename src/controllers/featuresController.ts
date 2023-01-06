@@ -12,7 +12,17 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   if (!registrar?.apiHost) {
     return res.status(400).json({ message: "Missing API host" });
   }
-  const entry = featuresCache
+
+  // If the connection has not been used before, force a cache read-through so that the GB server may validate the connection.
+  let forceReadThrough = false;
+  const connection = registrar.getConnectionByApiKey(res.locals.apiKey);
+  if (connection && !connection.connected) {
+    forceReadThrough = true;
+    connection.connected = true;
+    registrar.setConnectionByApiKey(res.locals.apiKey, connection);
+  }
+
+  const entry = !forceReadThrough && featuresCache
     ? await featuresCache.get(res.locals.apiKey)
     : undefined;
   const features = entry?.payload;

@@ -5,6 +5,7 @@ import { getApiHostFromEnv, getConnectionsFromEnv } from "./helper";
 const ConnectionFields: Set<string> = new Set([
   "apiKey",
   "signingKey",
+  "useEncryption",
   "encryptionKey",
 ]);
 
@@ -12,7 +13,18 @@ export type ApiKey = string;
 export interface Connection {
   apiKey: string;
   signingKey: string;
+  useEncryption: boolean;
   encryptionKey?: string;
+  connected: boolean; // Set to true once used. When false, force a cache read-through so that GB server may validate the connection.
+}
+
+interface ConnectionDoc {
+  key: string,
+  encryptPayload: boolean,
+  encryptionKey: string,
+  proxy: {
+    signingKey: string,
+  }
 }
 
 export class Registrar {
@@ -36,6 +48,12 @@ export class Registrar {
     if (!connection) {
       throw new Error("invalid payload");
     }
+    const oldConnection = this.getConnectionByApiKey(apiKey);
+    if (oldConnection) {
+      connection.connected = oldConnection.connected;
+    } else {
+      connection.connected = false;
+    }
     this.connections.set(apiKey, connection as Connection);
   }
 
@@ -43,6 +61,7 @@ export class Registrar {
     return this.connections.delete(apiKey);
   }
 
+  // todo: deprecate this method in favor of connection polling
   /* eslint-disable @typescript-eslint/no-explicit-any */
   private getConnectionFromPayload(payload: any): Connection | null {
     /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -80,14 +99,20 @@ export class Registrar {
     const headers = {
       Authorization: `Bearer ${this.authenticatedApiSigningKey}`,
     };
-    const connections = (await got
+    const connectionDocs = (await got
       .get(url, { headers })
       .json()
       .catch((e) => console.error("polling error", e.message))) as
-      | Connection[]
+      | ConnectionDoc[]
       | undefined;
-    if (connections) {
-      connections.forEach((connection: Connection) => {
+    if (connectionDocs) {
+      connectionDocs.forEach((doc: ConnectionDoc) => {
+        const connection = {
+          apiKey: doc.key,
+          signingKey: doc.proxy.signingKey,
+          encryptionKey: doc.encryptionKey,
+          useEncryption: doc.encryptPayload,
+        };
         this.setConnectionByApiKey(connection.apiKey, connection);
       });
     }

@@ -5,6 +5,7 @@ dotenv.config({ path: "./.env.local" });
 export const envToConnectionVarMap: Record<string, string> = {
   API_KEY: "apiKey",
   SIGNING_KEY: "signingKey",
+  USE_ENCRYPTION: "useEncryption",
   ENCRYPTION_KEY: "encryptionKey",
 };
 
