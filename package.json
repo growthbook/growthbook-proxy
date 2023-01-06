@@ -12,8 +12,8 @@
     "lint": "eslint './**/*.{ts,js}' --fix --max-warnings 0 --cache --cache-strategy content",
     "build:clean": "rimraf -rf dist",
     "build": "npx tsc",
-    "start": "node dist/index.js",
-    "dev": "concurrently 'npx tsc --watch' 'nodemon -q dist/index.js'"
+    "start": "node dist/src/index.js",
+    "dev": "concurrently 'npx tsc --watch' 'nodemon -q dist/src/index.js'"
   },
   "dependencies": {
     "cors": "^2.8.5",

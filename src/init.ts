@@ -6,6 +6,10 @@ dotenv.config({ path: "./.env.local" });
 
 export default async () => {
   const context: Partial<Context> = {
+    apiHost: process.env?.API_HOST,
+    authenticatedApiHost:
+      process.env?.AUTHENTICATED_API_HOST ?? process.env?.API_HOST,
+    authenticatedApiSigningKey: process.env?.AUTHENTICATED_API_SIGNING_KEY,
     cacheSettings: {
       cacheEngine: (process.env?.CACHE_ENGINE || "memory") as
         | "memory"

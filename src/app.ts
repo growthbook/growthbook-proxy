@@ -1,5 +1,6 @@
 import { Express } from "express";
 import cors from "cors";
+import { version } from "../package.json";
 import { adminRouter } from "./controllers/adminController";
 import { eventStreamRouter } from "./controllers/eventStreamController";
 import { featuresRouter } from "./controllers/featuresController";
@@ -15,7 +16,6 @@ import {
   EventStreamManager,
   eventStreamManager,
 } from "./services/eventStreamManager";
-import { version } from "../package.json";
 
 export interface GrowthBookProxy {
   app: Express;
@@ -29,7 +29,11 @@ export interface GrowthBookProxy {
 
 export interface Context {
   apiHost?: string;
+  authenticatedApiHost?: string;
+  authenticatedApiSigningKey?: string;
   connections?: Connection[];
+  pollForConnections?: boolean;
+  connectionPollingFrequency?: number;
   createConnectionsFromEnv: boolean;
   enableCache: boolean;
   cacheSettings: {
@@ -51,6 +55,8 @@ export interface Context {
 
 const defaultContext: Context = {
   createConnectionsFromEnv: true,
+  pollForConnections: true,
+  connectionPollingFrequency: 10000,
   enableCache: true,
   cacheSettings: {
     cacheEngine: "memory",
@@ -72,7 +78,7 @@ export const growthBookProxy = async (
   const ctx: Context = { ...defaultContext, ...context };
 
   // initialize
-  initializeRegistrar(ctx);
+  await initializeRegistrar(ctx);
   ctx.enableCache && (await initializeCache(ctx));
 
   // set up handlers

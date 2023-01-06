@@ -1,3 +1,4 @@
+import got from "got";
 import { Context } from "../../app";
 import { getApiHostFromEnv, getConnectionsFromEnv } from "./helper";
 
@@ -15,8 +16,12 @@ export interface Connection {
 }
 
 export class Registrar {
-  public apiHost = "";
   private readonly connections: Map<ApiKey, Connection> = new Map();
+  public apiHost = "";
+  public authenticatedApiHost = "";
+  private authenticatedApiSigningKey = "";
+  private getConnectionsPollingInterval: NodeJS.Timeout | null = null;
+  private getConnectionsPollingFrequency: number = 1000 * 60; // 1 min;
 
   public getConnectionByApiKey(apiKey: ApiKey): Connection | undefined {
     return this.connections.get(apiKey);
@@ -52,11 +57,46 @@ export class Registrar {
     }
     return null;
   }
+
+  public async startConnectionPolling(
+    authenticatedApiHost: string,
+    authenticatedApiSigningKey: string,
+    connectionPollingFrequency?: number
+  ) {
+    this.authenticatedApiHost = authenticatedApiHost;
+    this.authenticatedApiSigningKey = authenticatedApiSigningKey;
+    if (connectionPollingFrequency) {
+      this.getConnectionsPollingFrequency = connectionPollingFrequency;
+    }
+
+    this.getConnectionsPollingInterval = setInterval(async () => {
+      await this.pollForConnections();
+    }, this.getConnectionsPollingFrequency);
+    await this.pollForConnections();
+  }
+
+  private async pollForConnections() {
+    const url = `${this.authenticatedApiHost}/api/sdk-connections`;
+    const headers = {
+      Authorization: `Bearer ${this.authenticatedApiSigningKey}`,
+    };
+    const connections = (await got
+      .get(url, { headers })
+      .json()
+      .catch((e) => console.error("polling error", e.message))) as
+      | Connection[]
+      | undefined;
+    if (connections) {
+      connections.forEach((connection: Connection) => {
+        this.setConnectionByApiKey(connection.apiKey, connection);
+      });
+    }
+  }
 }
 
 export const registrar = new Registrar();
 
-export const initializeRegistrar = (context: Context) => {
+export const initializeRegistrar = async (context: Context) => {
   if (context?.apiHost) {
     registrar.apiHost = context.apiHost;
   }
@@ -75,6 +115,17 @@ export const initializeRegistrar = (context: Context) => {
       }
       registrar.setConnectionByApiKey(connection.apiKey, connection);
     });
+  }
+
+  if (context.pollForConnections) {
+    if (!context.authenticatedApiHost || !context.authenticatedApiSigningKey) {
+      throw new Error("missing required context for polling for connections");
+    }
+    await registrar.startConnectionPolling(
+      context.authenticatedApiHost,
+      context.authenticatedApiSigningKey,
+      context.connectionPollingFrequency
+    );
   }
 
   Object.freeze(registrar);
