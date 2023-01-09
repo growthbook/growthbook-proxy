@@ -1,5 +1,6 @@
 import got from "got";
 import { Context } from "../../app";
+import { version } from "../../../package.json";
 import { getApiHostFromEnv, getConnectionsFromEnv } from "./helper";
 
 const ConnectionFields: Set<string> = new Set([
@@ -98,6 +99,7 @@ export class Registrar {
     const url = `${this.authenticatedApiHost}/api/sdk-connections`;
     const headers = {
       Authorization: `Bearer ${this.authenticatedApiSigningKey}`,
+      "User-Agent": `GrowthBook Proxy ${version}`,
     };
     const connectionDocs = (await got
       .get(url, { headers })
