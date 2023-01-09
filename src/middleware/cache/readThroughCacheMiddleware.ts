@@ -9,30 +9,36 @@ import { registrar } from "../../services/registrar";
 
 const scopedMiddlewares: Record<string, RequestHandler> = {};
 
+const interceptor = responseInterceptor(
+  async (responseBuffer, proxyRes, req: Request, res: Response) => {
+    const response = responseBuffer.toString("utf-8");
+    if (!featuresCache) {
+      return response;
+    }
+
+    console.debug("cache MISS, setting cache...");
+    if (res.statusCode === 200) {
+      // refresh the cache
+      try {
+        const responseJson = JSON.parse(response);
+        featuresCache
+          .set(res.locals.apiKey, responseJson)
+          .catch((e) => console.error("Unable to set cache", e));
+      } catch (e) {
+        console.error("Unable to parse response", e);
+      }
+    }
+    return response;
+  }
+);
+
 export default ({ proxyTarget }: { proxyTarget: string }) => {
   if (!scopedMiddlewares[registrar.apiHost]) {
     scopedMiddlewares[registrar.apiHost] = createProxyMiddleware({
       target: proxyTarget,
       changeOrigin: true,
       selfHandleResponse: true,
-      onProxyRes: responseInterceptor(
-        async (responseBuffer, proxyRes, req: Request, res: Response) => {
-          featuresCache && console.debug("cache MISS, setting cache...");
-          const response = responseBuffer.toString("utf-8");
-          if (res.statusCode === 200) {
-            // refresh the cache
-            let responseJson = {};
-            try {
-              responseJson = JSON.parse(response);
-              featuresCache &&
-                (await featuresCache.set(res.locals.apiKey, responseJson));
-            } catch (e) {
-              console.error("Unable to parse response", e);
-            }
-          }
-          return response;
-        }
-      ),
+      onProxyRes: interceptor,
     });
   }
 

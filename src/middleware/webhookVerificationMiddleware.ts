@@ -2,6 +2,10 @@ import crypto from "crypto";
 import { NextFunction, Request, Response } from "express";
 import { registrar } from "../services/registrar";
 
+/**
+ * Uses the connection's signing key to verify the webhook signature.
+ * Calls next() or returns 401 if signatures do not match.
+ **/
 export default (req: Request, res: Response, next: NextFunction) => {
   const connection = registrar.getConnectionByApiKey(res.locals.apiKey);
   if (!connection?.signingKey) {
