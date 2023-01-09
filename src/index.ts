@@ -12,4 +12,7 @@ import { growthBookProxy } from "./app";
   setTimeout(() => {
     console.log(proxy.services.registrar.getAllConnections());
   }, 5000);
+  // setInterval(() => {
+  //   console.log('EventStream count:', eventStreamManager.getSubscriberCounts());
+  // }, 5000);
 })();

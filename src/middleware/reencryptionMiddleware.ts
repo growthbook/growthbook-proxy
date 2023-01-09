@@ -11,7 +11,11 @@ export const reencryptionMiddleware = async (
 
   // If using an encrypted SDK endpoint AND the features webhook is unencrypted, we need to re-encrypt it.
   // Otherwise, we would mess up the format for (a) cached features and (b) SSE events
-  if (connection?.useEncryption && connection?.encryptionKey && !("encryptedFeatures" in req.body)) {
+  if (
+    connection?.useEncryption &&
+    connection?.encryptionKey &&
+    !("encryptedFeatures" in req.body)
+  ) {
     req.body.encryptedFeatures = await encrypt(
       JSON.stringify(req.body.features),
       connection.encryptionKey

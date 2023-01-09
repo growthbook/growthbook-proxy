@@ -19,12 +19,12 @@ export interface Connection {
 }
 
 interface ConnectionDoc {
-  key: string,
-  encryptPayload: boolean,
-  encryptionKey: string,
+  key: string;
+  encryptPayload: boolean;
+  encryptionKey: string;
   proxy: {
-    signingKey: string,
-  }
+    signingKey: string;
+  };
 }
 
 export class Registrar {

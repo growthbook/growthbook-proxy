@@ -76,6 +76,7 @@ export const growthBookProxy = async (
   context?: Partial<Context>
 ): Promise<GrowthBookProxy> => {
   const ctx: Context = { ...defaultContext, ...context };
+  app.locals.ctx = ctx;
 
   // initialize
   await initializeRegistrar(ctx);

@@ -5,7 +5,7 @@ import { registrar } from "../services/registrar";
 import { apiKeyMiddleware } from "../middleware/apiKeyMiddleware";
 import webhookVerificationMiddleware from "../middleware/webhookVerificationMiddleware";
 import { reencryptionMiddleware } from "../middleware/reencryptionMiddleware";
-import { broadcastEventStreamMiddleware } from "../middleware/broadcastEventStreamMiddleware";
+import { broadcastEventStreamMiddleware } from "../middleware/eventStream/broadcastEventStreamMiddleware";
 import refreshStaleCacheMiddleware from "../middleware/cache/refreshStaleCacheMiddleware";
 
 const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
@@ -22,9 +22,10 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
     registrar.setConnectionByApiKey(res.locals.apiKey, connection);
   }
 
-  const entry = !forceReadThrough && featuresCache
-    ? await featuresCache.get(res.locals.apiKey)
-    : undefined;
+  const entry =
+    !forceReadThrough && featuresCache
+      ? await featuresCache.get(res.locals.apiKey)
+      : undefined;
   const features = entry?.payload;
 
   if (features === undefined) {

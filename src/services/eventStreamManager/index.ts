@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 const SSEChannel = require("sse-pubsub");
 
-// hacky TS binding for sse-pubsub
+// START hacky TS binding for sse-pubsub
 interface SSEChannel {
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  constructor: (options: any) => void;
+  constructor: (options: SSEChannelOptions) => void;
   /* eslint-disable @typescript-eslint/no-explicit-any */
   publish: (data: any, eventName: string) => number;
   subscribe: (
@@ -20,6 +20,19 @@ interface SSEChannel {
   listClients: () => { [ip: string]: number };
   getSubscriberCount: () => number;
 }
+interface SSEChannelOptions {
+  pingInterval?: number; // default 3000
+  maxStreamDuration?: number; // default 30000
+  clientRetryInterval?: number; // default 1000
+  startId?: number; // default 1
+  historySize?: number; // default 100
+  rewind?: number; // default 0
+}
+// END hacky TS binding for sse-pubsub
+
+const defaultOptions: SSEChannelOptions = {
+  historySize: 0,
+};
 
 interface ScopedChannel {
   apiKey: string;
@@ -50,6 +63,22 @@ export class EventStreamManager {
     }
   }
 
+  public getSubscriberCount(apiKey: string): number | null {
+    const scopedChannel = this.getScopedChannel(apiKey);
+    if (scopedChannel) {
+      return scopedChannel.channel.getSubscriberCount();
+    }
+    return null;
+  }
+
+  public getSubscriberCounts(): Record<string, number> {
+    const counts: Record<string, number> = {};
+    this.scopedChannels.forEach((scopedChannel) => {
+      counts[scopedChannel.apiKey] = scopedChannel.channel.getSubscriberCount();
+    });
+    return counts;
+  }
+
   public publish(apiKey: string, event: string, payload: any) {
     const scopedChannel = this.getScopedChannel(apiKey);
     if (scopedChannel) {
@@ -62,7 +91,7 @@ export class EventStreamManager {
     if (!scopedChannel) {
       this.scopedChannels.set(apiKey, {
         apiKey,
-        channel: new SSEChannel(),
+        channel: new SSEChannel(defaultOptions),
       });
       scopedChannel = this.scopedChannels.get(apiKey);
     }
