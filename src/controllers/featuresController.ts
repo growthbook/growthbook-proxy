@@ -15,11 +15,11 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
 
   // If the connection has not been used before, force a cache read-through so that the GB server may validate the connection.
   let forceReadThrough = false;
-  const connection = registrar.getConnectionByApiKey(res.locals.apiKey);
+  const connection = registrar.getConnection(res.locals.apiKey);
   if (connection && !connection.connected) {
     forceReadThrough = true;
     connection.connected = true;
-    registrar.setConnectionByApiKey(res.locals.apiKey, connection);
+    registrar.setConnection(res.locals.apiKey, connection);
   }
 
   const entry =

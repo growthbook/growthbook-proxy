@@ -7,7 +7,7 @@ export const reencryptionMiddleware = async (
   res: Response,
   next: NextFunction
 ) => {
-  const connection = registrar.getConnectionByApiKey(res.locals.apiKey);
+  const connection = registrar.getConnection(res.locals.apiKey);
 
   // If using an encrypted SDK endpoint AND the features webhook is unencrypted, we need to re-encrypt it.
   // Otherwise, we would mess up the format for (a) cached features and (b) SSE events

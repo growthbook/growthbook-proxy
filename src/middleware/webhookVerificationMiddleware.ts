@@ -7,7 +7,7 @@ import { registrar } from "../services/registrar";
  * Calls next() or returns 401 if signatures do not match.
  **/
 export default (req: Request, res: Response, next: NextFunction) => {
-  const connection = registrar.getConnectionByApiKey(res.locals.apiKey);
+  const connection = registrar.getConnection(res.locals.apiKey);
   if (!connection?.signingKey) {
     return res.status(400).json({ message: "Missing signing key" });
   }

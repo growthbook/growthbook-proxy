@@ -8,7 +8,7 @@ const postConnection = (req: Request, res: Response) => {
     return res.status(400).json({ message: "API key required" });
   }
   try {
-    registrar.setConnectionByApiKey(apiKey, req.body);
+    registrar.setConnection(apiKey, req.body);
   } catch (e) {
     console.error(e);
     return res.status(400).json({ message: "API key required" });
@@ -21,7 +21,7 @@ const getConnection = (req: Request, res: Response) => {
   if (!apiKey) {
     return res.status(400).json({ message: "API key required" });
   }
-  const data = registrar.getConnectionByApiKey(apiKey);
+  const data = registrar.getConnection(apiKey);
   if (!data) {
     return res
       .status(404)
@@ -40,7 +40,7 @@ const deleteConnection = (req: Request, res: Response) => {
   if (!apiKey) {
     return res.status(400).json({ message: "API key required" });
   }
-  const status = registrar.deleteConnectionByApiKey(apiKey);
+  const status = registrar.deleteConnection(apiKey);
   if (!status) {
     return res
       .status(404)

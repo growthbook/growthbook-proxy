@@ -6,16 +6,16 @@ import { getApiHostFromEnv, getConnectionsFromEnv } from "./helper";
 const ConnectionFields: Set<string> = new Set([
   "apiKey",
   "signingKey",
-  "useEncryption",
   "encryptionKey",
+  "useEncryption",
 ]);
 
 export type ApiKey = string;
 export interface Connection {
   apiKey: string;
   signingKey: string;
-  useEncryption: boolean;
   encryptionKey?: string;
+  useEncryption: boolean;
   connected: boolean; // Set to true once used. When false, force a cache read-through so that GB server may validate the connection.
 }
 
@@ -23,9 +23,7 @@ interface ConnectionDoc {
   key: string;
   encryptPayload: boolean;
   encryptionKey: string;
-  proxy: {
-    signingKey: string;
-  };
+  proxySigningKey: string;
 }
 
 export class Registrar {
@@ -36,7 +34,7 @@ export class Registrar {
   private getConnectionsPollingInterval: NodeJS.Timeout | null = null;
   private getConnectionsPollingFrequency: number = 1000 * 60; // 1 min;
 
-  public getConnectionByApiKey(apiKey: ApiKey): Connection | undefined {
+  public getConnection(apiKey: ApiKey): Connection | undefined {
     return this.connections.get(apiKey);
   }
 
@@ -44,38 +42,20 @@ export class Registrar {
     return Object.fromEntries(this.connections);
   }
 
-  public setConnectionByApiKey(apiKey: ApiKey, payload: unknown) {
-    const connection = this.getConnectionFromPayload(payload);
+  public setConnection(apiKey: ApiKey, payload: unknown) {
+    const connection = this.generateConnectionFromPayload(payload);
     if (!connection) {
       throw new Error("invalid payload");
     }
-    const oldConnection = this.getConnectionByApiKey(apiKey);
+    const oldConnection = this.getConnection(apiKey);
     if (oldConnection) {
       connection.connected = oldConnection.connected;
-    } else {
-      connection.connected = false;
     }
     this.connections.set(apiKey, connection as Connection);
   }
 
-  public deleteConnectionByApiKey(apiKey: ApiKey): boolean {
+  public deleteConnection(apiKey: ApiKey): boolean {
     return this.connections.delete(apiKey);
-  }
-
-  // todo: deprecate this method in favor of connection polling
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  private getConnectionFromPayload(payload: any): Connection | null {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    const connection: any = {};
-    for (const key in payload) {
-      if (ConnectionFields.has(key) && payload[key]) {
-        connection[key] = payload[key];
-      }
-    }
-    if (connection.apiKey && connection.signingKey) {
-      return connection as Connection;
-    }
-    return null;
   }
 
   public async startConnectionPolling(
@@ -95,27 +75,46 @@ export class Registrar {
     await this.pollForConnections();
   }
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  private generateConnectionFromPayload(payload: any): Connection | null {
+    if (typeof payload !== "object" || payload === null) {
+      return null;
+    }
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const connection: any = {};
+    for (const key in payload) {
+      if (ConnectionFields.has(key) && payload[key]) {
+        connection[key] = payload[key];
+      }
+    }
+    connection.connected = false;
+    if (connection.apiKey && connection.signingKey) {
+      return connection as Connection;
+    }
+    return null;
+  }
+
   private async pollForConnections() {
-    const url = `${this.authenticatedApiHost}/api/sdk-connections`;
+    const url = `${this.authenticatedApiHost}/api/v1/sdk-connections?withProxy=1&limit=100`;
     const headers = {
       Authorization: `Bearer ${this.authenticatedApiSigningKey}`,
       "User-Agent": `GrowthBook Proxy ${version}`,
     };
-    const connectionDocs = (await got
+    const resp = (await got
       .get(url, { headers })
       .json()
       .catch((e) => console.error("polling error", e.message))) as
-      | ConnectionDoc[]
+      | { connections: ConnectionDoc[] }
       | undefined;
-    if (connectionDocs) {
-      connectionDocs.forEach((doc: ConnectionDoc) => {
-        const connection = {
+    if (resp?.connections) {
+      resp.connections.forEach((doc: ConnectionDoc) => {
+        const connection: Partial<Connection> = {
           apiKey: doc.key,
-          signingKey: doc.proxy.signingKey,
+          signingKey: doc.proxySigningKey,
           encryptionKey: doc.encryptionKey,
           useEncryption: doc.encryptPayload,
         };
-        this.setConnectionByApiKey(connection.apiKey, connection);
+        this.setConnection(doc.key, connection);
       });
     }
   }
@@ -129,7 +128,7 @@ export const initializeRegistrar = async (context: Context) => {
   }
   if (context?.connections?.length) {
     for (const connection of context.connections) {
-      registrar.setConnectionByApiKey(connection.apiKey, connection);
+      registrar.setConnection(connection.apiKey, connection);
     }
   }
 
@@ -137,10 +136,9 @@ export const initializeRegistrar = async (context: Context) => {
     registrar.apiHost = getApiHostFromEnv();
     const envConnections = getConnectionsFromEnv();
     envConnections.forEach((connection) => {
-      if (!connection.apiKey) {
-        return;
+      if (connection.apiKey && connection.signingKey) {
+        registrar.setConnection(connection.apiKey, connection);
       }
-      registrar.setConnectionByApiKey(connection.apiKey, connection);
     });
   }
 

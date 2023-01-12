@@ -31,7 +31,7 @@ interface SSEChannelOptions {
 // END hacky TS binding for sse-pubsub
 
 const defaultOptions: SSEChannelOptions = {
-  historySize: 0,
+  historySize: 1,
 };
 
 interface ScopedChannel {

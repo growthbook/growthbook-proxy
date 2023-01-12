@@ -1,5 +1,6 @@
 import init from "./init";
 import { growthBookProxy } from "./app";
+import { eventStreamManager } from "./services/eventStreamManager";
 
 // Sample implementation for the GrowthBookProxy
 (async () => {
@@ -9,10 +10,8 @@ import { growthBookProxy } from "./app";
   const proxy = await growthBookProxy(app, context);
 
   // example: use the public interface to do something trivial:
-  setTimeout(() => {
-    console.log(proxy.services.registrar.getAllConnections());
+  setInterval(() => {
+    console.log("SDK connections count:", Object.keys(proxy.services.registrar.getAllConnections()).length);
+    console.log("EventSource subscriber counts:", eventStreamManager.getSubscriberCounts(), "\n");
   }, 5000);
-  // setInterval(() => {
-  //   console.log('EventStream count:', eventStreamManager.getSubscriberCounts());
-  // }, 5000);
 })();

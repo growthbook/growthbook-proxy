@@ -5,8 +5,8 @@ dotenv.config({ path: "./.env.local" });
 export const envToConnectionVarMap: Record<string, string> = {
   API_KEY: "apiKey",
   SIGNING_KEY: "signingKey",
-  USE_ENCRYPTION: "useEncryption",
   ENCRYPTION_KEY: "encryptionKey",
+  USE_ENCRYPTION: "useEncryption",
 };
 
 export const getApiHostFromEnv = (): string => {
@@ -28,6 +28,7 @@ export const getConnectionsFromEnv = (): Connection[] => {
         connection[entryKey] = val;
       }
     });
+    connection.connected = false;
     if (Object.keys(connection).length) {
       initialConnections.push(connection as Connection);
     }

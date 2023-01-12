@@ -1,4 +1,4 @@
-import { Express } from "express";
+import express, { Express } from "express";
 import cors from "cors";
 import { version } from "../package.json";
 import { adminRouter } from "./controllers/adminController";
@@ -85,12 +85,14 @@ export const growthBookProxy = async (
   // set up handlers
   ctx.enableCors && app.use(cors());
   ctx.enableHealthCheck &&
-    app.get("/health", (req, res) =>
-      res.status(200).json({ ok: true, version })
+    app.get("/healthcheck", (req, res) =>
+      res.status(200).json({ ok: true, proxyVersion: version })
     );
   ctx.enableAdmin && app.use("/admin", adminRouter);
+
   ctx.enableEventStream && app.use("/sub", eventStreamRouter);
   app.use("/", featuresRouter);
+
   ctx.proxyAllRequests && app.all("/*", proxyMiddleware);
 
   return {
