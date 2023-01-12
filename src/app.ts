@@ -1,4 +1,4 @@
-import express, { Express } from "express";
+import { Express } from "express";
 import cors from "cors";
 import { version } from "../package.json";
 import { adminRouter } from "./controllers/adminController";
@@ -6,52 +6,9 @@ import { eventStreamRouter } from "./controllers/eventStreamController";
 import { featuresRouter } from "./controllers/featuresController";
 import proxyMiddleware from "./middleware/proxyMiddleware";
 import { featuresCache, initializeCache } from "./services/cache";
-import {
-  Connection,
-  initializeRegistrar,
-  Registrar,
-  registrar,
-} from "./services/registrar";
-import {
-  EventStreamManager,
-  eventStreamManager,
-} from "./services/eventStreamManager";
-
-export interface GrowthBookProxy {
-  app: Express;
-  context: Context;
-  services: {
-    featuresCache: typeof featuresCache;
-    registrar: Registrar;
-    eventStreamManager: EventStreamManager;
-  };
-}
-
-export interface Context {
-  apiHost?: string;
-  authenticatedApiHost?: string;
-  authenticatedApiSigningKey?: string;
-  connections?: Connection[];
-  pollForConnections?: boolean;
-  connectionPollingFrequency?: number;
-  createConnectionsFromEnv: boolean;
-  enableCache: boolean;
-  cacheSettings: {
-    cacheEngine: "memory" | "redis" | "mongo";
-    staleTTL: number;
-    expiresTTL: number;
-    allowStale: boolean;
-    connectionUrl?: string;
-    databaseName?: string;
-    collectionName?: string;
-    useAdditionalMemoryCache?: boolean;
-  };
-  enableHealthCheck: boolean;
-  enableCors: boolean;
-  enableAdmin: boolean;
-  enableEventStream: boolean;
-  proxyAllRequests: boolean;
-}
+import { initializeRegistrar, registrar } from "./services/registrar";
+import { eventStreamManager } from "./services/eventStreamManager";
+import { Context, GrowthBookProxy } from "./types";
 
 const defaultContext: Context = {
   createConnectionsFromEnv: true,
@@ -66,7 +23,7 @@ const defaultContext: Context = {
   },
   enableHealthCheck: true,
   enableCors: true,
-  enableAdmin: true,
+  enableAdmin: false,
   enableEventStream: true,
   proxyAllRequests: false,
 };
@@ -88,6 +45,7 @@ export const growthBookProxy = async (
     app.get("/healthcheck", (req, res) =>
       res.status(200).json({ ok: true, proxyVersion: version })
     );
+  ctx.enableAdmin && console.log("WARNING: Admin API is enabled");
   ctx.enableAdmin && app.use("/admin", adminRouter);
 
   ctx.enableEventStream && app.use("/sub", eventStreamRouter);

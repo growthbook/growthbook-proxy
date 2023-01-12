@@ -1,7 +1,7 @@
 import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
-import { Context } from "./app";
+import { Context } from "./types";
 dotenv.config({ path: "./.env.local" });
 
 export default async () => {
@@ -10,6 +10,8 @@ export default async () => {
     authenticatedApiHost:
       process.env?.AUTHENTICATED_API_HOST ?? process.env?.API_HOST,
     authenticatedApiSigningKey: process.env?.AUTHENTICATED_API_SIGNING_KEY,
+    enableAdmin: ["true", "1"].includes(process.env?.ENABLE_ADMIN ?? ""),
+    adminKey: process.env?.ADMIN_KEY,
     cacheSettings: {
       cacheEngine: (process.env?.CACHE_ENGINE || "memory") as
         | "memory"

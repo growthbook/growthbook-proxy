@@ -1,4 +1,4 @@
-import { Context } from "../../app";
+import { Context } from "../../types";
 import { MemoryCache } from "./MemoryCache";
 import { MongoCache } from "./MongoCache";
 import { RedisCache } from "./RedisCache";
@@ -19,7 +19,9 @@ export interface Settings {
   useAdditionalMemoryCache?: boolean;
 }
 
-export let featuresCache: MemoryCache | RedisCache | MongoCache | null = null;
+export type FeaturesCache = MemoryCache | RedisCache | MongoCache | null;
+
+export let featuresCache: FeaturesCache = null;
 
 export const initializeCache = async (context: Context) => {
   if (context.cacheSettings.cacheEngine === "redis") {

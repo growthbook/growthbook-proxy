@@ -5,6 +5,11 @@ export const adminMiddleware = (
   res: Response,
   next: NextFunction
 ) => {
-  // todo: lock these endpoints down using a secret (and possibly a limited IP range?)
-  next();
+  if (
+    req.app.locals?.ctx?.adminKey &&
+    req.headers["x-admin-key"] === req.app.locals.ctx.adminKey
+  ) {
+    return next();
+  }
+  res.status(401).json({ message: "Unauthorized" });
 };

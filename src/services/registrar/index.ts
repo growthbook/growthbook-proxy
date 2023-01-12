@@ -1,5 +1,5 @@
 import got from "got";
-import { Context } from "../../app";
+import { Context } from "../../types";
 import { version } from "../../../package.json";
 import { getApiHostFromEnv, getConnectionsFromEnv } from "./helper";
 
