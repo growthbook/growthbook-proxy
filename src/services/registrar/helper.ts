@@ -10,7 +10,7 @@ export const envToConnectionVarMap: Record<string, string> = {
 };
 
 export const getApiHostFromEnv = (): string => {
-  return process.env.API_HOST || "";
+  return process.env.GROWTHBOOK_API_HOST || "";
 };
 
 export const getConnectionsFromEnv = (): Connection[] => {

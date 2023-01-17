@@ -14,9 +14,8 @@ export interface GrowthBookProxy {
 }
 
 export interface Context {
-  apiHost?: string;
-  authenticatedApiHost?: string;
-  authenticatedApiSigningKey?: string;
+  growthbookApiHost?: string;
+  secretApiKey?: string;
   connections?: Connection[];
   pollForConnections?: boolean;
   connectionPollingFrequency?: number;

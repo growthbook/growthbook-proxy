@@ -6,10 +6,8 @@ dotenv.config({ path: "./.env.local" });
 
 export default async () => {
   const context: Partial<Context> = {
-    apiHost: process.env?.API_HOST,
-    authenticatedApiHost:
-      process.env?.AUTHENTICATED_API_HOST ?? process.env?.API_HOST,
-    authenticatedApiSigningKey: process.env?.AUTHENTICATED_API_SIGNING_KEY,
+    growthbookApiHost: process.env?.GROWTHBOOK_API_HOST,
+    secretApiKey: process.env?.SECRET_API_KEY,
     enableAdmin: ["true", "1"].includes(process.env?.ENABLE_ADMIN ?? ""),
     adminKey: process.env?.ADMIN_KEY,
     cacheSettings: {
@@ -36,7 +34,7 @@ export default async () => {
   const USE_HTTP2 = process.env?.USE_HTTP2 ?? false;
   const HTTPS_CERT = process.env?.HTTPS_CERT ?? "";
   const HTTPS_KEY = process.env?.HTTPS_KEY ?? "";
-  const PROXY_PORT = process.env?.PORT ?? 3200;
+  const PROXY_PORT = process.env?.PORT ?? 3300;
 
   // Start express
   const app = express();

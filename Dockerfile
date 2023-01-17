@@ -7,11 +7,10 @@ RUN yarn install --frozen-lockfile --ignore-optional
 # Build the app and do a clean install with only production dependencies
 COPY src ./src
 COPY tsconfig.json ./tsconfig.json
-COPY .env ./.env.local
 RUN \
   yarn build \
   && rm -rf node_modules \
   && yarn install --frozen-lockfile --production=true --ignore-optional
 
-EXPOSE 3200
+EXPOSE 3300
 CMD ["yarn","start"]

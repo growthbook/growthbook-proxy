@@ -28,9 +28,8 @@ interface ConnectionDoc {
 
 export class Registrar {
   private readonly connections: Map<ApiKey, Connection> = new Map();
-  public apiHost = "";
-  public authenticatedApiHost = "";
-  private authenticatedApiSigningKey = "";
+  public growthbookApiHost = "";
+  private secretApiKey = "";
   private getConnectionsPollingInterval: NodeJS.Timeout | null = null;
   private getConnectionsPollingFrequency: number = 1000 * 60; // 1 min;
 
@@ -59,12 +58,10 @@ export class Registrar {
   }
 
   public async startConnectionPolling(
-    authenticatedApiHost: string,
-    authenticatedApiSigningKey: string,
+    secretApiKey: string,
     connectionPollingFrequency?: number
   ) {
-    this.authenticatedApiHost = authenticatedApiHost;
-    this.authenticatedApiSigningKey = authenticatedApiSigningKey;
+    this.secretApiKey = secretApiKey;
     if (connectionPollingFrequency) {
       this.getConnectionsPollingFrequency = connectionPollingFrequency;
     }
@@ -95,9 +92,9 @@ export class Registrar {
   }
 
   private async pollForConnections() {
-    const url = `${this.authenticatedApiHost}/api/v1/sdk-connections?withProxy=1&limit=100`;
+    const url = `${this.growthbookApiHost}/api/v1/sdk-connections?withProxy=1&limit=100`;
     const headers = {
-      Authorization: `Bearer ${this.authenticatedApiSigningKey}`,
+      Authorization: `Bearer ${this.secretApiKey}`,
       "User-Agent": `GrowthBook Proxy ${version}`,
     };
     const resp = (await got
@@ -123,8 +120,8 @@ export class Registrar {
 export const registrar = new Registrar();
 
 export const initializeRegistrar = async (context: Context) => {
-  if (context?.apiHost) {
-    registrar.apiHost = context.apiHost;
+  if (context?.growthbookApiHost) {
+    registrar.growthbookApiHost = context.growthbookApiHost;
   }
   if (context?.connections?.length) {
     for (const connection of context.connections) {
@@ -133,7 +130,7 @@ export const initializeRegistrar = async (context: Context) => {
   }
 
   if (context.createConnectionsFromEnv) {
-    registrar.apiHost = getApiHostFromEnv();
+    registrar.growthbookApiHost = registrar.growthbookApiHost || getApiHostFromEnv();
     const envConnections = getConnectionsFromEnv();
     envConnections.forEach((connection) => {
       if (connection.apiKey && connection.signingKey) {
@@ -143,12 +140,11 @@ export const initializeRegistrar = async (context: Context) => {
   }
 
   if (context.pollForConnections) {
-    if (!context.authenticatedApiHost || !context.authenticatedApiSigningKey) {
+    if (!context.growthbookApiHost || !context.secretApiKey) {
       throw new Error("missing required context for polling for connections");
     }
     await registrar.startConnectionPolling(
-      context.authenticatedApiHost,
-      context.authenticatedApiSigningKey,
+      context.secretApiKey,
       context.connectionPollingFrequency
     );
   }

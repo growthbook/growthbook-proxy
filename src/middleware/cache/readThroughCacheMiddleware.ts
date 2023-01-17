@@ -33,8 +33,8 @@ const interceptor = responseInterceptor(
 );
 
 export default ({ proxyTarget }: { proxyTarget: string }) => {
-  if (!scopedMiddlewares[registrar.apiHost]) {
-    scopedMiddlewares[registrar.apiHost] = createProxyMiddleware({
+  if (!scopedMiddlewares[registrar.growthbookApiHost]) {
+    scopedMiddlewares[registrar.growthbookApiHost] = createProxyMiddleware({
       target: proxyTarget,
       changeOrigin: true,
       selfHandleResponse: true,
@@ -42,5 +42,5 @@ export default ({ proxyTarget }: { proxyTarget: string }) => {
     });
   }
 
-  return scopedMiddlewares[registrar.apiHost];
+  return scopedMiddlewares[registrar.growthbookApiHost];
 };

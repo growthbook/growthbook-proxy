@@ -39,26 +39,24 @@ The GrowthBook Proxy may be implemented in a few different ways:
 <h3>1. Docker</h3>
 
 ```bash
-git clone https://github.com/growthbook-proxy/growthbook-proxy.git
+git clone https://github.com/growthbook/growthbook-proxy.git
 cd growthbook-proxy
 ```
 You will need to provide a few configuration environment variables. Create a file in the project root called `.env`, and provide the following values:
-- `API_HOST` - The URL of your GrowthBook API server.
-- `AUTHENTICATED_API_HOST` - The URL of your Authenticated GrowthBook API server (typically the same URL).
-- `AUTHENTICATED_API_SIGNING_KEY` - Your secret API key, generated in your GrowthBook app in **Settings** > **Api Keys**
+- `GROWTHBOOK_API_HOST` - The URL of your GrowthBook API server.
+- `SECRET_API_KEY` - Your secret API key, generated in your GrowthBook app in **Settings** > **Api Keys**
 
 Example:
 ```
-API_HOST="http://host.docker.internal:3100"
-AUTHENTICATED_API_HOST="http://host.docker.internal:3100"
-AUTHENTICATED_API_SIGNING_KEY="_MY_SECRET_KEY_"
+GROWTHBOOK_API_HOST="http://host.docker.internal:3100"
+SECRET_API_KEY="_MY_SECRET_KEY_"
 ```
 
 Then, run the following command to start the proxy:
 ```bash
 docker-compose up -d
 ```
-The proxy runs by default on port `3200`. To change this:
+The proxy runs by default on port `3300`. To change this:
 - specify a new `PORT` in your `.env` file.
 - modify `docker-compose.yml` to reflect the change.
 </section>
@@ -89,7 +87,7 @@ npm start
 ```
 or `yarn start`.
 
-To change the port from `3200`, just specify a new `PORT` in your `.env` file.
+To change the port from `3300`, just specify a new `PORT` in your `.env` file.
 
 <h4>Additional customization</h4>
 
@@ -120,9 +118,8 @@ app.listen(PROXY_PORT);
 
 const context = {
   // your proxy configuration items
-  apiHost: "http://growthbook.mydomain.com",
-  authenticatedApiHost: "http://api.growthbook.mydomain.com",
-  authenticatedApiSigningKey: AUTHENTICATED_API_SIGNING_KEY, // do not paste secrets as raw text!!
+  growtbookApiHost: "http://growthbook.mydomain.com",
+  secretApiKey: API_SIGNING_KEY, // do not paste secrets as raw text!!
   // ... other context items
 };
 

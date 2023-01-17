@@ -1,8 +1,0 @@
-version: "3"
-services:
-  proxy:
-    image: "growthbook/growthbook-proxy:latest"
-    ports:
-      - "3200:3200"
-    env_file:
-      - .env

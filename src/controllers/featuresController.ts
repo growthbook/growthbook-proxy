@@ -10,8 +10,8 @@ import refreshStaleCacheMiddleware from "../middleware/cache/refreshStaleCacheMi
 import { sseSupportMiddleware } from "../middleware/sseSupportMiddleware";
 
 const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
-  if (!registrar?.apiHost) {
-    return res.status(400).json({ message: "Missing API host" });
+  if (!registrar?.growthbookApiHost) {
+    return res.status(400).json({ message: "Missing GrowthBook API host" });
   }
 
   // If the connection has not been used before, force a cache read-through so that the GB server may validate the connection.
@@ -33,7 +33,7 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
     // expired or unset
     // todo: add lock for setting cache?
     return readThroughCacheMiddleware({
-      proxyTarget: registrar.apiHost,
+      proxyTarget: registrar.growthbookApiHost,
     })(req, res, next);
   }
 
@@ -45,7 +45,7 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
     // stale. refresh in background, return stale response
     // todo: add lock for setting cache?
     refreshStaleCacheMiddleware({
-      proxyTarget: registrar.apiHost,
+      proxyTarget: registrar.growthbookApiHost,
     })(req, res).catch((e) => {
       console.error("Unable to refresh stale cache", e);
     });
