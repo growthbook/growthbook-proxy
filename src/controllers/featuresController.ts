@@ -7,6 +7,7 @@ import webhookVerificationMiddleware from "../middleware/webhookVerificationMidd
 import { reencryptionMiddleware } from "../middleware/reencryptionMiddleware";
 import { broadcastEventStreamMiddleware } from "../middleware/eventStream/broadcastEventStreamMiddleware";
 import refreshStaleCacheMiddleware from "../middleware/cache/refreshStaleCacheMiddleware";
+import { sseSupportMiddleware } from "../middleware/sseSupportMiddleware";
 
 const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   if (!registrar?.apiHost) {
@@ -67,7 +68,12 @@ const postFeatures = async (req: Request, res: Response) => {
 export const featuresRouter = express.Router();
 
 // proxy clients' "get features" endpoint call to GrowthBook, with cache layer
-featuresRouter.get("/api/features/*", apiKeyMiddleware, getFeatures);
+featuresRouter.get(
+  "/api/features/*",
+  apiKeyMiddleware,
+  sseSupportMiddleware,
+  getFeatures
+);
 
 // subscribe to GrowthBook's "post features" updates, refresh cache, publish to subscribed clients
 featuresRouter.post(
