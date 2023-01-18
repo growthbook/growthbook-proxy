@@ -12,6 +12,8 @@ import { Context, GrowthBookProxy } from "./types";
 import logger, { initializeLogger } from "./services/logger";
 
 const defaultContext: Context = {
+  growthbookApiHost: "",
+  secretApiKey: "",
   createConnectionsFromEnv: true,
   pollForConnections: true,
   connectionPollingFrequency: 10000,

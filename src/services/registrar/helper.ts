@@ -1,6 +1,6 @@
-import dotenv from "dotenv";
+// import dotenv from "dotenv";
 import { Connection } from "./index";
-dotenv.config({ path: "./.env.local" });
+// dotenv.config({ path: "./.env.local" });
 
 export const envToConnectionVarMap: Record<string, string> = {
   API_KEY: "apiKey",

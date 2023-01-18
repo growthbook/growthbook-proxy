@@ -1,7 +1,7 @@
 import { Collection, MongoClient } from "mongodb";
 import logger from "../logger";
 import { MemoryCache } from "./MemoryCache";
-import { CacheEntry, Settings } from "./index";
+import { CacheEntry, CacheSettings } from "./index";
 
 export class MongoCache {
   private client: MongoClient | undefined;
@@ -22,7 +22,7 @@ export class MongoCache {
     databaseName = "proxy",
     collectionName = "cache",
     useAdditionalMemoryCache,
-  }: Settings = {}) {
+  }: CacheSettings = {}) {
     this.connectionUrl = connectionUrl;
     this.databaseName = databaseName;
     this.collectionName = collectionName;

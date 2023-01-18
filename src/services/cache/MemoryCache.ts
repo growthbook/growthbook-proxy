@@ -1,4 +1,4 @@
-import { CacheEntry, Settings } from "./index";
+import { CacheEntry, CacheSettings } from "./index";
 
 export class MemoryCache {
   private readonly store: Map<string, CacheEntry>;
@@ -10,7 +10,7 @@ export class MemoryCache {
     staleTTL = 60, // 1 minute
     expiresTTL = 10 * 60, // 10 minutes
     allowStale = true,
-  }: Settings = {}) {
+  }: CacheSettings = {}) {
     this.store = new Map();
     this.staleTTL = staleTTL * 1000;
     this.expiresTTL = expiresTTL * 1000;

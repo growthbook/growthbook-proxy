@@ -1,7 +1,7 @@
 import { createClient } from "redis";
 import logger from "../logger";
 import { MemoryCache } from "./MemoryCache";
-import { CacheEntry, Settings } from "./index";
+import { CacheEntry, CacheSettings } from "./index";
 
 export class RedisCache {
   private client: ReturnType<typeof createClient> | undefined;
@@ -17,7 +17,7 @@ export class RedisCache {
     allowStale = true,
     connectionUrl,
     useAdditionalMemoryCache,
-  }: Settings = {}) {
+  }: CacheSettings = {}) {
     this.connectionUrl = connectionUrl;
     this.staleTTL = staleTTL * 1000;
     this.expiresTTL = expiresTTL * 1000;

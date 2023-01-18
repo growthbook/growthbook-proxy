@@ -1,7 +1,7 @@
 import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
-import { Context } from "./types";
+import { CacheEngine, Context } from "./types";
 import logger from "./services/logger";
 dotenv.config({ path: "./.env.local" });
 
@@ -13,32 +13,22 @@ export default async () => {
     adminKey: process.env?.ADMIN_KEY,
     environment: process.env?.NODE_ENV as Context["environment"],
     cacheSettings: {
-      cacheEngine: (process.env?.CACHE_ENGINE || "memory") as
-        | "memory"
-        | "redis"
-        | "mongo",
+      cacheEngine: (process.env?.CACHE_ENGINE || "memory") as CacheEngine,
       connectionUrl: process.env?.CACHE_CONNECTION_URL,
-      staleTTL: process.env?.CACHE_STALE_TTL
-        ? parseInt(process.env.CACHE_STALE_TTL)
-        : 60,
-      expiresTTL: process.env?.CACHE_EXPIRES_TTL
-        ? parseInt(process.env.CACHE_EXPIRES_TTL)
-        : 60 * 10,
-      allowStale:
-        "CACHE_ALLOW_STALE" in process.env
-          ? ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? "")
-          : true,
+      staleTTL: parseInt(process.env?.CACHE_STALE_TTL || "60"),
+      expiresTTL: parseInt(process.env?.CACHE_EXPIRES_TTL || "600"),
+      allowStale: ["true", "1"].includes(process.env?.CACHE_ALLOW_STALE ?? ""),
       useAdditionalMemoryCache: true,
     },
   };
 
-  // Proxy configuration consts:
+  // Express configuration consts:
   const USE_HTTP2 = process.env?.USE_HTTP2 ?? false;
   const HTTPS_CERT = process.env?.HTTPS_CERT ?? "";
   const HTTPS_KEY = process.env?.HTTPS_KEY ?? "";
   const PROXY_PORT = process.env?.PORT ?? 3300;
 
-  // Start express
+  // Start Express
   const app = express();
 
   // Start app

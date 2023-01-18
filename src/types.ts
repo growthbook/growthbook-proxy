@@ -2,7 +2,7 @@ import { Express } from "express";
 import { HttpLogger } from "pino-http";
 import { Connection, Registrar } from "./services/registrar";
 import { EventStreamManager } from "./services/eventStreamManager";
-import { FeaturesCache } from "./services/cache";
+import { FeaturesCache, CacheSettings } from "./services/cache";
 
 export interface GrowthBookProxy {
   app: Express;
@@ -16,28 +16,23 @@ export interface GrowthBookProxy {
 }
 
 export interface Context {
-  growthbookApiHost?: string;
-  secretApiKey?: string;
+  growthbookApiHost: string;
+  secretApiKey: string;
   connections?: Connection[];
   pollForConnections?: boolean;
   connectionPollingFrequency?: number;
-  createConnectionsFromEnv: boolean;
+  createConnectionsFromEnv?: boolean;
   enableCache: boolean;
-  cacheSettings: {
-    cacheEngine: "memory" | "redis" | "mongo";
-    staleTTL: number;
-    expiresTTL: number;
-    allowStale: boolean;
-    connectionUrl?: string;
-    databaseName?: string;
-    collectionName?: string;
-    useAdditionalMemoryCache?: boolean;
-  };
-  enableHealthCheck: boolean;
-  enableCors: boolean;
-  enableAdmin: boolean;
+  cacheSettings?: {
+    cacheEngine: CacheEngine;
+  } & CacheSettings;
+  enableHealthCheck?: boolean;
+  enableCors?: boolean;
+  enableAdmin?: boolean;
   adminKey?: string;
-  enableEventStream: boolean;
-  proxyAllRequests: boolean;
+  enableEventStream?: boolean;
+  proxyAllRequests?: boolean;
   environment?: "development" | "production";
 }
+
+export type CacheEngine = "memory" | "redis" | "mongo";
