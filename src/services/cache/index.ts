@@ -1,4 +1,5 @@
 import { Context } from "../../types";
+import logger from "../logger";
 import { MemoryCache } from "./MemoryCache";
 import { MongoCache } from "./MongoCache";
 import { RedisCache } from "./RedisCache";
@@ -25,15 +26,15 @@ export let featuresCache: FeaturesCache = null;
 
 export const initializeCache = async (context: Context) => {
   if (context.cacheSettings.cacheEngine === "redis") {
-    console.debug("using Redis cache");
+    logger.info("using Redis cache");
     featuresCache = new RedisCache(context.cacheSettings);
     await featuresCache.connect();
   } else if (context.cacheSettings.cacheEngine === "mongo") {
-    console.debug("using Mongo cache");
+    logger.info("using Mongo cache");
     featuresCache = new MongoCache(context.cacheSettings);
     await featuresCache.connect();
   } else {
-    console.debug("using in-memory cache");
+    logger.info("using in-memory cache");
     featuresCache = new MemoryCache(context.cacheSettings);
   }
 

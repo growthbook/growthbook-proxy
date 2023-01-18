@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import { registrar } from "../services/registrar";
 import { adminMiddleware } from "../middleware/adminMiddleware";
+import logger from "../services/logger";
 
 const postConnection = (req: Request, res: Response) => {
   const apiKey = req.body.apiKey;
@@ -10,8 +11,8 @@ const postConnection = (req: Request, res: Response) => {
   try {
     registrar.setConnection(apiKey, req.body);
   } catch (e) {
-    console.error(e);
-    return res.status(400).json({ message: "API key required" });
+    logger.error(e);
+    return res.status(400).json({ message: "Malformed payload" });
   }
   return res.status(200).json({ message: "Success" });
 };

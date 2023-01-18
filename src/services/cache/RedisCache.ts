@@ -1,4 +1,5 @@
 import { createClient } from "redis";
+import logger from "../logger";
 import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, Settings } from "./index";
 
@@ -37,7 +38,7 @@ export class RedisCache {
       : createClient();
     if (this.client) {
       this.client.on("error", (e: Error) => {
-        console.error("Error connecting to redis client", e);
+        logger.error(e, "Error connecting to redis client");
       });
       await this.client.connect();
     }
@@ -66,7 +67,7 @@ export class RedisCache {
       try {
         entry = JSON.parse(entryRaw);
       } catch (e) {
-        console.error("unable to parse cache json");
+        logger.error("unable to parse cache json");
         return undefined;
       }
     }

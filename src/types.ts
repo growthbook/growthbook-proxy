@@ -1,4 +1,5 @@
 import { Express } from "express";
+import { HttpLogger } from "pino-http";
 import { Connection, Registrar } from "./services/registrar";
 import { EventStreamManager } from "./services/eventStreamManager";
 import { FeaturesCache } from "./services/cache";
@@ -10,6 +11,7 @@ export interface GrowthBookProxy {
     featuresCache: FeaturesCache;
     registrar: Registrar;
     eventStreamManager: EventStreamManager;
+    logger: HttpLogger["logger"];
   };
 }
 
@@ -37,4 +39,5 @@ export interface Context {
   adminKey?: string;
   enableEventStream: boolean;
   proxyAllRequests: boolean;
+  environment?: "development" | "production";
 }

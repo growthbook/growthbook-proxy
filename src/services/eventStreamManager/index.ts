@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import logger from "../logger";
 const SSEChannel = require("sse-pubsub");
 
 // START hacky TS binding for sse-pubsub
@@ -49,16 +50,16 @@ export class EventStreamManager {
       try {
         scopedChannel = this.getScopedChannel(apiKey);
       } catch (e) {
-        console.error("Unable to get SSE channel", e);
+        logger.error(e, "Unable to get SSE channel");
       }
       if (scopedChannel) {
         try {
           scopedChannel.channel.subscribe(req, res);
         } catch (e) {
-          console.error("Unable to subscribe to SSE channel", e);
+          logger.error(e, "Unable to subscribe to SSE channel");
         }
       } else {
-        console.error("Unable to get SSE channel");
+        logger.error("Unable to get SSE channel");
       }
     }
   }

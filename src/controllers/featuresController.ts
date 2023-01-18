@@ -8,6 +8,7 @@ import { reencryptionMiddleware } from "../middleware/reencryptionMiddleware";
 import { broadcastEventStreamMiddleware } from "../middleware/eventStream/broadcastEventStreamMiddleware";
 import refreshStaleCacheMiddleware from "../middleware/cache/refreshStaleCacheMiddleware";
 import { sseSupportMiddleware } from "../middleware/sseSupportMiddleware";
+import logger from "../services/logger";
 
 const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   if (!registrar?.growthbookApiHost) {
@@ -47,11 +48,11 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
     refreshStaleCacheMiddleware({
       proxyTarget: registrar.growthbookApiHost,
     })(req, res).catch((e) => {
-      console.error("Unable to refresh stale cache", e);
+      logger.error(e, "Unable to refresh stale cache");
     });
   }
 
-  featuresCache && console.debug("cache HIT");
+  featuresCache && logger.debug("cache HIT");
   return res.status(200).json(features);
 };
 
@@ -59,7 +60,7 @@ const postFeatures = async (req: Request, res: Response) => {
   try {
     await featuresCache?.set(res.locals.apiKey, req.body);
   } catch (e) {
-    console.error("Unable to update features", e);
+    logger.error(e, "Unable to update features");
     return res.status(500).json({ message: "Unable to update features" });
   }
   return res.status(200).json({ message: "Success" });

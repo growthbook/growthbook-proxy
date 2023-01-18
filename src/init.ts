@@ -2,6 +2,7 @@ import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
 import { Context } from "./types";
+import logger from "./services/logger";
 dotenv.config({ path: "./.env.local" });
 
 export default async () => {
@@ -10,6 +11,7 @@ export default async () => {
     secretApiKey: process.env?.SECRET_API_KEY,
     enableAdmin: ["true", "1"].includes(process.env?.ENABLE_ADMIN ?? ""),
     adminKey: process.env?.ADMIN_KEY,
+    environment: process.env?.NODE_ENV as Context["environment"],
     cacheSettings: {
       cacheEngine: (process.env?.CACHE_ENGINE || "memory") as
         | "memory"
@@ -49,13 +51,11 @@ export default async () => {
       app
     );
     server.listen(PROXY_PORT, () => {
-      console.debug(`GrowthBook proxy running over HTTP2, port ${PROXY_PORT}`);
+      logger.info(`GrowthBook proxy running over HTTP2, port ${PROXY_PORT}`);
     });
   } else {
     app.listen(PROXY_PORT, () => {
-      console.debug(
-        `GrowthBook proxy running over HTTP1.1, port ${PROXY_PORT}`
-      );
+      logger.info(`GrowthBook proxy running over HTTP1.1, port ${PROXY_PORT}`);
     });
   }
 

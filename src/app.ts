@@ -9,6 +9,7 @@ import { featuresCache, initializeCache } from "./services/cache";
 import { initializeRegistrar, registrar } from "./services/registrar";
 import { eventStreamManager } from "./services/eventStreamManager";
 import { Context, GrowthBookProxy } from "./types";
+import logger, { initializeLogger } from "./services/logger";
 
 const defaultContext: Context = {
   createConnectionsFromEnv: true,
@@ -36,6 +37,7 @@ export const growthBookProxy = async (
   app.locals.ctx = ctx;
 
   // initialize
+  initializeLogger(ctx);
   await initializeRegistrar(ctx);
   ctx.enableCache && (await initializeCache(ctx));
 
@@ -45,7 +47,7 @@ export const growthBookProxy = async (
     app.get("/healthcheck", (req, res) =>
       res.status(200).json({ ok: true, proxyVersion: version })
     );
-  ctx.enableAdmin && console.log("WARNING: Admin API is enabled");
+  ctx.enableAdmin && logger.warn("Admin API is enabled");
   ctx.enableAdmin && app.use("/admin", adminRouter);
 
   ctx.enableEventStream && app.use("/sub", eventStreamRouter);
@@ -60,6 +62,7 @@ export const growthBookProxy = async (
       featuresCache,
       registrar,
       eventStreamManager,
+      logger,
     },
   };
 };

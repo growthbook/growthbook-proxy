@@ -11,14 +11,14 @@ import { eventStreamManager } from "./services/eventStreamManager";
 
   // example: use the public interface to do something trivial:
   setInterval(() => {
-    console.log(
-      "SDK connections count:",
-      Object.keys(proxy.services.registrar.getAllConnections()).length
+    proxy.services.logger.info(
+      `SDK connections count: ${
+        Object.keys(proxy.services.registrar.getAllConnections()).length
+      }`
     );
-    console.log(
-      "EventSource subscriber counts:",
+    proxy.services.logger.info(
       eventStreamManager.getSubscriberCounts(),
-      "\n"
+      `EventSource subscriber counts`
     );
   }, 5000);
 })();

@@ -1,4 +1,5 @@
 import { Collection, MongoClient } from "mongodb";
+import logger from "../logger";
 import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, Settings } from "./index";
 
@@ -45,7 +46,7 @@ export class MongoCache {
     this.client = new MongoClient(this.connectionUrl ?? "");
     if (this.client) {
       this.client.on("error", (e: Error) => {
-        console.error("Error connecting to mongo client", e);
+        logger.error(e, "Error connecting to mongo client");
       });
       await this.client.connect();
       const db = this.client.db(this.databaseName);
@@ -79,7 +80,7 @@ export class MongoCache {
         return undefined;
       }
       if (!doc.entry) {
-        console.error("unable to parse cache json");
+        logger.error("unable to parse cache json");
         return undefined;
       }
       entry = doc.entry;

@@ -1,6 +1,7 @@
 import got from "got";
 import { Context } from "../../types";
 import { version } from "../../../package.json";
+import logger from "../logger";
 import { getApiHostFromEnv, getConnectionsFromEnv } from "./helper";
 
 const ConnectionFields: Set<string> = new Set([
@@ -100,7 +101,7 @@ export class Registrar {
     const resp = (await got
       .get(url, { headers })
       .json()
-      .catch((e) => console.error("polling error", e.message))) as
+      .catch((e) => logger.error(e, "polling error"))) as
       | { connections: ConnectionDoc[] }
       | undefined;
     if (resp?.connections) {
@@ -130,7 +131,8 @@ export const initializeRegistrar = async (context: Context) => {
   }
 
   if (context.createConnectionsFromEnv) {
-    registrar.growthbookApiHost = registrar.growthbookApiHost || getApiHostFromEnv();
+    registrar.growthbookApiHost =
+      registrar.growthbookApiHost || getApiHostFromEnv();
     const envConnections = getConnectionsFromEnv();
     envConnections.forEach((connection) => {
       if (connection.apiKey && connection.signingKey) {

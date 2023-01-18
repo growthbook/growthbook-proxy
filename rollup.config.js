@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-named-as-default
 import babel from "@rollup/plugin-babel";
 import resolve from "@rollup/plugin-node-resolve";
 import replace from "@rollup/plugin-replace";
