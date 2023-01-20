@@ -7,7 +7,7 @@ on:
       - ".github/workflows/ci.yml"
 
 jobs:
-  # Linting, type-checking, and tests
+  # Linting and type checking
   ci:
     runs-on: ubuntu-latest
     steps:
@@ -17,8 +17,16 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
-          cache: 'yarn'
+          node-version: "16"
+          cache: "yarn"
+
+      - name: Cache eslint
+        uses: actions/cache@v2
+        with:
+          path: ${{ github.workspace }}/.eslintcache
+          key: ${{ runner.os }}-eslint-${{ hashFiles('**/yarn.lock') }}-${{ hashFiles('**/*.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-eslint-
 
       - name: Install dependencies
         run: |
