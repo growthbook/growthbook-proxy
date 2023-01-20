@@ -6,5 +6,5 @@ import { growthBookProxy } from "./app";
   const { app, context } = await init();
 
   // creating and starting the proxy is a one-liner
-  const proxy = await growthBookProxy(app, context);
+  await growthBookProxy(app, context);
 })();

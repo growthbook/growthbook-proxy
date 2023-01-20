@@ -19,9 +19,10 @@
     "build:esm": "cross-env BABEL_ENV=esmUnbundled babel src --extensions '.ts' --out-dir 'dist/esm' --source-maps",
     "build:cjs": "cross-env BABEL_ENV=cjs babel src --extensions '.ts' --out-dir 'dist/cjs' --source-maps",
     "build:bundles": "rollup -c",
-    "build": "npx tsc",
+    "build": "tsc",
+    "type-check": "tsc --pretty --noEmit",
     "start": "node dist/src/index.js",
-    "dev": "concurrently 'npx tsc --watch' 'nodemon -q dist/src/index.js | yarn pino-pretty'"
+    "dev": "concurrently 'tsc --watch' 'nodemon -q dist/src/index.js | yarn pino-pretty'"
   },
   "dependencies": {
     "cors": "^2.8.5",
