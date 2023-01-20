@@ -7,6 +7,7 @@ import { Request, Response } from "express";
 import { featuresCache } from "../../services/cache";
 import { registrar } from "../../services/registrar";
 import logger from "../../services/logger";
+import { eventStreamManager } from "../../services/eventStreamManager";
 
 const scopedMiddlewares: Record<string, RequestHandler> = {};
 
@@ -17,14 +18,25 @@ const interceptor = responseInterceptor(
       return response;
     }
 
-    logger.debug("cache MISS, setting cache...");
     if (res.statusCode === 200) {
+      logger.debug("cache MISS, setting cache...");
+
       // refresh the cache
       try {
+        const apiKey = res.locals.apiKey;
         const responseJson = JSON.parse(response);
+        const oldEntry = await featuresCache.get(apiKey);
+
         featuresCache
-          .set(res.locals.apiKey, responseJson)
+          .set(apiKey, responseJson)
           .catch((e) => logger.error(e, "Unable to set cache"));
+
+        eventStreamManager.publish(
+          apiKey,
+          "features",
+          responseJson,
+          oldEntry?.payload
+        );
       } catch (e) {
         logger.error(e, "Unable to parse response");
       }

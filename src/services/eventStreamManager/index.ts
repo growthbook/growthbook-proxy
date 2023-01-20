@@ -55,6 +55,11 @@ export class EventStreamManager {
       if (scopedChannel) {
         try {
           scopedChannel.channel.subscribe(req, res);
+
+          logger.info(
+            this.getSubscriberCounts(),
+            `EventSource subscriber counts`
+          );
         } catch (e) {
           logger.error(e, "Unable to subscribe to SSE channel");
         }
@@ -80,10 +85,25 @@ export class EventStreamManager {
     return counts;
   }
 
-  public publish(apiKey: string, event: string, payload: any) {
+  public publish(
+    apiKey: string,
+    event: string,
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    payload: any,
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    oldPayload?: any
+  ) {
     const scopedChannel = this.getScopedChannel(apiKey);
     if (scopedChannel) {
-      scopedChannel.channel.publish(payload, event);
+      if (oldPayload === undefined) {
+        scopedChannel.channel.publish(payload, event);
+      } else {
+        const hasChanges =
+          JSON.stringify(payload) !== JSON.stringify(oldPayload);
+        if (hasChanges) {
+          scopedChannel.channel.publish(payload, event);
+        }
+      }
     }
   }
 

@@ -104,7 +104,10 @@ export class Registrar {
       .catch((e) => logger.error(e, "polling error"))) as
       | { connections: ConnectionDoc[] }
       | undefined;
+
     if (resp?.connections) {
+      const oldConnections = this.getAllConnections();
+
       resp.connections.forEach((doc: ConnectionDoc) => {
         const connection: Partial<Connection> = {
           apiKey: doc.key,
@@ -114,6 +117,15 @@ export class Registrar {
         };
         this.setConnection(doc.key, connection);
       });
+
+      const newConnections = this.getAllConnections();
+      const hasChanges =
+        JSON.stringify(newConnections) !== JSON.stringify(oldConnections);
+      if (hasChanges) {
+        logger.info(
+          `SDK connections count: ${Object.keys(newConnections).length}`
+        );
+      }
     }
   }
 }
