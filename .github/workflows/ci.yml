@@ -1,0 +1,38 @@
+name: CI
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - ".eslint*"
+      - ".github/workflows/ci.yml"
+
+jobs:
+  # Linting, type-checking, and tests
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: |
+          # Main app
+          yarn install
+
+      - name: Lint and Type-check
+        run: |
+          # Linting
+          yarn lint
+
+          # Typescript type checks
+          yarn type-check
+
+          # TODO: tests
+        env:
+          CI: true

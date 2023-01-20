@@ -19,12 +19,12 @@
     "build:esm": "cross-env BABEL_ENV=esmUnbundled babel src --extensions '.ts' --out-dir 'dist/esm' --source-maps",
     "build:cjs": "cross-env BABEL_ENV=cjs babel src --extensions '.ts' --out-dir 'dist/cjs' --source-maps",
     "build:bundles": "rollup -c",
-    "build": "npx tsc",
+    "build": "tsc",
+    "type-check": "tsc --pretty --noEmit",
     "start": "node dist/src/index.js",
-    "dev": "concurrently 'npx tsc --watch' 'nodemon -q dist/src/index.js | yarn pino-pretty'"
+    "dev": "concurrently 'tsc --watch' 'nodemon -q dist/src/index.js | yarn pino-pretty'"
   },
   "dependencies": {
-    "@types/pino": "^7.0.5",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
@@ -49,6 +49,7 @@
     "@types/cors": "^2.8.13",
     "@types/express": "^4.17.15",
     "@types/node": "^18.11.18",
+    "@types/pino": "^7.0.5",
     "@types/redis": "^4.0.11",
     "@types/spdy": "^3.4.5",
     "@typescript-eslint/eslint-plugin": "^5.48.0",
