@@ -5,7 +5,7 @@ import replace from "@rollup/plugin-replace";
 import commonjs from "@rollup/plugin-commonjs";
 import json from "@rollup/plugin-json";
 
-const extensions = [".js", ".ts", ".tsx", ".jsx"];
+const extensions = [".js", ".ts"];
 
 export default {
   input: "src/app.ts",
