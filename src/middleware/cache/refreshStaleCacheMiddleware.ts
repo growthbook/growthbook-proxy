@@ -35,7 +35,7 @@ export default ({ proxyTarget }: { proxyTarget: string }) =>
     const responseJson = await promise;
 
     if (responseJson) {
-      logger.info("cache STALE, refreshing cache...");
+      logger.debug("cache STALE, refreshing cache...");
 
       const oldEntry = await featuresCache.get(apiKey);
       await featuresCache.set(apiKey, responseJson);
