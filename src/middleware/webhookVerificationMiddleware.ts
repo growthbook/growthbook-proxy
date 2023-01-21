@@ -11,7 +11,7 @@ export default (req: Request, res: Response, next: NextFunction) => {
   if (!connection?.signingKey) {
     return res.status(400).json({ message: "Missing signing key" });
   }
-  const sig = req.get("X-GrowthBook-Signature") || "";
+  const sig = req.get("x-growthbook-signature") || "";
 
   const computed = crypto
     .createHmac("sha256", connection?.signingKey || "")

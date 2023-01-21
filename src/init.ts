@@ -9,7 +9,7 @@ export default async () => {
   const context: Partial<Context> = {
     growthbookApiHost: process.env.GROWTHBOOK_API_HOST,
     secretApiKey: process.env.SECRET_API_KEY,
-    enableAdmin: ["true", "1"].includes(process.env.ENABLE_ADMIN ?? ""),
+    enableAdmin: ["true", "1"].includes(process.env.ENABLE_ADMIN ?? "0"),
     adminKey: process.env.ADMIN_KEY,
     environment: process.env.NODE_ENV as Context["environment"],
     cacheSettings: {
@@ -17,7 +17,7 @@ export default async () => {
       connectionUrl: process.env.CACHE_CONNECTION_URL,
       staleTTL: parseInt(process.env.CACHE_STALE_TTL || "60"),
       expiresTTL: parseInt(process.env.CACHE_EXPIRES_TTL || "600"),
-      allowStale: ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? ""),
+      allowStale: ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? "1"),
       useAdditionalMemoryCache: true,
     },
   };
