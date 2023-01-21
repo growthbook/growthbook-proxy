@@ -17,7 +17,7 @@ export default async () => {
       connectionUrl: process.env.CACHE_CONNECTION_URL,
       staleTTL: parseInt(process.env.CACHE_STALE_TTL || "60"),
       expiresTTL: parseInt(process.env.CACHE_EXPIRES_TTL || "600"),
-      allowStale: ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? ""),
+      allowStale: ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? "1"),
       useAdditionalMemoryCache: true,
     },
   };

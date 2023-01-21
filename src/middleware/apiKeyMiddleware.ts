@@ -12,7 +12,7 @@ export const apiKeyMiddleware = (
   next: NextFunction
 ) => {
   const apiKey =
-    req.headers?.["x-growthbook-api-key"] ||
+    req.headers?.["X-GrowthBook-Api-Key"] ||
     req.originalUrl.match(RE_API_KEY)?.[1];
   if (!apiKey) {
     return res.status(401).json({ message: "API key required" });
