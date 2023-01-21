@@ -9,7 +9,7 @@ export default async () => {
   const context: Partial<Context> = {
     growthbookApiHost: process.env.GROWTHBOOK_API_HOST,
     secretApiKey: process.env.SECRET_API_KEY,
-    enableAdmin: ["true", "1"].includes(process.env.ENABLE_ADMIN ?? ""),
+    enableAdmin: ["true", "1"].includes(process.env.ENABLE_ADMIN ?? "0"),
     adminKey: process.env.ADMIN_KEY,
     environment: process.env.NODE_ENV as Context["environment"],
     cacheSettings: {

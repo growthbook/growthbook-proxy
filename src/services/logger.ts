@@ -30,7 +30,7 @@ export const initializeLogger = (context: Context) => {
         'res.headers["x-powered-by"]',
         'res.headers["access-control-allow-credentials"]',
         'res.headers["access-control-allow-origin"]',
-        'res.headers["X-GrowthBook-Signature"]',
+        'res.headers["x-growthbook-signature"]',
         'res.headers["x-admin-key"]',
       ],
       remove: true,
