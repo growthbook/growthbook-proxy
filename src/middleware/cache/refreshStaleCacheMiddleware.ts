@@ -5,7 +5,7 @@ import { featuresCache } from "../../services/cache";
 import logger from "../../services/logger";
 import { eventStreamManager } from "../../services/eventStreamManager";
 
-const scopedPromises: Map<string, Promise<unknown>> = new Map();
+const activeFetchUrls = new Set<string>();
 
 export default ({ proxyTarget }: { proxyTarget: string }) =>
   async (req: Request, res: Response) => {
@@ -16,36 +16,24 @@ export default ({ proxyTarget }: { proxyTarget: string }) =>
     const url = proxyTarget + req.originalUrl;
 
     // debounce requests
-    let promise = scopedPromises.get(url);
-    if (!promise) {
-      // eslint-disable-next-line no-async-promise-executor
-      promise = new Promise(async (resolve) => {
-        const resp = await got
-          .get(url, {
-            headers: { "User-Agent": `GrowthBook Proxy ${version}` },
-          })
-          .json()
-          .catch((e) => logger.error(e, "refresh stale cache error"));
-        resolve(resp);
-        scopedPromises.delete(url);
-      });
-      scopedPromises.set(url, promise);
+    if (activeFetchUrls.has(url)) {
+      return;
     }
+    activeFetchUrls.add(url);
+    // eslint-disable-next-line no-async-promise-executor
+    const entry = await got
+      .get(url, { headers: { "User-Agent": `GrowthBook Proxy ${version}` } })
+      .json()
+      .catch((e) => logger.error(e, "Refresh stale cache error"))
+      .finally(() => activeFetchUrls.delete(url));
 
-    const responseJson = await promise;
-
-    if (responseJson) {
+    if (entry) {
       logger.debug("cache STALE, refreshing cache...");
 
       const oldEntry = await featuresCache.get(apiKey);
-      await featuresCache.set(apiKey, responseJson);
+      await featuresCache.set(apiKey, entry);
 
-      eventStreamManager.publish(
-        apiKey,
-        "features",
-        responseJson,
-        oldEntry?.payload
-      );
+      eventStreamManager.publish(apiKey, "features", entry, oldEntry?.payload);
     } else {
       logger.error("Unable to parse response");
     }

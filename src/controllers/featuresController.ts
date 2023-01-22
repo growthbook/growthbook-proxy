@@ -32,10 +32,11 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
 
   if (features === undefined) {
     // expired or unset
-    // todo: add lock for setting cache?
-    return readThroughCacheMiddleware({
-      proxyTarget: registrar.growthbookApiHost,
-    })(req, res, next);
+    return (
+      await readThroughCacheMiddleware({
+        proxyTarget: registrar.growthbookApiHost,
+      })
+    )(req, res, next);
   }
 
   if (
@@ -44,7 +45,6 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
     entry.staleOn < new Date()
   ) {
     // stale. refresh in background, return stale response
-    // todo: add lock for setting cache?
     refreshStaleCacheMiddleware({
       proxyTarget: registrar.growthbookApiHost,
     })(req, res).catch((e) => {
