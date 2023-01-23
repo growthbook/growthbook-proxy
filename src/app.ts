@@ -13,6 +13,8 @@ import { eventStreamManager } from "./services/eventStreamManager";
 import { Context, GrowthBookProxy } from "./types";
 import logger, { initializeLogger } from "./services/logger";
 
+export { Context, GrowthBookProxy, CacheEngine } from "./types";
+
 let build: { sha: string; date: string };
 function getBuild() {
   if (!build) {

@@ -2,7 +2,6 @@ import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
 import { CacheEngine, Context } from "./types";
-import logger from "./services/logger";
 dotenv.config({ path: "./.env.local" });
 
 export default async () => {
@@ -51,11 +50,11 @@ export default async () => {
       app
     );
     server.listen(PROXY_PORT, () => {
-      logger.info(`GrowthBook proxy running over HTTP2, port ${PROXY_PORT}`);
+      console.info(`GrowthBook proxy running over HTTP2, port ${PROXY_PORT}`);
     });
   } else {
     app.listen(PROXY_PORT, () => {
-      logger.info(`GrowthBook proxy running over HTTP1.1, port ${PROXY_PORT}`);
+      console.info(`GrowthBook proxy running over HTTP1.1, port ${PROXY_PORT}`);
     });
   }
 
