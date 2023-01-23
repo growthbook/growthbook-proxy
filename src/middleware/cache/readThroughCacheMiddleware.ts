@@ -53,10 +53,9 @@ export default async ({ proxyTarget }: { proxyTarget: string }) => {
   // slow down requests to GrowthBook API if error counts are too high
   const errorCount = errorCounts[proxyTarget] || 0;
   if (errorCount > 5) {
-    const delaySecs = Math.pow(
-      1.5,
-      Math.min(errorCount, 8) + Math.random() - 5
-    );
+    // maxes out around (7.6 ~ 15.2) seconds
+    const delaySecs =
+      Math.pow(1.5, Math.min(errorCount, 10) - 5) * (1 + Math.random());
     logger.debug(`Delaying request to ${proxyTarget} by ${delaySecs} seconds`);
     await new Promise((resolve) => setTimeout(resolve, delaySecs * 1000));
   }
