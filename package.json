@@ -6,7 +6,7 @@
   "description": "GrowthBook proxy server for caching, realtime updates, telemetry, etc",
   "private": true,
   "version": "1.0.3",
-  "main": "dist/src/app.js",
+  "main": "dist/app.js",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -19,7 +19,7 @@
     "build": "tsc",
     "type-check": "tsc --pretty --noEmit",
     "start": "node dist/src/index.js",
-    "dev": "concurrently 'tsc --watch' 'nodemon -q dist/src/index.js | yarn pino-pretty'"
+    "dev": "concurrently 'tsc --watch' 'nodemon -q dist/index.js | yarn pino-pretty'"
   },
   "dependencies": {
     "cors": "^2.8.5",

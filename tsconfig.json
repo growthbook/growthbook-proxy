@@ -14,8 +14,7 @@
     "strictNullChecks": true,
     "strictBindCallApply": true,
     "strictPropertyInitialization": true,
-    "incremental": true,
-    "resolveJsonModule": true
+    "incremental": true
   },
   "include": ["src/**/*"]
 }

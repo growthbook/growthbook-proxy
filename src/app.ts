@@ -2,7 +2,6 @@ import fs from "fs";
 import path from "path";
 import { Express } from "express";
 import cors from "cors";
-import { version } from "../package.json";
 import { adminRouter } from "./controllers/adminController";
 import { eventStreamRouter } from "./controllers/eventStreamController";
 import { featuresRouter } from "./controllers/featuresController";
@@ -60,6 +59,9 @@ export const growthBookProxy = async (
   app: Express,
   context?: Partial<Context>
 ): Promise<GrowthBookProxy> => {
+  const packageJson = require("../package.json");
+  const version = (packageJson.version ?? "unknown") + "";
+
   const ctx: Context = { ...defaultContext, ...context };
   app.locals.ctx = ctx;
 
@@ -96,5 +98,6 @@ export const growthBookProxy = async (
       eventStreamManager,
       logger,
     },
+    version,
   };
 };

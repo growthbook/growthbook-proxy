@@ -1,6 +1,5 @@
 import got from "got";
 import { Context } from "../../types";
-import { version } from "../../../package.json";
 import logger from "../logger";
 import { getApiHostFromEnv, getConnectionsFromEnv } from "./helper";
 
@@ -96,7 +95,7 @@ export class Registrar {
     const url = `${this.growthbookApiHost}/api/v1/sdk-connections?withProxy=1&limit=100`;
     const headers = {
       Authorization: `Bearer ${this.secretApiKey}`,
-      "User-Agent": `GrowthBook Proxy ${version}`,
+      "User-Agent": `GrowthBook Proxy`,
     };
     const resp = (await got
       .get(url, { headers })

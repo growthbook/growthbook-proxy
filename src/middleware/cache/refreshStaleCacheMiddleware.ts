@@ -1,6 +1,5 @@
 import got from "got";
 import { Request, Response } from "express";
-import { version } from "../../../package.json";
 import { featuresCache } from "../../services/cache";
 import logger from "../../services/logger";
 import { eventStreamManager } from "../../services/eventStreamManager";
@@ -22,7 +21,7 @@ export default ({ proxyTarget }: { proxyTarget: string }) =>
     activeFetchUrls.add(url);
     // eslint-disable-next-line no-async-promise-executor
     const entry = await got
-      .get(url, { headers: { "User-Agent": `GrowthBook Proxy ${version}` } })
+      .get(url, { headers: { "User-Agent": `GrowthBook Proxy` } })
       .json()
       .catch((e) => logger.error(e, "Refresh stale cache error"))
       .finally(() => activeFetchUrls.delete(url));
