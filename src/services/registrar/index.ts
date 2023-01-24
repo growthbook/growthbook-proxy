@@ -107,6 +107,7 @@ export class Registrar {
     if (resp?.connections) {
       const oldConnections = this.getAllConnections();
 
+      const newKeys: Set<string> = new Set();
       resp.connections.forEach((doc: ConnectionDoc) => {
         const connection: Partial<Connection> = {
           apiKey: doc.key,
@@ -115,7 +116,15 @@ export class Registrar {
           useEncryption: doc.encryptPayload,
         };
         this.setConnection(doc.key, connection);
+        newKeys.add(doc.key);
       });
+
+      // clean up stale connections
+      for (const key in oldConnections) {
+        if (!newKeys.has(key)) {
+          this.deleteConnection(key);
+        }
+      }
 
       const newConnections = this.getAllConnections();
       const hasChanges =

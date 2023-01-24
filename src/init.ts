@@ -39,10 +39,12 @@ export default async () => {
 
   // Start Express
   const app = express();
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  let server: any = null;
 
   // Start app
   if (USE_HTTP2) {
-    const server = spdy.createServer(
+    server = spdy.createServer(
       {
         key: HTTPS_KEY,
         cert: HTTPS_CERT,
@@ -53,10 +55,10 @@ export default async () => {
       console.info(`GrowthBook proxy running over HTTP2, port ${PROXY_PORT}`);
     });
   } else {
-    app.listen(PROXY_PORT, () => {
+    server = app.listen(PROXY_PORT, () => {
       console.info(`GrowthBook proxy running over HTTP1.1, port ${PROXY_PORT}`);
     });
   }
 
-  return { app, context };
+  return { app, server, context };
 };
