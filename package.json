@@ -1,5 +1,5 @@
 {
-  "name": "@growthbook/growthbook-proxy",
+  "name": "@growthbook/proxy",
   "engines": {
     "node": ">=16"
   },
