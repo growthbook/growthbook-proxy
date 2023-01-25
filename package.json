@@ -4,7 +4,6 @@
     "node": ">=16"
   },
   "description": "GrowthBook proxy server for caching, realtime updates, telemetry, etc",
-  "private": true,
   "version": "1.0.3",
   "main": "dist/app.js",
   "license": "MIT",
