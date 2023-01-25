@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "module": "commonjs",
+    "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "target": "es6",
@@ -8,12 +9,12 @@
     "moduleResolution": "node",
     "sourceMap": true,
     "outDir": "dist",
+    "declaration": true,
     "typeRoots": ["node_modules/@types", "./typings"],
     "strictNullChecks": true,
     "strictBindCallApply": true,
     "strictPropertyInitialization": true,
-    "incremental": true,
-    "resolveJsonModule": true
+    "incremental": true
   },
   "include": ["src/**/*"]
 }

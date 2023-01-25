@@ -13,6 +13,7 @@ export interface GrowthBookProxy {
     eventStreamManager: EventStreamManager;
     logger: HttpLogger["logger"];
   };
+  version: string;
 }
 
 export interface Context {

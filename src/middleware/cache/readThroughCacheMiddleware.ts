@@ -1,9 +1,10 @@
+import { IncomingMessage, ServerResponse } from "http";
+import { Response } from "express";
 import {
   createProxyMiddleware,
   RequestHandler,
   responseInterceptor,
 } from "http-proxy-middleware";
-import { Request, Response } from "express";
 import { featuresCache } from "../../services/cache";
 import logger from "../../services/logger";
 import { eventStreamManager } from "../../services/eventStreamManager";
@@ -13,7 +14,12 @@ const errorCounts: Record<string, number> = {};
 
 const interceptor = (proxyTarget: string) =>
   responseInterceptor(
-    async (responseBuffer, proxyRes, req: Request, res: Response) => {
+    async (
+      responseBuffer,
+      proxyRes,
+      req: IncomingMessage,
+      res: ServerResponse
+    ) => {
       // got response, reset error count
       errorCounts[proxyTarget] = 0;
 
@@ -27,7 +33,7 @@ const interceptor = (proxyTarget: string) =>
 
         // refresh the cache
         try {
-          const apiKey = res.locals.apiKey;
+          const apiKey = (res as Response).locals.apiKey;
           const responseJson = JSON.parse(response);
           const oldEntry = await featuresCache.get(apiKey);
 

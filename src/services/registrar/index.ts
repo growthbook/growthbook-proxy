@@ -1,6 +1,5 @@
 import got from "got";
 import { Context } from "../../types";
-import { version } from "../../../package.json";
 import logger from "../logger";
 import { getApiHostFromEnv, getConnectionsFromEnv } from "./helper";
 
@@ -96,7 +95,7 @@ export class Registrar {
     const url = `${this.growthbookApiHost}/api/v1/sdk-connections?withProxy=1&limit=100`;
     const headers = {
       Authorization: `Bearer ${this.secretApiKey}`,
-      "User-Agent": `GrowthBook Proxy ${version}`,
+      "User-Agent": `GrowthBook Proxy`,
     };
     const resp = (await got
       .get(url, { headers })
@@ -108,6 +107,7 @@ export class Registrar {
     if (resp?.connections) {
       const oldConnections = this.getAllConnections();
 
+      const newKeys: Set<string> = new Set();
       resp.connections.forEach((doc: ConnectionDoc) => {
         const connection: Partial<Connection> = {
           apiKey: doc.key,
@@ -116,7 +116,15 @@ export class Registrar {
           useEncryption: doc.encryptPayload,
         };
         this.setConnection(doc.key, connection);
+        newKeys.add(doc.key);
       });
+
+      // clean up stale connections
+      for (const key in oldConnections) {
+        if (!newKeys.has(key)) {
+          this.deleteConnection(key);
+        }
+      }
 
       const newConnections = this.getAllConnections();
       const hasChanges =
