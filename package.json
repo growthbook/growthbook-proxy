@@ -17,7 +17,7 @@
     "build:clean": "rimraf -rf dist",
     "build": "tsc",
     "type-check": "tsc --pretty --noEmit",
-    "start": "node dist/src/index.js",
+    "start": "node dist/index.js",
     "dev": "concurrently 'tsc --watch' 'nodemon -q dist/index.js | yarn pino-pretty'"
   },
   "dependencies": {
