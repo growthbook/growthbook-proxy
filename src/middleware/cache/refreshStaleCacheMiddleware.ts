@@ -6,13 +6,20 @@ import { eventStreamManager } from "../../services/eventStreamManager";
 
 const activeFetchUrls = new Set<string>();
 
-export default ({ proxyTarget }: { proxyTarget: string }) =>
+export default ({
+    proxyTarget,
+    overrideOriginalUrl,
+  }: {
+    proxyTarget: string;
+    overrideOriginalUrl?: string;
+  }) =>
   async (req: Request, res: Response) => {
     if (!featuresCache) {
       return;
     }
     const apiKey = res.locals.apiKey;
-    const url = proxyTarget + req.originalUrl;
+    const url = proxyTarget + (overrideOriginalUrl ?? req.originalUrl);
+    console.log(url);
 
     // debounce requests
     if (activeFetchUrls.has(url)) {

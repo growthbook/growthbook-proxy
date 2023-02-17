@@ -30,6 +30,7 @@ export interface Context {
   enableHealthCheck?: boolean;
   enableCors?: boolean;
   enableAdmin?: boolean;
+  enableFeatureEvaluation?: boolean;
   adminKey?: string;
   enableEventStream?: boolean;
   proxyAllRequests?: boolean;

@@ -29,3 +29,5 @@ export async function encrypt(
   );
   return bufToBase64(iv) + "." + bufToBase64(encryptedBuffer);
 }
+
+export async function decrypt(

@@ -11,6 +11,8 @@ import { initializeRegistrar, registrar } from "./services/registrar";
 import { eventStreamManager } from "./services/eventStreamManager";
 import { Context, GrowthBookProxy } from "./types";
 import logger, { initializeLogger } from "./services/logger";
+import { initializeFeatureEvaluation } from "./services/featureEvaluation";
+import {featureEvaluationRouter} from "./controllers/featureEvaluationController";
 
 export { Context, GrowthBookProxy, CacheEngine } from "./types";
 
@@ -51,6 +53,7 @@ const defaultContext: Context = {
   enableHealthCheck: true,
   enableCors: true,
   enableAdmin: false,
+  enableFeatureEvaluation: true,
   enableEventStream: true,
   proxyAllRequests: false,
 };
@@ -69,6 +72,7 @@ export const growthBookProxy = async (
   initializeLogger(ctx);
   await initializeRegistrar(ctx);
   ctx.enableCache && (await initializeCache(ctx));
+  ctx.enableFeatureEvaluation && (await initializeFeatureEvaluation());
 
   // set up handlers
   ctx.enableCors && app.use(cors());
@@ -85,6 +89,7 @@ export const growthBookProxy = async (
   ctx.enableAdmin && app.use("/admin", adminRouter);
 
   ctx.enableEventStream && app.use("/sub", eventStreamRouter);
+  ctx.enableFeatureEvaluation && app.use("/eval", featureEvaluationRouter);
   app.use("/", featuresRouter);
 
   ctx.proxyAllRequests && app.all("/*", proxyMiddleware);
