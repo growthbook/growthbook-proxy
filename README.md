@@ -33,6 +33,16 @@ docker run -d -p 3300:3300 \
 
 Then, simply point your GrowthBook SDKs to the GrowthBook Proxy instead of the GrowthBook API.
 
+You will also need to ensure that your self-hosted GrowthBook instance is configured to use the proxy server. This includes setting environment variables:
+```
+PROXY_ENABLED=1
+PROXY_HOST_PUBLIC=https://proxy.example.com
+
+## Optional; you may also use the GrowthBook UI to set this:
+SECRET_API_KEY=something_secret
+```
+See GrowthBook's [Proxy documentation](https://docs.growthbook.io/self-host/proxy#standalone) for more information.
+
 
 ## Configuration
 
