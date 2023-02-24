@@ -18,6 +18,7 @@ export interface CacheSettings {
   databaseName?: string; // for MongoCache
   collectionName?: string; // for MongoCache
   useAdditionalMemoryCache?: boolean;
+  publishPayloadToChannel?: boolean; // for RedisCache pub/sub
 }
 
 export type FeaturesCache = MemoryCache | RedisCache | MongoCache | null;

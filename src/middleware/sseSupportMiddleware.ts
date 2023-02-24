@@ -5,7 +5,7 @@ export const sseSupportMiddleware = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (req.app.locals?.ctx?.enableEventStream) {
+  if (req.app.locals?.ctx?.enableEventStreamHeaders) {
     res.setHeader("x-sse-support", "enabled");
     res.setHeader("Access-Control-Expose-Headers", "x-sse-support");
   }

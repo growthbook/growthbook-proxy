@@ -10,6 +10,7 @@ export class RedisCache {
   private readonly staleTTL: number;
   private readonly expiresTTL: number;
   public readonly allowStale: boolean;
+  private readonly publishPayloadToChannel: boolean;
 
   public constructor({
     staleTTL = 60, //         1 minute
@@ -17,11 +18,13 @@ export class RedisCache {
     allowStale = true,
     connectionUrl,
     useAdditionalMemoryCache,
+    publishPayloadToChannel = false,
   }: CacheSettings = {}) {
     this.connectionUrl = connectionUrl;
     this.staleTTL = staleTTL * 1000;
     this.expiresTTL = expiresTTL * 1000;
     this.allowStale = allowStale;
+    this.publishPayloadToChannel = publishPayloadToChannel;
 
     // wrap the RedisCache in a MemoryCache to avoid hitting Redis on every request
     if (useAdditionalMemoryCache) {
@@ -99,9 +102,18 @@ export class RedisCache {
       EX: this.expiresTTL / 1000,
     });
 
+    // pub/sub using "set" channel
+    if (this.publishPayloadToChannel) {
+      this.client.publish("set", JSON.stringify({ key, payload }));
+    }
+
     // refresh MemoryCache
     if (this.memoryCacheClient) {
       await this.memoryCacheClient.set(key, entry);
     }
+  }
+
+  public getClient() {
+    return this.client;
   }
 }

@@ -119,4 +119,8 @@ export class MongoCache {
       await this.memoryCacheClient.set(key, entry);
     }
   }
+
+  public getClient() {
+    return this.client;
+  }
 }
