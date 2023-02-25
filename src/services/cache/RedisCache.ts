@@ -108,7 +108,7 @@ export class RedisCache {
     return entry;
   }
 
-  public async set(key: string, payload: unknown, skipPublish = false) {
+  public async set(key: string, payload: unknown) {
     if (!this.client) {
       throw new Error("No redis client");
     }
@@ -122,7 +122,7 @@ export class RedisCache {
     });
 
     // pub/sub using "set" channel
-    if (this.publishPayloadToChannel && !skipPublish && this.subscriberClient) {
+    if (this.publishPayloadToChannel && this.subscriberClient) {
       this.client.publish(
         "set",
         JSON.stringify({
@@ -157,7 +157,7 @@ export class RedisCache {
           if (uuid === this.clientUUID) return;
 
           const oldEntry = await this.get(key);
-          // publish to event stream clients
+          // publish to eventStream clients
           if (this.appContext?.enableEventStream) {
             eventStreamManager.publish(
               key,
