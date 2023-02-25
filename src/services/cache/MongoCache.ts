@@ -86,6 +86,9 @@ export class MongoCache {
       entry = doc.entry;
     }
 
+    if (!entry) {
+      return undefined;
+    }
     if (!this.allowStale && entry.staleOn < new Date()) {
       return undefined;
     }

@@ -29,7 +29,7 @@ export const initializeCache = async (context: Context) => {
   if (context.enableCache && context.cacheSettings) {
     if (context.cacheSettings.cacheEngine === "redis") {
       logger.info("using Redis cache");
-      featuresCache = new RedisCache(context.cacheSettings);
+      featuresCache = new RedisCache(context.cacheSettings, context);
       await featuresCache.connect();
     } else if (context.cacheSettings.cacheEngine === "mongo") {
       logger.info("using Mongo cache");
