@@ -166,6 +166,15 @@ export class RedisCache {
               oldEntry?.payload
             );
           }
+          // update MemoryCache
+          if (this.memoryCacheClient) {
+            const entry = {
+              payload,
+              staleOn: new Date(Date.now() + this.staleTTL),
+              expiresOn: new Date(Date.now() + this.expiresTTL),
+            };
+            await this.memoryCacheClient.set(key, entry);
+          }
         } catch (e) {
           logger.error(e, "Error parsing message from Redis pub/sub");
         }
