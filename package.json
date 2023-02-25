@@ -40,6 +40,7 @@
     "@types/pino": "^7.0.5",
     "@types/redis": "^4.0.11",
     "@types/spdy": "^3.4.5",
+    "@types/uuid": "^9.0.1",
     "@typescript-eslint/eslint-plugin": "^5.48.0",
     "@typescript-eslint/parser": "^5.48.0",
     "concurrently": "^7.6.0",
