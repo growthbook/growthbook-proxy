@@ -121,21 +121,29 @@ export class RedisCache {
       EX: this.expiresTTL / 1000,
     });
 
-    // pub/sub using "set" channel
-    if (this.publishPayloadToChannel && this.subscriberClient) {
-      this.client.publish(
-        "set",
-        JSON.stringify({
-          uuid: this.clientUUID,
-          key,
-          payload,
-        })
-      );
-    }
-
     // refresh MemoryCache
     if (this.memoryCacheClient) {
       await this.memoryCacheClient.set(key, entry);
+    }
+
+    // Publish with Redis pub/sub so that other proxy nodes can
+    // 1. emit SSE to SDK subscribers
+    // 2. update their MemoryCache
+    if (this.publishPayloadToChannel && this.subscriberClient) {
+      // publish to Redis subscribers if new payload !== old payload
+      const oldEntry = await this.get(key);
+      const hasChanges =
+        JSON.stringify(oldEntry?.payload) !== JSON.stringify(payload);
+      if (hasChanges) {
+        this.client.publish(
+          "set",
+          JSON.stringify({
+            uuid: this.clientUUID,
+            key,
+            payload,
+          })
+        );
+      }
     }
   }
 
@@ -145,20 +153,24 @@ export class RedisCache {
       throw new Error("No redis client");
     }
 
+    // Redis requires that subscribers use a separate client
     this.subscriberClient = this.client.duplicate();
     await this.subscriberClient.connect();
 
-    // Redis will not subscribe to messages published from the same connection
+    // Subscribe to Redis pub/sub so that this proxy node can:
+    // 1. emit SSE to SDK subscribers
+    // 2. update its MemoryCache
     this.subscriberClient.subscribe("set", async (message, channel) => {
       if (channel === "set") {
         try {
           const { uuid, key, payload } = JSON.parse(message);
-          // ignore messages published from this client
+
+          // ignore messages published from this node (shouldn't subscribe to ourselves)
           if (uuid === this.clientUUID) return;
 
-          const oldEntry = await this.get(key);
-          // publish to eventStream clients
+          // 1. emit SSE to SDK clients (if new payload !== old payload)
           if (this.appContext?.enableEventStream) {
+            const oldEntry = await this.get(key);
             eventStreamManager.publish(
               key,
               "features",
@@ -166,7 +178,8 @@ export class RedisCache {
               oldEntry?.payload
             );
           }
-          // update MemoryCache
+
+          // 2. update MemoryCache
           if (this.memoryCacheClient) {
             const entry = {
               payload,
