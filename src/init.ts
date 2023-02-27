@@ -9,6 +9,12 @@ export default async () => {
     growthbookApiHost: process.env.GROWTHBOOK_API_HOST,
     secretApiKey: process.env.SECRET_API_KEY,
     enableAdmin: ["true", "1"].includes(process.env.ENABLE_ADMIN ?? "0"),
+    enableEventStream: ["true", "1"].includes(
+      process.env.ENABLE_EVENT_STREAM ?? "1"
+    ),
+    enableEventStreamHeaders: ["true", "1"].includes(
+      process.env.ENABLE_EVENT_STREAM_HEADERS ?? "1"
+    ),
     adminKey: process.env.ADMIN_KEY,
     environment: process.env.NODE_ENV as Context["environment"],
     cacheSettings: {
@@ -18,6 +24,9 @@ export default async () => {
       expiresTTL: parseInt(process.env.CACHE_EXPIRES_TTL || "600"),
       allowStale: ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? "1"),
       useAdditionalMemoryCache: true,
+      publishPayloadToChannel: ["true", "1"].includes(
+        process.env.PUBLISH_PAYLOAD_TO_CHANNEL ?? "0"
+      ),
     },
   };
 

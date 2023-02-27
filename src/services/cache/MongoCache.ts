@@ -86,6 +86,9 @@ export class MongoCache {
       entry = doc.entry;
     }
 
+    if (!entry) {
+      return undefined;
+    }
     if (!this.allowStale && entry.staleOn < new Date()) {
       return undefined;
     }
@@ -118,5 +121,9 @@ export class MongoCache {
     if (this.memoryCacheClient) {
       await this.memoryCacheClient.set(key, entry);
     }
+  }
+
+  public getClient() {
+    return this.client;
   }
 }

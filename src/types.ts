@@ -32,6 +32,7 @@ export interface Context {
   enableAdmin?: boolean;
   adminKey?: string;
   enableEventStream?: boolean;
+  enableEventStreamHeaders?: boolean;
   proxyAllRequests?: boolean;
   environment?: "development" | "production";
 }

@@ -52,6 +52,7 @@ const defaultContext: Context = {
   enableCors: true,
   enableAdmin: false,
   enableEventStream: true,
+  enableEventStreamHeaders: true,
   proxyAllRequests: false,
 };
 
