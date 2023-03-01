@@ -27,5 +27,4 @@ jobs:
           npm set //registry.npmjs.org/:_authToken $NPM_TOKEN
           yarn install
           yarn build
-          ls -lah dist
-          yarn publish
+          npm publish
