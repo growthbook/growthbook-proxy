@@ -1,0 +1,25 @@
+name: Deploy to NPM
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Publish to NPM
+    if: ${{ github.ref == 'refs/heads/main' }}
+
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Build & Publish
+        run: ./scripts/publish.sh
