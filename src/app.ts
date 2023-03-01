@@ -8,7 +8,10 @@ import { featuresRouter } from "./controllers/featuresController";
 import proxyMiddleware from "./middleware/proxyMiddleware";
 import { featuresCache, initializeCache } from "./services/cache";
 import { initializeRegistrar, registrar } from "./services/registrar";
-import { eventStreamManager } from "./services/eventStreamManager";
+import {
+  eventStreamManager,
+  initializeEventStreamManager,
+} from "./services/eventStreamManager";
 import { Context, GrowthBookProxy } from "./types";
 import logger, { initializeLogger } from "./services/logger";
 
@@ -70,6 +73,7 @@ export const growthBookProxy = async (
   initializeLogger(ctx);
   await initializeRegistrar(ctx);
   ctx.enableCache && (await initializeCache(ctx));
+  ctx.enableEventStream && initializeEventStreamManager(ctx);
 
   // set up handlers
   ctx.enableCors && app.use(cors());

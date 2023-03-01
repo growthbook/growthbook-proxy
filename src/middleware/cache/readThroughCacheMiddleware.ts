@@ -24,7 +24,7 @@ const interceptor = (proxyTarget: string) =>
       errorCounts[proxyTarget] = 0;
 
       const response = responseBuffer.toString("utf-8");
-      if (!featuresCache) {
+      if (!featuresCache || !eventStreamManager) {
         return response;
       }
 

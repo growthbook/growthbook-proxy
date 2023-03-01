@@ -3,11 +3,14 @@ import { Request, Response } from "express";
 import { featuresCache } from "../../services/cache";
 import logger from "../../services/logger";
 import { eventStreamManager } from "../../services/eventStreamManager";
+import { Context } from "../../types";
 
 const activeFetchUrls = new Set<string>();
 
 export default ({ proxyTarget }: { proxyTarget: string }) =>
   async (req: Request, res: Response) => {
+    const ctx = req.app.locals?.ctx as Context;
+
     if (!featuresCache) {
       return;
     }
@@ -32,7 +35,14 @@ export default ({ proxyTarget }: { proxyTarget: string }) =>
       const oldEntry = await featuresCache.get(apiKey);
       await featuresCache.set(apiKey, entry);
 
-      eventStreamManager.publish(apiKey, "features", entry, oldEntry?.payload);
+      if (ctx.enableEventStream && eventStreamManager) {
+        eventStreamManager.publish(
+          apiKey,
+          "features",
+          entry,
+          oldEntry?.payload
+        );
+      }
     } else {
       logger.error("Unable to parse response");
     }

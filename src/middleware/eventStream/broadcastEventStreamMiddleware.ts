@@ -12,7 +12,7 @@ export const broadcastEventStreamMiddleware = async (
   const ctx = req.app.locals?.ctx as Context;
   ctx?.verboseDebugging && logger.info("broadcastEventStreamMiddleware");
 
-  if (ctx?.enableEventStream) {
+  if (ctx?.enableEventStream && eventStreamManager) {
     const apiKey = res.locals.apiKey;
 
     const oldEntry = featuresCache
