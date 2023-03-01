@@ -35,6 +35,7 @@ export interface Context {
   enableEventStreamHeaders?: boolean;
   proxyAllRequests?: boolean;
   environment?: "development" | "production";
+  verboseDebugging?: boolean;
 }
 
 export type CacheEngine = "memory" | "redis" | "mongo";
