@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import logger from "../logger";
+import { Context } from "../../types";
 const SSEChannel = require("sse-pubsub");
 
 // START hacky TS binding for sse-pubsub
@@ -91,20 +92,35 @@ export class EventStreamManager {
     /* eslint-disable @typescript-eslint/no-explicit-any */
     payload: any,
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    oldPayload?: any
+    oldPayload?: any,
+    ctx?: Context
   ) {
+    ctx?.verboseDebugging &&
+      logger.info(
+        { apiKey, event, payload, oldPayload },
+        "EventStreamManager.publish"
+      );
     const scopedChannel = this.getScopedChannel(apiKey);
     if (scopedChannel) {
       if (oldPayload === undefined) {
+        ctx?.verboseDebugging &&
+          logger.info({ payload, event }, "publishing SSE");
         scopedChannel.channel.publish(payload, event);
       } else {
         const hasChanges =
           JSON.stringify(payload) !== JSON.stringify(oldPayload);
         if (hasChanges) {
+          ctx?.verboseDebugging &&
+            logger.info({ payload, event }, "publishing SSE");
           scopedChannel.channel.publish(payload, event);
+          return;
         }
+        ctx?.verboseDebugging &&
+          logger.info({ payload, event }, "skipping SSE publish, no changes");
       }
+      return;
     }
+    ctx?.verboseDebugging && logger.info("No scoped channel found");
   }
 
   private getScopedChannel(apiKey: string): ScopedChannel | undefined {
