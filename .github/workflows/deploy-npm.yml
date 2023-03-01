@@ -22,4 +22,10 @@ jobs:
           node-version: '16'
 
       - name: Build & Publish
-        run: ./scripts/publish.sh
+        run: |
+          if [ ! -v NPM_TOKEN ]; then echo "NPM_TOKEN not set"; exit 1; fi;
+          npm set //registry.npmjs.org/:_authToken $NPM_TOKEN
+          yarn install
+          yarn build
+          ls -lah dist
+          yarn publish
