@@ -46,7 +46,7 @@ export class SSEChannel {
       maxStreamDuration = 30000,
       clientRetryInterval = 1000,
       startId = 1,
-      historySize = 100,
+      historySize = 1,
       rewind = 0,
     }: Partial<Options>,
     ctx?: Context
@@ -73,6 +73,11 @@ export class SSEChannel {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   publish(data?: any, eventName?: string) {
+    this.ctx?.verboseDebugging &&
+      logger.info(
+        { clients: this.clients.size },
+        "ssePubsub.subscribe: publish"
+      );
     if (!this.active) {
       logger.warn("ssePubsub.publish: Channel closed");
     }
@@ -120,6 +125,7 @@ export class SSEChannel {
   }
 
   subscribe(req: Request, res: Response, events?: (string | RegExp)[]) {
+    this.ctx?.verboseDebugging && logger.info("ssePubsub.subscribe: subscribe");
     if (!this.active) {
       logger.warn("ssePubsub.subscribe: Channel closed");
     }
@@ -155,13 +161,15 @@ export class SSEChannel {
     c.res.write(body);
     this.clients.add(c);
 
-    setTimeout(() => {
-      if (!c.res.finished) {
-        this.ctx?.verboseDebugging &&
-          logger.info("ssePubsub.subscribe: unsubscribe via timeout");
-        this.unsubscribe(c);
-      }
-    }, this.options.maxStreamDuration);
+    if (this.options.maxStreamDuration) {
+      setTimeout(() => {
+        if (!c.res.finished) {
+          this.ctx?.verboseDebugging &&
+            logger.info("ssePubsub.subscribe: unsubscribe via timeout");
+          this.unsubscribe(c);
+        }
+      }, this.options.maxStreamDuration);
+    }
 
     c.res.on("close", () => {
       this.ctx?.verboseDebugging &&

@@ -1,11 +1,7 @@
 import { Request, Response } from "express";
 import logger from "../logger";
 import { Context } from "../../types";
-import { SSEChannel, Options } from "./ssePubsub";
-
-const defaultOptions: Partial<Options> = {
-  historySize: 1,
-};
+import { SSEChannel } from "./ssePubsub";
 
 interface ScopedChannel {
   apiKey: string;
@@ -22,6 +18,8 @@ export class SSEManager {
   }
 
   public subscribe(req: Request, res: Response) {
+    this.appContext?.verboseDebugging &&
+      logger.info("EventStreamManager.subscribe");
     const apiKey = res.locals.apiKey;
     if (apiKey) {
       let scopedChannel;
@@ -104,7 +102,10 @@ export class SSEManager {
     if (!scopedChannel) {
       this.scopedChannels.set(apiKey, {
         apiKey,
-        channel: new SSEChannel(defaultOptions, this.appContext),
+        channel: new SSEChannel(
+          { maxStreamDuration: this.appContext.eventStreamMaxDurationMs },
+          this.appContext
+        ),
       });
       scopedChannel = this.scopedChannels.get(apiKey);
     }

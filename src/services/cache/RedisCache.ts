@@ -135,6 +135,11 @@ export class RedisCache {
       const hasChanges =
         JSON.stringify(oldEntry?.payload) !== JSON.stringify(payload);
       if (hasChanges) {
+        logger.debug(
+          { payload },
+          "RedisCache.set: publish to Redis subscribers"
+        );
+
         this.client.publish(
           "set",
           JSON.stringify({
@@ -143,12 +148,20 @@ export class RedisCache {
             payload,
           })
         );
+        return;
       }
+
+      logger.debug(
+        { payload, oldPayload: oldEntry?.payload },
+        "RedisCache.set: do not publish to Redis subscribers (no changes)"
+      );
     }
   }
 
   private async subscribe() {
     if (!this.publishPayloadToChannel) return;
+    this.appContext?.verboseDebugging && logger.debug("RedisCache.subscribe");
+
     if (!this.client) {
       throw new Error("No redis client");
     }
@@ -167,10 +180,14 @@ export class RedisCache {
 
           // ignore messages published from this node (shouldn't subscribe to ourselves)
           if (uuid === this.clientUUID) return;
+          logger.debug({ payload }, "RedisCache.subscribe: got 'set' message");
 
           // 1. emit SSE to SDK clients (if new payload !== old payload)
           if (this.appContext?.enableEventStream && eventStreamManager) {
             const oldEntry = await this.get(key);
+            this.appContext?.verboseDebugging &&
+              logger.debug({ payload }, "RedisCache.subscribe: publish SSE");
+
             eventStreamManager.publish(
               key,
               "features",
