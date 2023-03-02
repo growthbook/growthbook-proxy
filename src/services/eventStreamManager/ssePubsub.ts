@@ -31,9 +31,7 @@ interface Message {
 
 export class SSEChannel {
   private nextID = 1;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private clients: Set<any> = new Set();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private clients: Set<Connection> = new Set();
   private messages: Message[] = [];
   private active = true;
 
@@ -108,7 +106,10 @@ export class SSEChannel {
     }
 
     [...this.clients]
-      .filter((c) => !eventName || this.hasEventMatch(c.events, eventName))
+      .filter(
+        (c) =>
+          !eventName || !c.events || this.hasEventMatch(c.events, eventName)
+      )
       .forEach((c) => c.res.write(output));
 
     while (this.messages.length > this.options.historySize) {
