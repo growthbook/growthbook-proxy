@@ -4,7 +4,7 @@
     "node": ">=16"
   },
   "description": "GrowthBook proxy server for caching, realtime updates, telemetry, etc",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "main": "dist/app.js",
   "license": "MIT",
   "repository": {
@@ -30,7 +30,6 @@
     "pino-http": "^8.3.1",
     "redis": "^4.5.1",
     "spdy": "^4.0.2",
-    "sse-pubsub": "^1.4.1",
     "uuid": "^9.0.0"
   },
   "devDependencies": {

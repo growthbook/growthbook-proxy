@@ -169,7 +169,7 @@ export class RedisCache {
           if (uuid === this.clientUUID) return;
 
           // 1. emit SSE to SDK clients (if new payload !== old payload)
-          if (this.appContext?.enableEventStream) {
+          if (this.appContext?.enableEventStream && eventStreamManager) {
             const oldEntry = await this.get(key);
             eventStreamManager.publish(
               key,

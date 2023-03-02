@@ -1,38 +1,9 @@
 import { Request, Response } from "express";
 import logger from "../logger";
 import { Context } from "../../types";
-const SSEChannel = require("sse-pubsub");
+import { SSEChannel, Options } from "./ssePubsub";
 
-// START hacky TS binding for sse-pubsub
-interface SSEChannel {
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  constructor: (options: SSEChannelOptions) => void;
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  publish: (data: any, eventName: string) => number;
-  subscribe: (
-    req: Request,
-    res: Response,
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    events?: any[]
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-  ) => { req: Request; res: Response; events?: any[] };
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  unsubscribe: (c: { req: Request; res: Response; events?: any[] }) => void;
-  close: () => void;
-  listClients: () => { [ip: string]: number };
-  getSubscriberCount: () => number;
-}
-interface SSEChannelOptions {
-  pingInterval?: number; // default 3000
-  maxStreamDuration?: number; // default 30000
-  clientRetryInterval?: number; // default 1000
-  startId?: number; // default 1
-  historySize?: number; // default 100
-  rewind?: number; // default 0
-}
-// END hacky TS binding for sse-pubsub
-
-const defaultOptions: SSEChannelOptions = {
+const defaultOptions: Partial<Options> = {
   historySize: 1,
 };
 
@@ -41,8 +12,14 @@ interface ScopedChannel {
   channel: SSEChannel;
 }
 
-export class EventStreamManager {
+export class SSEManager {
   private scopedChannels = new Map<string, ScopedChannel>();
+
+  private appContext: Context;
+
+  constructor(appContext: Context) {
+    this.appContext = appContext;
+  }
 
   public subscribe(req: Request, res: Response) {
     const apiKey = res.locals.apiKey;
@@ -92,10 +69,9 @@ export class EventStreamManager {
     /* eslint-disable @typescript-eslint/no-explicit-any */
     payload: any,
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    oldPayload?: any,
-    ctx?: Context
+    oldPayload?: any
   ) {
-    ctx?.verboseDebugging &&
+    this.appContext?.verboseDebugging &&
       logger.info(
         { apiKey, event, payload, oldPayload },
         "EventStreamManager.publish"
@@ -103,24 +79,24 @@ export class EventStreamManager {
     const scopedChannel = this.getScopedChannel(apiKey);
     if (scopedChannel) {
       if (oldPayload === undefined) {
-        ctx?.verboseDebugging &&
+        this.appContext?.verboseDebugging &&
           logger.info({ payload, event }, "publishing SSE");
         scopedChannel.channel.publish(payload, event);
       } else {
         const hasChanges =
           JSON.stringify(payload) !== JSON.stringify(oldPayload);
         if (hasChanges) {
-          ctx?.verboseDebugging &&
+          this.appContext?.verboseDebugging &&
             logger.info({ payload, event }, "publishing SSE");
           scopedChannel.channel.publish(payload, event);
           return;
         }
-        ctx?.verboseDebugging &&
+        this.appContext?.verboseDebugging &&
           logger.info({ payload, event }, "skipping SSE publish, no changes");
       }
       return;
     }
-    ctx?.verboseDebugging && logger.info("No scoped channel found");
+    this.appContext?.verboseDebugging && logger.info("No scoped channel found");
   }
 
   private getScopedChannel(apiKey: string): ScopedChannel | undefined {
@@ -128,7 +104,7 @@ export class EventStreamManager {
     if (!scopedChannel) {
       this.scopedChannels.set(apiKey, {
         apiKey,
-        channel: new SSEChannel(defaultOptions),
+        channel: new SSEChannel(defaultOptions, this.appContext),
       });
       scopedChannel = this.scopedChannels.get(apiKey);
     }
@@ -136,5 +112,12 @@ export class EventStreamManager {
   }
 }
 
-export const eventStreamManager = new EventStreamManager();
-Object.freeze(eventStreamManager);
+export type EventStreamManager = SSEManager | null;
+export let eventStreamManager: SSEManager | null = null;
+
+export const initializeEventStreamManager = (appContext: Context) => {
+  if (appContext.enableEventStream) {
+    eventStreamManager = new SSEManager(appContext);
+  }
+  Object.freeze(eventStreamManager);
+};

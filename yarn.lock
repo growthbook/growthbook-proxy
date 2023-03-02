@@ -3405,11 +3405,6 @@ split2@^4.0.0:
   resolved "https://registry.yarnpkg.com/split2/-/split2-4.1.0.tgz#101907a24370f85bb782f08adaabe4e281ecf809"
   integrity sha512-VBiJxFkxiXRlUIeyMQi8s4hgvKCSjtknJv/LVYbrgALPwf5zSKmEwV9Lst25AkvMDnvxODugjdl6KZgwKM1WYQ==
 
-sse-pubsub@^1.4.1:
-  version "1.4.1"
-  resolved "https://registry.yarnpkg.com/sse-pubsub/-/sse-pubsub-1.4.1.tgz#b3b0570d001c1e48109dc1b8f967fdb72814d8a0"
-  integrity sha512-KPf5GVmaUM1XEpOVLQqU5Qm1Vn0Zyb2SfXdWOdKP9k/dtelBHaxZELLM0deL4cODrLIl7MLXSe0pObgETig1QQ==
-
 statuses@2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/statuses/-/statuses-2.0.1.tgz#55cb000ccf1d48728bd23c685a063998cf1a1b63"
