@@ -17,7 +17,6 @@ export default async () => {
     ),
     adminKey: process.env.ADMIN_KEY,
     environment: process.env.NODE_ENV as Context["environment"],
-    verboseDebugging: true,
     cacheSettings: {
       cacheEngine: (process.env.CACHE_ENGINE || "memory") as CacheEngine,
       connectionUrl: process.env.CACHE_CONNECTION_URL,

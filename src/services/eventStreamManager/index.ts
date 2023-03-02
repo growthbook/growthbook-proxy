@@ -15,10 +15,10 @@ interface ScopedChannel {
 export class SSEManager {
   private scopedChannels = new Map<string, ScopedChannel>();
 
-  private ctx: Context;
+  private appContext: Context;
 
-  constructor(ctx: Context) {
-    this.ctx = ctx;
+  constructor(appContext: Context) {
+    this.appContext = appContext;
   }
 
   public subscribe(req: Request, res: Response) {
@@ -69,10 +69,9 @@ export class SSEManager {
     /* eslint-disable @typescript-eslint/no-explicit-any */
     payload: any,
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    oldPayload?: any,
-    ctx?: Context
+    oldPayload?: any
   ) {
-    ctx?.verboseDebugging &&
+    this.appContext?.verboseDebugging &&
       logger.info(
         { apiKey, event, payload, oldPayload },
         "EventStreamManager.publish"
@@ -80,24 +79,24 @@ export class SSEManager {
     const scopedChannel = this.getScopedChannel(apiKey);
     if (scopedChannel) {
       if (oldPayload === undefined) {
-        ctx?.verboseDebugging &&
+        this.appContext?.verboseDebugging &&
           logger.info({ payload, event }, "publishing SSE");
         scopedChannel.channel.publish(payload, event);
       } else {
         const hasChanges =
           JSON.stringify(payload) !== JSON.stringify(oldPayload);
         if (hasChanges) {
-          ctx?.verboseDebugging &&
+          this.appContext?.verboseDebugging &&
             logger.info({ payload, event }, "publishing SSE");
           scopedChannel.channel.publish(payload, event);
           return;
         }
-        ctx?.verboseDebugging &&
+        this.appContext?.verboseDebugging &&
           logger.info({ payload, event }, "skipping SSE publish, no changes");
       }
       return;
     }
-    ctx?.verboseDebugging && logger.info("No scoped channel found");
+    this.appContext?.verboseDebugging && logger.info("No scoped channel found");
   }
 
   private getScopedChannel(apiKey: string): ScopedChannel | undefined {
@@ -105,7 +104,7 @@ export class SSEManager {
     if (!scopedChannel) {
       this.scopedChannels.set(apiKey, {
         apiKey,
-        channel: new SSEChannel(defaultOptions, this.ctx),
+        channel: new SSEChannel(defaultOptions, this.appContext),
       });
       scopedChannel = this.scopedChannels.get(apiKey);
     }
@@ -116,9 +115,9 @@ export class SSEManager {
 export type EventStreamManager = SSEManager | null;
 export let eventStreamManager: SSEManager | null = null;
 
-export const initializeEventStreamManager = (ctx: Context) => {
-  if (ctx.enableEventStream) {
-    eventStreamManager = new SSEManager(ctx);
+export const initializeEventStreamManager = (appContext: Context) => {
+  if (appContext.enableEventStream) {
+    eventStreamManager = new SSEManager(appContext);
   }
   Object.freeze(eventStreamManager);
 };

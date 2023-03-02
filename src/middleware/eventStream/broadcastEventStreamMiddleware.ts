@@ -19,13 +19,7 @@ export const broadcastEventStreamMiddleware = async (
       ? await featuresCache.get(apiKey)
       : undefined;
 
-    eventStreamManager.publish(
-      apiKey,
-      "features",
-      req.body,
-      oldEntry?.payload,
-      ctx
-    );
+    eventStreamManager.publish(apiKey, "features", req.body, oldEntry?.payload);
   }
   next();
 };
