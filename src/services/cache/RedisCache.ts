@@ -180,7 +180,11 @@ export class RedisCache {
 
           // ignore messages published from this node (shouldn't subscribe to ourselves)
           if (uuid === this.clientUUID) return;
-          logger.debug({ payload }, "RedisCache.subscribe: got 'set' message");
+          this.appContext?.verboseDebugging &&
+            logger.debug(
+              { payload },
+              "RedisCache.subscribe: got 'set' message"
+            );
 
           // 1. emit SSE to SDK clients (if new payload !== old payload)
           if (this.appContext?.enableEventStream && eventStreamManager) {
