@@ -129,13 +129,13 @@ export class RedisCache {
     // Publish with Redis pub/sub so that other proxy nodes can
     // 1. emit SSE to SDK subscribers
     // 2. update their MemoryCache
-    if (this.publishPayloadToChannel && this.subscriberClient) {
+    if (this.publishPayloadToChannel) {
       // publish to Redis subscribers if new payload !== old payload
       const oldEntry = await this.get(key);
       const hasChanges =
         JSON.stringify(oldEntry?.payload) !== JSON.stringify(payload);
       if (hasChanges) {
-        logger.debug(
+        logger.info(
           { payload },
           "RedisCache.set: publish to Redis subscribers"
         );
@@ -151,7 +151,7 @@ export class RedisCache {
         return;
       }
 
-      logger.debug(
+      logger.info(
         { payload, oldPayload: oldEntry?.payload },
         "RedisCache.set: do not publish to Redis subscribers (no changes)"
       );
@@ -160,7 +160,7 @@ export class RedisCache {
 
   private async subscribe() {
     if (!this.publishPayloadToChannel) return;
-    this.appContext?.verboseDebugging && logger.debug("RedisCache.subscribe");
+    this.appContext?.verboseDebugging && logger.info("RedisCache.subscribe");
 
     if (!this.client) {
       throw new Error("No redis client");
@@ -181,16 +181,13 @@ export class RedisCache {
           // ignore messages published from this node (shouldn't subscribe to ourselves)
           if (uuid === this.clientUUID) return;
           this.appContext?.verboseDebugging &&
-            logger.debug(
-              { payload },
-              "RedisCache.subscribe: got 'set' message"
-            );
+            logger.info({ payload }, "RedisCache.subscribe: got 'set' message");
 
           // 1. emit SSE to SDK clients (if new payload !== old payload)
           if (this.appContext?.enableEventStream && eventStreamManager) {
             const oldEntry = await this.get(key);
             this.appContext?.verboseDebugging &&
-              logger.debug({ payload }, "RedisCache.subscribe: publish SSE");
+              logger.info({ payload }, "RedisCache.subscribe: publish SSE");
 
             eventStreamManager.publish(
               key,
