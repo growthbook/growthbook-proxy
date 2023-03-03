@@ -112,6 +112,9 @@ export class RedisCache {
     if (!this.client) {
       throw new Error("No redis client");
     }
+
+    const oldEntry = await this.get(key);
+
     const entry = {
       payload,
       staleOn: new Date(Date.now() + this.staleTTL),
@@ -131,7 +134,6 @@ export class RedisCache {
     // 2. update their MemoryCache
     if (this.publishPayloadToChannel) {
       // publish to Redis subscribers if new payload !== old payload
-      const oldEntry = await this.get(key);
       const hasChanges =
         JSON.stringify(oldEntry?.payload) !== JSON.stringify(payload);
       if (hasChanges) {
@@ -183,18 +185,12 @@ export class RedisCache {
           this.appContext?.verboseDebugging &&
             logger.info({ payload }, "RedisCache.subscribe: got 'set' message");
 
-          // 1. emit SSE to SDK clients (if new payload !== old payload)
+          // 1. emit SSE to SDK clients
           if (this.appContext?.enableEventStream && eventStreamManager) {
-            const oldEntry = await this.get(key);
             this.appContext?.verboseDebugging &&
               logger.info({ payload }, "RedisCache.subscribe: publish SSE");
 
-            eventStreamManager.publish(
-              key,
-              "features",
-              payload,
-              oldEntry?.payload
-            );
+            eventStreamManager.publish(key, "features", payload);
           }
 
           // 2. update MemoryCache
