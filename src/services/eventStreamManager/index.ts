@@ -103,7 +103,10 @@ export class SSEManager {
       this.scopedChannels.set(apiKey, {
         apiKey,
         channel: new SSEChannel(
-          { maxStreamDuration: this.appContext.eventStreamMaxDurationMs },
+          {
+            maxStreamDuration: this.appContext.eventStreamMaxDurationMs,
+            pingInterval: this.appContext.eventStreamPingIntervalMs,
+          },
           this.appContext
         ),
       });

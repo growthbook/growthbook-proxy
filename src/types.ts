@@ -34,6 +34,7 @@ export interface Context {
   enableEventStream?: boolean;
   enableEventStreamHeaders?: boolean;
   eventStreamMaxDurationMs?: number;
+  eventStreamPingIntervalMs?: number;
   proxyAllRequests?: boolean;
   environment?: "development" | "production";
   verboseDebugging?: boolean;

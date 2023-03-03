@@ -75,7 +75,7 @@ export class SSEChannel {
   publish(data?: any, eventName?: string) {
     this.ctx?.verboseDebugging &&
       logger.info(
-        { clients: this.clients.size },
+        { data, eventName, clients: this.clients.size },
         "ssePubsub.subscribe: publish"
       );
     if (!this.active) {
