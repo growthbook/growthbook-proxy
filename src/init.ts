@@ -15,8 +15,6 @@ export default async () => {
     enableEventStreamHeaders: ["true", "1"].includes(
       process.env.ENABLE_EVENT_STREAM_HEADERS ?? "1"
     ),
-    eventStreamMaxDurationMs: 30000,
-    eventStreamPingIntervalMs: 3000,
     adminKey: process.env.ADMIN_KEY,
     environment: process.env.NODE_ENV as Context["environment"],
     cacheSettings: {

@@ -38,18 +38,18 @@ export class SSEChannel {
   private pingTimer: NodeJS.Timeout | null = null;
 
   private options: Options;
-  private ctx?: Context;
+  private appContext?: Context;
 
   constructor(
     {
-      pingInterval = 3000,
-      maxStreamDuration = 30000,
-      clientRetryInterval = 1000,
+      pingInterval = 30000,
+      maxStreamDuration = 0,
+      clientRetryInterval = 10000,
       startId = 1,
       historySize = 1,
       rewind = 0,
     }: Partial<Options>,
-    ctx?: Context
+    appContext?: Context
   ) {
     this.options = {
       pingInterval,
@@ -59,7 +59,7 @@ export class SSEChannel {
       historySize,
       rewind,
     };
-    this.ctx = ctx;
+    this.appContext = appContext;
 
     this.nextID = this.options.startId;
 
@@ -73,9 +73,9 @@ export class SSEChannel {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   publish(data?: any, eventName?: string) {
-    this.ctx?.verboseDebugging &&
+    this.appContext?.verboseDebugging &&
       logger.info(
-        { data, eventName, clients: this.clients.size },
+        { eventName: eventName || "[ping]", clients: this.clients.size },
         "ssePubsub.subscribe: publish"
       );
     if (!this.active) {
@@ -125,21 +125,19 @@ export class SSEChannel {
   }
 
   subscribe(req: Request, res: Response, events?: (string | RegExp)[]) {
-    this.ctx?.verboseDebugging && logger.info("ssePubsub.subscribe: subscribe");
+    this.appContext?.verboseDebugging &&
+      logger.info("ssePubsub.subscribe: subscribe");
     if (!this.active) {
       logger.warn("ssePubsub.subscribe: Channel closed");
     }
     const c: Connection = { req, res, events };
-    c.req.socket.setNoDelay(true);
     c.res.writeHead(200, {
       "Content-Type": "text/event-stream",
-      "Cache-Control":
-        "s-maxage=" +
-        (Math.floor(this.options.maxStreamDuration / 1000) - 1) +
-        "; max-age=0; stale-while-revalidate=0; stale-if-error=0",
+      "Cache-Control": "no-cache",
       Connection: "keep-alive",
     });
-    let body = "retry: " + this.options.clientRetryInterval + "\n\n";
+    c.res.flushHeaders();
+    let body = `retry: ${this.options.clientRetryInterval}\n\n`;
 
     const lastID = req.headers["last-event-id"]
       ? Number.parseInt(req.headers["last-event-id"] + "", 10)
@@ -164,7 +162,7 @@ export class SSEChannel {
     if (this.options.maxStreamDuration) {
       setTimeout(() => {
         if (!c.res.finished) {
-          this.ctx?.verboseDebugging &&
+          this.appContext?.verboseDebugging &&
             logger.info("ssePubsub.subscribe: unsubscribe via timeout");
           this.unsubscribe(c);
         }
@@ -172,18 +170,18 @@ export class SSEChannel {
     }
 
     c.res.on("close", () => {
-      this.ctx?.verboseDebugging &&
+      this.appContext?.verboseDebugging &&
         logger.info("ssePubsub.subscribe: unsubscribe via response close");
       this.unsubscribe(c);
     });
 
     c.res.on("error", (err) => {
-      this.ctx?.verboseDebugging &&
+      this.appContext?.verboseDebugging &&
         logger.warn(err, "ssePubsub.subscribe: response error");
     });
 
     c.res.on("finish", () => {
-      this.ctx?.verboseDebugging &&
+      this.appContext?.verboseDebugging &&
         logger.info("ssePubsub.subscribe: response finish");
     });
 
@@ -191,7 +189,7 @@ export class SSEChannel {
   }
 
   unsubscribe(c: Connection) {
-    this.ctx?.verboseDebugging && logger.info("ssePubsub.unsubscribe");
+    this.appContext?.verboseDebugging && logger.info("ssePubsub.unsubscribe");
     c.res.end();
     this.clients.delete(c);
   }
