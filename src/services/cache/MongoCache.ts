@@ -80,10 +80,16 @@ export class MongoCache {
         return undefined;
       }
       if (!doc.entry) {
-        logger.error("unable to parse cache json");
+        logger.error("MongoCache: unable to parse doc");
         return undefined;
       }
-      entry = doc.entry;
+      try {
+        const docEntry = doc.entry;
+        docEntry.payload = JSON.parse(docEntry.payload as string);
+        entry = docEntry;
+      } catch (e) {
+        logger.error("MongoCache: unable to parse doc entry payload");
+      }
     }
 
     if (!entry) {
@@ -112,7 +118,9 @@ export class MongoCache {
       staleOn: new Date(Date.now() + this.staleTTL),
       expiresOn: new Date(Date.now() + this.expiresTTL),
     };
-    const doc = { key, entry };
+    const docEntry = { ...entry };
+    docEntry.payload = JSON.stringify(docEntry.payload) as string;
+    const doc = { key, entry: docEntry };
     await this.collection.replaceOne({ key }, doc, {
       upsert: true,
     });
