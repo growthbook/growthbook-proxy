@@ -19,10 +19,12 @@ export default async () => {
     environment: process.env.NODE_ENV as Context["environment"],
     cacheSettings: {
       cacheEngine: (process.env.CACHE_ENGINE || "memory") as CacheEngine,
-      connectionUrl: process.env.CACHE_CONNECTION_URL,
       staleTTL: parseInt(process.env.CACHE_STALE_TTL || "60"),
       expiresTTL: parseInt(process.env.CACHE_EXPIRES_TTL || "600"),
       allowStale: ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? "1"),
+      connectionUrl: process.env.CACHE_CONNECTION_URL,
+      databaseName: process.env.CACHE_DATABASE_NAME || undefined,
+      collectionName: process.env.CACHE_COLLECTION_NAME || undefined,
       useAdditionalMemoryCache: true,
       publishPayloadToChannel: ["true", "1"].includes(
         process.env.PUBLISH_PAYLOAD_TO_CHANNEL ?? "0"

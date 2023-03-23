@@ -51,13 +51,20 @@ The GrowthBook Proxy supports a number of configuration options available via en
 - `GROWTHBOOK_API_HOST` - Set this to the host and port of your GrowthBook API instance
 - `SECRET_API_KEY` - Create a secret API key in GrowthBook by going to **Settings -> API Keys**
 - `NODE_ENV` - Set to "production" to hide debug and informational log messages
-- `CACHE_ENGINE` - One of - `memory`, `redis`, or `mongo`
+- `CACHE_ENGINE` - One of: `memory`, `redis`, or `mongo`
 - `CACHE_CONNECTION_URL` - The URL of your redis or mongo cluster (if using)
 - `CACHE_STALE_TTL` - Number of seconds until a cache entry is considered stale
 - `CACHE_EXPIRES_TTL` - Number of seconds until a cache entry is expired
 
+For MongoDB, you can optionally set the following options:
+- `CACHE_DATABASE_NAME` - Mongo database name (default is `proxy`)
+- `CACHE_COLLECTION_NAME` - Mongo collection name (default is `cache`)
+
+For horizontally scaled GrowthBook Proxy clusters, we provide a basic mechanism for keeping your proxy instances in sync, which uses Redis Pub/Sub. To use this feature, you must use Redis as your cache engine and set the following option:
+- `PUBLISH_PAYLOAD_TO_CHANNEL` - "true" or "1" to enable
+
 You can also configure the GrowthBook Proxy to handle SSL termination. It supports HTTP/2 by default, which is required for high performance streaming.
 
-- `USE_HTTP2` - Set to "true" or "1" to enable
+- `USE_HTTP2` - "true" or "1" to enable
 - `HTTPS_CERT` - The SSL certificate
 - `HTTPS_KEY` - The SSL key
