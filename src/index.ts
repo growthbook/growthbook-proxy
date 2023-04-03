@@ -1,6 +1,5 @@
 import init from "./init";
-import { Context, GrowthBookProxy, growthBookProxy } from "./app";
-import logger from "./services/logger";
+import { GrowthBookProxy, growthBookProxy } from "./app";
 
 // Sample implementation for the GrowthBookProxy
 (async () => {
