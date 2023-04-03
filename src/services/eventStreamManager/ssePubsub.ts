@@ -72,7 +72,7 @@ export class SSEChannel {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  publish(data?: any, eventName?: string) {
+  public publish(data?: any, eventName?: string) {
     this.appContext?.verboseDebugging &&
       logger.info(
         { eventName: eventName || "[ping]", clients: this.clients.size },
@@ -124,7 +124,7 @@ export class SSEChannel {
     return id;
   }
 
-  subscribe(req: Request, res: Response, events?: (string | RegExp)[]) {
+  public subscribe(req: Request, res: Response, events?: (string | RegExp)[]) {
     this.appContext?.verboseDebugging &&
       logger.info("ssePubsub.subscribe: subscribe");
     if (!this.active) {
@@ -188,13 +188,13 @@ export class SSEChannel {
     return c;
   }
 
-  unsubscribe(c: Connection) {
+  public unsubscribe(c: Connection) {
     this.appContext?.verboseDebugging && logger.info("ssePubsub.unsubscribe");
     c.res.end();
     this.clients.delete(c);
   }
 
-  close() {
+  public close() {
     this.clients.forEach((c) => c.res.end());
     this.clients = new Set();
     this.messages = [];
@@ -202,7 +202,7 @@ export class SSEChannel {
     this.active = false;
   }
 
-  listClients() {
+  public listClients() {
     const rollupByIP: Record<string, number> = {};
     this.clients.forEach((c) => {
       const ip = c.req?.connection?.remoteAddress
@@ -216,7 +216,7 @@ export class SSEChannel {
     return rollupByIP;
   }
 
-  getSubscriberCount() {
+  public getSubscriberCount() {
     return this.clients.size;
   }
 
