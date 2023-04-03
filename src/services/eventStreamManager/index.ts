@@ -97,6 +97,12 @@ export class SSEManager {
     this.appContext?.verboseDebugging && logger.info("No scoped channel found");
   }
 
+  public closeAll() {
+    this.scopedChannels.forEach((scopedChannel) => {
+      scopedChannel.channel.close();
+    });
+  }
+
   private getScopedChannel(apiKey: string): ScopedChannel | undefined {
     let scopedChannel = this.scopedChannels.get(apiKey);
     if (!scopedChannel) {
