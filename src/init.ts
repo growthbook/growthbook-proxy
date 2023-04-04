@@ -22,7 +22,7 @@ export default async () => {
       process.env.ENABLE_EVENT_STREAM_HEADERS ?? "1"
     ),
     eventStreamMaxDurationMs: parseInt(
-      process.env.EVENT_STREAM_MAX_DURATION_MS ?? "600000"
+      process.env.EVENT_STREAM_MAX_DURATION_MS ?? "60000"
     ),
     eventStreamPingIntervalMs: parseInt(
       process.env.EVENT_STREAM_PING_INTERVAL_MS ?? "30000"
