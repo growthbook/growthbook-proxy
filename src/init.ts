@@ -8,24 +8,37 @@ export default async () => {
   const context: Partial<Context> = {
     growthbookApiHost: process.env.GROWTHBOOK_API_HOST,
     secretApiKey: process.env.SECRET_API_KEY,
+    environment: process.env.NODE_ENV as Context["environment"],
     enableAdmin: ["true", "1"].includes(process.env.ENABLE_ADMIN ?? "0"),
+    adminKey: process.env.ADMIN_KEY,
+    verboseDebugging: ["true", "1"].includes(
+      process.env.VERBOSE_DEBUGGING ?? "0"
+    ),
+    // SSE settings:
     enableEventStream: ["true", "1"].includes(
       process.env.ENABLE_EVENT_STREAM ?? "1"
     ),
     enableEventStreamHeaders: ["true", "1"].includes(
       process.env.ENABLE_EVENT_STREAM_HEADERS ?? "1"
     ),
-    adminKey: process.env.ADMIN_KEY,
-    environment: process.env.NODE_ENV as Context["environment"],
+    eventStreamMaxDurationMs: parseInt(
+      process.env.EVENT_STREAM_MAX_DURATION_MS ?? "600000"
+    ),
+    eventStreamPingIntervalMs: parseInt(
+      process.env.EVENT_STREAM_PING_INTERVAL_MS ?? "30000"
+    ),
+    // Cache settings:
     cacheSettings: {
       cacheEngine: (process.env.CACHE_ENGINE || "memory") as CacheEngine,
       staleTTL: parseInt(process.env.CACHE_STALE_TTL || "60"),
       expiresTTL: parseInt(process.env.CACHE_EXPIRES_TTL || "600"),
       allowStale: ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? "1"),
       connectionUrl: process.env.CACHE_CONNECTION_URL,
+      // Mongo only:
       databaseName: process.env.CACHE_DATABASE_NAME || undefined,
       collectionName: process.env.CACHE_COLLECTION_NAME || undefined,
       useAdditionalMemoryCache: true,
+      // Redis only - pub/sub:
       publishPayloadToChannel: ["true", "1"].includes(
         process.env.PUBLISH_PAYLOAD_TO_CHANNEL ?? "0"
       ),
