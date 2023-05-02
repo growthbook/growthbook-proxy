@@ -1,10 +1,12 @@
-import {
-  createClient,
-  createCluster,
-  RedisClientType,
-  RedisClusterType,
-  RedisClusterClientOptions,
-} from "redis";
+// import {
+//   createClient,
+//   createCluster,
+//   RedisClientType,
+//   RedisClusterType,
+// } from "redis";
+// import { RedisClusterClientOptions } from "@redis/client/dist/lib/cluster";
+import Redis, { Cluster, ClusterNode } from "ioredis";
+
 import { v4 as uuidv4 } from "uuid";
 import logger from "../logger";
 import { eventStreamManager } from "../eventStreamManager";
@@ -13,11 +15,13 @@ import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, CacheSettings } from "./index";
 
 export class RedisCache {
-  private client: RedisClientType | RedisClusterType | undefined;
+  // private client: RedisClientType | RedisClusterType | undefined;
+  private client: Redis | Cluster | undefined;
   private clientUUID: string = uuidv4();
 
   private readonly publishPayloadToChannel: boolean;
-  private subscriberClient: RedisClientType | RedisClusterType | undefined;
+  // private subscriberClient: RedisClientType | RedisClusterType | undefined;
+  private subscriberClient: any | undefined;
 
   private readonly memoryCacheClient: MemoryCache | undefined;
   private readonly connectionUrl: string | undefined;
@@ -26,7 +30,8 @@ export class RedisCache {
   public readonly allowStale: boolean;
 
   private readonly useCluster: boolean;
-  private readonly clusterRootNodes: RedisClusterClientOptions[];
+  // private readonly clusterRootNodes: RedisClusterClientOptions[];
+  private readonly clusterRootNodes: ClusterNode[];
 
   private readonly appContext?: Context;
 
@@ -49,9 +54,7 @@ export class RedisCache {
     this.allowStale = allowStale;
     this.publishPayloadToChannel = publishPayloadToChannel;
     this.useCluster = useCluster;
-    this.clusterRootNodes = clusterRootNodes.map((node) => ({
-      url: node,
-    }));
+    this.clusterRootNodes = clusterRootNodes;
 
     this.appContext = appContext;
 
@@ -66,28 +69,21 @@ export class RedisCache {
 
   public async connect() {
     if (!this.useCluster) {
+      // this.client = this.connectionUrl
+      //   ? createClient({ url: this.connectionUrl })
+      //   : createClient();
       this.client = this.connectionUrl
-        ? createClient({ url: this.connectionUrl })
-        : createClient();
+        ? new Redis(this.connectionUrl)
+        : new Redis();
     } else {
       if (this.clusterRootNodes) {
-        this.client = createCluster({
-          rootNodes: this.clusterRootNodes,
-          minimizeConnections: true,
-        });
+        this.client = new Redis.Cluster(this.clusterRootNodes);
       } else {
         throw new Error("No cluster root nodes");
       }
     }
 
-    if (this.client) {
-      this.client.on("error", (e: Error) => {
-        logger.error(e, "Error connecting to redis client");
-      });
-      await this.client.connect();
-
-      await this.subscribe();
-    }
+    await this.subscribe();
   }
 
   public async get(key: string): Promise<CacheEntry | undefined> {
@@ -147,9 +143,12 @@ export class RedisCache {
       staleOn: new Date(Date.now() + this.staleTTL),
       expiresOn: new Date(Date.now() + this.expiresTTL),
     };
-    await this.client.set(key, JSON.stringify(entry), {
-      EX: this.expiresTTL / 1000,
-    });
+    await this.client.set(
+      key,
+      JSON.stringify(entry),
+      "EX",
+      this.expiresTTL / 1000
+    );
 
     // refresh MemoryCache
     if (this.memoryCacheClient) {
@@ -197,14 +196,22 @@ export class RedisCache {
 
     // Redis requires that subscribers use a separate client
     this.subscriberClient = this.client.duplicate();
-    await this.subscriberClient.connect();
 
     // Subscribe to Redis pub/sub so that this proxy node can:
     // 1. emit SSE to SDK subscribers
     // 2. update its MemoryCache
-    this.subscriberClient.subscribe(
-      "set",
-      async (message: string, channel: string) => {
+    this.subscriberClient.subscribe("set", (err: Error) => {
+      if (err) {
+        logger.error(err, "RedisCache.subscribe: error subscribing to 'set'");
+      } else {
+        this.appContext?.verboseDebugging &&
+          logger.info("RedisCache.subscribe: subscribed to 'set' channel");
+      }
+    });
+
+    this.subscriberClient.on(
+      "message",
+      async (channel: string, message: string) => {
         if (channel === "set") {
           try {
             const { uuid, key, payload } = JSON.parse(message);
