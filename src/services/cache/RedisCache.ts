@@ -1,10 +1,3 @@
-// import {
-//   createClient,
-//   createCluster,
-//   RedisClientType,
-//   RedisClusterType,
-// } from "redis";
-// import { RedisClusterClientOptions } from "@redis/client/dist/lib/cluster";
 import Redis, { Cluster, ClusterNode } from "ioredis";
 
 import { v4 as uuidv4 } from "uuid";
@@ -15,13 +8,11 @@ import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, CacheSettings } from "./index";
 
 export class RedisCache {
-  // private client: RedisClientType | RedisClusterType | undefined;
   private client: Redis | Cluster | undefined;
   private clientUUID: string = uuidv4();
 
   private readonly publishPayloadToChannel: boolean;
-  // private subscriberClient: RedisClientType | RedisClusterType | undefined;
-  private subscriberClient: any | undefined;
+  private subscriberClient: Redis | Cluster | undefined;
 
   private readonly memoryCacheClient: MemoryCache | undefined;
   private readonly connectionUrl: string | undefined;
@@ -30,7 +21,6 @@ export class RedisCache {
   public readonly allowStale: boolean;
 
   private readonly useCluster: boolean;
-  // private readonly clusterRootNodes: RedisClusterClientOptions[];
   private readonly clusterRootNodes: ClusterNode[];
 
   private readonly appContext?: Context;
@@ -69,9 +59,6 @@ export class RedisCache {
 
   public async connect() {
     if (!this.useCluster) {
-      // this.client = this.connectionUrl
-      //   ? createClient({ url: this.connectionUrl })
-      //   : createClient();
       this.client = this.connectionUrl
         ? new Redis(this.connectionUrl)
         : new Redis();
@@ -200,7 +187,7 @@ export class RedisCache {
     // Subscribe to Redis pub/sub so that this proxy node can:
     // 1. emit SSE to SDK subscribers
     // 2. update its MemoryCache
-    this.subscriberClient.subscribe("set", (err: Error) => {
+    this.subscriberClient.subscribe("set", (err) => {
       if (err) {
         logger.error(err, "RedisCache.subscribe: error subscribing to 'set'");
       } else {
@@ -218,6 +205,7 @@ export class RedisCache {
 
             // ignore messages published from this node (shouldn't subscribe to ourselves)
             if (uuid === this.clientUUID) return;
+
             this.appContext?.verboseDebugging &&
               logger.info(
                 { payload },
