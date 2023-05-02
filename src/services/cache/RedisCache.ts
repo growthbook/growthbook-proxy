@@ -1,4 +1,10 @@
-import { createClient } from "redis";
+import {
+  createClient,
+  createCluster,
+  RedisClientType,
+  RedisClusterType,
+  RedisClusterClientOptions,
+} from "redis";
 import { v4 as uuidv4 } from "uuid";
 import logger from "../logger";
 import { eventStreamManager } from "../eventStreamManager";
@@ -7,17 +13,20 @@ import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, CacheSettings } from "./index";
 
 export class RedisCache {
-  private client: ReturnType<typeof createClient> | undefined;
+  private client: RedisClientType | RedisClusterType | undefined;
   private clientUUID: string = uuidv4();
 
   private readonly publishPayloadToChannel: boolean;
-  private subscriberClient: ReturnType<typeof createClient> | undefined;
+  private subscriberClient: RedisClientType | RedisClusterType | undefined;
 
   private readonly memoryCacheClient: MemoryCache | undefined;
   private readonly connectionUrl: string | undefined;
   private readonly staleTTL: number;
   private readonly expiresTTL: number;
   public readonly allowStale: boolean;
+
+  private readonly useCluster: boolean;
+  private readonly clusterRootNodes: RedisClusterClientOptions[];
 
   private readonly appContext?: Context;
 
@@ -29,6 +38,8 @@ export class RedisCache {
       connectionUrl,
       useAdditionalMemoryCache,
       publishPayloadToChannel = false,
+      useCluster = false,
+      clusterRootNodes = [],
     }: CacheSettings = {},
     appContext?: Context
   ) {
@@ -37,6 +48,10 @@ export class RedisCache {
     this.expiresTTL = expiresTTL * 1000;
     this.allowStale = allowStale;
     this.publishPayloadToChannel = publishPayloadToChannel;
+    this.useCluster = useCluster;
+    this.clusterRootNodes = clusterRootNodes.map((node) => ({
+      url: node,
+    }));
 
     this.appContext = appContext;
 
@@ -50,9 +65,21 @@ export class RedisCache {
   }
 
   public async connect() {
-    this.client = this.connectionUrl
-      ? createClient({ url: this.connectionUrl })
-      : createClient();
+    if (!this.useCluster) {
+      this.client = this.connectionUrl
+        ? createClient({ url: this.connectionUrl })
+        : createClient();
+    } else {
+      if (this.clusterRootNodes) {
+        this.client = createCluster({
+          rootNodes: this.clusterRootNodes,
+          minimizeConnections: true,
+        });
+      } else {
+        throw new Error("No cluster root nodes");
+      }
+    }
+
     if (this.client) {
       this.client.on("error", (e: Error) => {
         logger.error(e, "Error connecting to redis client");
@@ -175,38 +202,44 @@ export class RedisCache {
     // Subscribe to Redis pub/sub so that this proxy node can:
     // 1. emit SSE to SDK subscribers
     // 2. update its MemoryCache
-    this.subscriberClient.subscribe("set", async (message, channel) => {
-      if (channel === "set") {
-        try {
-          const { uuid, key, payload } = JSON.parse(message);
+    this.subscriberClient.subscribe(
+      "set",
+      async (message: string, channel: string) => {
+        if (channel === "set") {
+          try {
+            const { uuid, key, payload } = JSON.parse(message);
 
-          // ignore messages published from this node (shouldn't subscribe to ourselves)
-          if (uuid === this.clientUUID) return;
-          this.appContext?.verboseDebugging &&
-            logger.info({ payload }, "RedisCache.subscribe: got 'set' message");
-
-          // 1. emit SSE to SDK clients
-          if (this.appContext?.enableEventStream && eventStreamManager) {
+            // ignore messages published from this node (shouldn't subscribe to ourselves)
+            if (uuid === this.clientUUID) return;
             this.appContext?.verboseDebugging &&
-              logger.info({ payload }, "RedisCache.subscribe: publish SSE");
+              logger.info(
+                { payload },
+                "RedisCache.subscribe: got 'set' message"
+              );
 
-            eventStreamManager.publish(key, "features", payload);
-          }
+            // 1. emit SSE to SDK clients
+            if (this.appContext?.enableEventStream && eventStreamManager) {
+              this.appContext?.verboseDebugging &&
+                logger.info({ payload }, "RedisCache.subscribe: publish SSE");
 
-          // 2. update MemoryCache
-          if (this.memoryCacheClient) {
-            const entry = {
-              payload,
-              staleOn: new Date(Date.now() + this.staleTTL),
-              expiresOn: new Date(Date.now() + this.expiresTTL),
-            };
-            await this.memoryCacheClient.set(key, entry);
+              eventStreamManager.publish(key, "features", payload);
+            }
+
+            // 2. update MemoryCache
+            if (this.memoryCacheClient) {
+              const entry = {
+                payload,
+                staleOn: new Date(Date.now() + this.staleTTL),
+                expiresOn: new Date(Date.now() + this.expiresTTL),
+              };
+              await this.memoryCacheClient.set(key, entry);
+            }
+          } catch (e) {
+            logger.error(e, "Error parsing message from Redis pub/sub");
           }
-        } catch (e) {
-          logger.error(e, "Error parsing message from Redis pub/sub");
         }
       }
-    });
+    );
   }
 
   public getClient() {

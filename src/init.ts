@@ -34,14 +34,19 @@ export default async () => {
       expiresTTL: parseInt(process.env.CACHE_EXPIRES_TTL || "600"),
       allowStale: ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? "1"),
       connectionUrl: process.env.CACHE_CONNECTION_URL,
+      useAdditionalMemoryCache: true,
       // Mongo only:
       databaseName: process.env.CACHE_DATABASE_NAME || undefined,
       collectionName: process.env.CACHE_COLLECTION_NAME || undefined,
-      useAdditionalMemoryCache: true,
       // Redis only - pub/sub:
       publishPayloadToChannel: ["true", "1"].includes(
         process.env.PUBLISH_PAYLOAD_TO_CHANNEL ?? "0"
       ),
+      // Redis only - cluster:
+      useCluster: ["true", "1"].includes(process.env.USE_CLUSTER ?? "0"),
+      clusterRootNodes: process.env.CLUSTER_ROOT_NODES
+        ? process.env.CLUSTER_ROOT_NODES.replace(" ", "").split(",")
+        : undefined,
     },
   };
 
