@@ -51,19 +51,32 @@ The GrowthBook Proxy supports a number of configuration options available via en
 - `GROWTHBOOK_API_HOST` - Set this to the host and port of your GrowthBook API instance
 - `SECRET_API_KEY` - Create a secret API key in GrowthBook by going to **Settings -> API Keys**
 - `NODE_ENV` - Set to "production" to hide debug and informational log messages
+
+### Caching
+By default, features are cached in memory in GrowthBook Proxy; you may provide your own cache service via Redis or Mongo. To fully utilize the GrowthBook Proxy, we highly recommend using Redis, which is a prerequisite for real-time updates when your proxy is horizontally scaled (as proxy instances are kept in-sync using Redis pub/sub).
+
 - `CACHE_ENGINE` - One of: `memory`, `redis`, or `mongo`
-- `CACHE_CONNECTION_URL` - The URL of your redis or mongo cluster (if using)
+- `CACHE_CONNECTION_URL` - The URL of your Redis or Mongo Database
 - `CACHE_STALE_TTL` - Number of seconds until a cache entry is considered stale
 - `CACHE_EXPIRES_TTL` - Number of seconds until a cache entry is expired
+
+For Redis, you can also run in cluster mode:
+- `USE_CLUSTER` - "true" or "1" to enable
+- `CLUSTER_ROOT_NODES` - comma-separated URLs to your cluster seed nodes
+  - Note: CACHE_CONNECTION_URL is ignored when using cluster mode
 
 For MongoDB, you can optionally set the following options:
 - `CACHE_DATABASE_NAME` - Mongo database name (default is `proxy`)
 - `CACHE_COLLECTION_NAME` - Mongo collection name (default is `cache`)
 
+### Horizontally scaling
+
 For horizontally scaled GrowthBook Proxy clusters, we provide a basic mechanism for keeping your proxy instances in sync, which uses Redis Pub/Sub. To use this feature, you must use Redis as your cache engine and set the following option:
 - `PUBLISH_PAYLOAD_TO_CHANNEL` - "true" or "1" to enable
 
-You can also configure the GrowthBook Proxy to handle SSL termination. It supports HTTP/2 by default, which is required for high performance streaming.
+### SSL termination & HTTP2
+
+Although we recommend terminating SSL using your load balancer, you can also configure the GrowthBook Proxy to handle SSL termination directly. It supports HTTP/2 by default, which is required for high performance streaming.
 
 - `USE_HTTP2` - "true" or "1" to enable
 - `HTTPS_CERT` - The SSL certificate
