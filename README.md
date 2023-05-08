@@ -60,19 +60,27 @@ By default, features are cached in memory in GrowthBook Proxy; you may provide y
 - `CACHE_STALE_TTL` - Number of seconds until a cache entry is considered stale
 - `CACHE_EXPIRES_TTL` - Number of seconds until a cache entry is expired
 
-For Redis, you can also run in cluster mode:
+#### Redis Cluster
+Redis-specific options for cluster mode:<br />
+_(Note that CACHE_CONNECTION_URL is ignored when using cluster mode)_
 - `USE_CLUSTER` - "true" or "1" to enable
-- `CLUSTER_ROOT_NODES` - comma-separated URLs to your cluster seed nodes
-  - Note: CACHE_CONNECTION_URL is ignored when using cluster mode
+- `CLUSTER_ROOT_NODES` - simple: comma-separated URLs to your cluster seed nodes
+- `CLUSTER_ROOT_NODES_JSON` - advanced: JSON array of ClusterNode objects (ioredis)
+- `CLUSTER_OPTIONS_JSON` - advanced: JSON object of ClusterOptions (ioredis)
 
-For MongoDB, you can optionally set the following options:
+#### MongoDB
+Mongo-specific options:
+
 - `CACHE_DATABASE_NAME` - Mongo database name (default is `proxy`)
 - `CACHE_COLLECTION_NAME` - Mongo collection name (default is `cache`)
+
 
 ### Horizontally scaling
 
 For horizontally scaled GrowthBook Proxy clusters, we provide a basic mechanism for keeping your proxy instances in sync, which uses Redis Pub/Sub. To use this feature, you must use Redis as your cache engine and set the following option:
+
 - `PUBLISH_PAYLOAD_TO_CHANNEL` - "true" or "1" to enable
+
 
 ### SSL termination & HTTP2
 

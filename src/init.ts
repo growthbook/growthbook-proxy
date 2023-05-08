@@ -47,6 +47,12 @@ export default async () => {
       clusterRootNodes: process.env.CLUSTER_ROOT_NODES
         ? process.env.CLUSTER_ROOT_NODES.replace(" ", "").split(",")
         : undefined,
+      clusterRootNodesJSON: process.env.CLUSTER_ROOT_NODES_JSON
+        ? JSON.parse(process.env.CLUSTER_ROOT_NODES_JSON)
+        : undefined,
+      clusterOptionsJSON: process.env.CLUSTER_OPTIONS_JSON
+        ? JSON.parse(process.env.CLUSTER_OPTIONS_JSON)
+        : undefined,
     },
   };
 
