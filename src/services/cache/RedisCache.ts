@@ -1,4 +1,4 @@
-import Redis, { Cluster, ClusterNode } from "ioredis";
+import Redis, { Cluster, ClusterNode, ClusterOptions } from "ioredis";
 
 import { v4 as uuidv4 } from "uuid";
 import logger from "../logger";
@@ -21,7 +21,8 @@ export class RedisCache {
   public readonly allowStale: boolean;
 
   private readonly useCluster: boolean;
-  private readonly clusterRootNodes: ClusterNode[];
+  private readonly clusterRootNodes?: ClusterNode[];
+  private readonly clusterOptions?: ClusterOptions;
 
   private readonly appContext?: Context;
 
@@ -34,7 +35,9 @@ export class RedisCache {
       useAdditionalMemoryCache,
       publishPayloadToChannel = false,
       useCluster = false,
-      clusterRootNodes = [],
+      clusterRootNodes,
+      clusterRootNodesJSON,
+      clusterOptionsJSON,
     }: CacheSettings = {},
     appContext?: Context
   ) {
@@ -44,7 +47,9 @@ export class RedisCache {
     this.allowStale = allowStale;
     this.publishPayloadToChannel = publishPayloadToChannel;
     this.useCluster = useCluster;
-    this.clusterRootNodes = clusterRootNodes;
+    this.clusterRootNodes =
+      clusterRootNodesJSON ?? this.transformRootNodes(clusterRootNodes);
+    this.clusterOptions = clusterOptionsJSON;
 
     this.appContext = appContext;
 
@@ -64,7 +69,10 @@ export class RedisCache {
         : new Redis();
     } else {
       if (this.clusterRootNodes) {
-        this.client = new Redis.Cluster(this.clusterRootNodes);
+        this.client = new Redis.Cluster(
+          this.clusterRootNodes,
+          this.clusterOptions
+        );
       } else {
         throw new Error("No cluster root nodes");
       }
@@ -243,5 +251,22 @@ export class RedisCache {
 
   public getsubscriberClient() {
     return this.subscriberClient;
+  }
+
+  private transformRootNodes(rootNodes?: string[]): ClusterNode[] | undefined {
+    if (!rootNodes) return undefined;
+    return rootNodes
+      .map((node) => {
+        try {
+          const url = new URL(node);
+          const host = url.protocol + "//" + url.hostname + url.pathname;
+          const port = parseInt(url.port);
+          return { host, port };
+        } catch (e) {
+          logger.error(e, "Error parsing Redis cluster node");
+          return undefined;
+        }
+      })
+      .filter(Boolean) as ClusterNode[];
   }
 }

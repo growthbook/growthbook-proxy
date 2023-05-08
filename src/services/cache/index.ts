@@ -1,3 +1,5 @@
+import { ClusterNode, ClusterOptions } from "ioredis";
+
 import { Context } from "../../types";
 import logger from "../logger";
 import { MemoryCache } from "./MemoryCache";
@@ -21,6 +23,8 @@ export interface CacheSettings {
   publishPayloadToChannel?: boolean; // for RedisCache pub/sub
   useCluster?: boolean; // for RedisCache
   clusterRootNodes?: string[]; // for RedisCache
+  clusterRootNodesJSON?: ClusterNode[]; // for RedisCache
+  clusterOptionsJSON?: ClusterOptions; // for RedisCache
 }
 
 export type FeaturesCache = MemoryCache | RedisCache | MongoCache | null;
