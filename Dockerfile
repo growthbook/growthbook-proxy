@@ -1,4 +1,4 @@
-FROM node:16-alpine3.17
+FROM node:16-alpine
 WORKDIR /usr/local/src/app
 
 # Yarn install with dev dependencies
