@@ -17,5 +17,7 @@ RUN \
 # Directory with build info (git commit sha, build date)
 COPY buildinfo* ./buildinfo
 
+USER node
+
 EXPOSE 3300
 CMD ["yarn","start"]
