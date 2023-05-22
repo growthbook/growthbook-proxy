@@ -8,6 +8,7 @@ const ConnectionFields: Set<string> = new Set([
   "signingKey",
   "encryptionKey",
   "useEncryption",
+  "ssEvalEnabled",
 ]);
 
 export type ApiKey = string;
@@ -16,6 +17,7 @@ export interface Connection {
   signingKey: string;
   encryptionKey?: string;
   useEncryption: boolean;
+  ssEvalEnabled: boolean;
   connected: boolean; // Set to true once used. When false, force a cache read-through so that GB server may validate the connection.
 }
 
@@ -24,6 +26,7 @@ interface ConnectionDoc {
   encryptPayload: boolean;
   encryptionKey: string;
   proxySigningKey: string;
+  ssEvalEnabled?: boolean;
 }
 
 export class Registrar {
@@ -114,6 +117,7 @@ export class Registrar {
           signingKey: doc.proxySigningKey,
           encryptionKey: doc.encryptionKey,
           useEncryption: doc.encryptPayload,
+          ssEvalEnabled: !!doc.ssEvalEnabled,
         };
         this.setConnection(doc.key, connection);
         newKeys.add(doc.key);

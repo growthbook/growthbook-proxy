@@ -61,14 +61,21 @@ export class SSEManager {
     return counts;
   }
 
-  public publish(
-    apiKey: string,
-    event: string,
+  public publish({
+    apiKey,
+    event,
+    payload,
+    oldPayload,
+    ssEvalEnabled = false,
+  }: {
+    apiKey: string;
+    event: string;
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    payload: any,
+    payload: any;
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    oldPayload?: any
-  ) {
+    oldPayload?: any;
+    ssEvalEnabled?: boolean;
+  }) {
     this.appContext?.verboseDebugging &&
       logger.info(
         { apiKey, event, payload, oldPayload },
@@ -79,14 +86,20 @@ export class SSEManager {
       if (oldPayload === undefined) {
         this.appContext?.verboseDebugging &&
           logger.info({ payload, event }, "publishing SSE");
-        scopedChannel.channel.publish(payload, event);
+        scopedChannel.channel.publish(
+          !ssEvalEnabled ? payload : { update: true },
+          event
+        );
       } else {
         const hasChanges =
           JSON.stringify(payload) !== JSON.stringify(oldPayload);
         if (hasChanges) {
           this.appContext?.verboseDebugging &&
             logger.info({ payload, event }, "publishing SSE");
-          scopedChannel.channel.publish(payload, event);
+          scopedChannel.channel.publish(
+            !ssEvalEnabled ? payload : { update: true },
+            event
+          );
           return;
         }
         this.appContext?.verboseDebugging &&

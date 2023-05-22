@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { Context } from "../types";
 import logger from "../services/logger";
 
-const RE_API_KEY = /(?:api|sub)\/.*?\/?([^/?]*)[/|?]?$/;
+const RE_API_KEY = /(?:api|sub|eval)\/.*?\/?([^/?]*)[/|?]?$/;
 
 /**
  * Extracts the API key from the request path or header.

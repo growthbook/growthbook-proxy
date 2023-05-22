@@ -8,6 +8,7 @@ import {
 import { featuresCache } from "../../services/cache";
 import logger from "../../services/logger";
 import { eventStreamManager } from "../../services/eventStreamManager";
+import { registrar } from "../../services/registrar";
 
 const scopedMiddlewares: Record<string, RequestHandler> = {};
 const errorCounts: Record<string, number> = {};
@@ -41,12 +42,16 @@ const interceptor = (proxyTarget: string) =>
             .set(apiKey, responseJson)
             .catch((e) => logger.error(e, "Unable to set cache"));
 
-          eventStreamManager.publish(
+          const ssEvalEnabled =
+            !!registrar.getConnection(apiKey)?.ssEvalEnabled;
+
+          eventStreamManager.publish({
             apiKey,
-            "features",
-            responseJson,
-            oldEntry?.payload
-          );
+            event: "features",
+            payload: responseJson,
+            oldPayload: oldEntry?.payload,
+            ssEvalEnabled,
+          });
         } catch (e) {
           logger.error(e, "Unable to parse response");
         }
