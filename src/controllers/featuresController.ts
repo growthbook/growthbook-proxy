@@ -101,7 +101,7 @@ const getEvaluatedFeautres = async (req: Request, res: Response) => {
     const resp = await fetchFeatures({
       apiKey: res.locals.apiKey,
       ctx: req.app.locals?.ctx,
-      serverSideEval: true,
+      ssEvalEnabled: true,
     });
     if (resp?.payload) {
       payload = resp?.payload;
@@ -118,7 +118,7 @@ const getEvaluatedFeautres = async (req: Request, res: Response) => {
     fetchFeatures({
       apiKey: res.locals.apiKey,
       ctx: req.app.locals?.ctx,
-      serverSideEval: true,
+      ssEvalEnabled: true,
     }).catch((e) => {
       logger.error(e, "Unable to refresh stale cache");
     });
