@@ -8,7 +8,7 @@ import { reencryptionMiddleware } from "../middleware/reencryptionMiddleware";
 import { broadcastEventStreamMiddleware } from "../middleware/eventStream/broadcastEventStreamMiddleware";
 import { sseSupportMiddleware } from "../middleware/sseSupportMiddleware";
 import logger from "../services/logger";
-import { fetchFeatures } from "../services/features";
+import { evaluateFeatures, fetchFeatures } from "../services/features";
 
 const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   if (!registrar?.growthbookApiHost) {
@@ -67,7 +67,7 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   return res.status(200).json(payload);
 };
 
-const getEvaluatedFeautres = async (req: Request, res: Response) => {
+const getEvaluatedFeatures = async (req: Request, res: Response) => {
   if (!registrar?.growthbookApiHost) {
     return res.status(400).json({ message: "Missing GrowthBook API host" });
   }
@@ -126,9 +126,19 @@ const getEvaluatedFeautres = async (req: Request, res: Response) => {
 
   featuresCache && logger.debug("cache HIT");
 
-  // todo: evaluate features!!!
+  // Evaluate features using provided attributes
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let attributes: Record<string, any> = {};
+  try {
+    // reverse: encodeURIComponent( JSON.stringify( ... ) )
+    if (typeof req.query.attributes === "string") {
+      attributes = JSON.parse(req.query.attributes);
+    }
+  } catch (e) {
+    logger.error(e, "Unable to parse attributes");
+  }
 
-  // todo: emit SSE? do we actually need oldEntry?
+  payload = evaluateFeatures({ payload, attributes, ctx: req.app.locals?.ctx });
 
   return res.status(200).json(payload);
 };
@@ -158,7 +168,7 @@ featuresRouter.get(
   "/eval/features/*",
   apiKeyMiddleware,
   sseSupportMiddleware,
-  getEvaluatedFeautres
+  getEvaluatedFeatures
 );
 
 // subscribe to GrowthBook's "post features" updates, refresh cache, publish to subscribed clients
