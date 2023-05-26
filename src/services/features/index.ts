@@ -89,12 +89,13 @@ export function evaluateFeatures({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const evaluatedExperiments: any[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const trackExperiments: { experiment: any; result: any }[] = [];
+  let trackExperiments: { experiment: any; result: any }[] = [];
 
   const features = payload?.features;
   const experiments = payload?.experiments;
   const context: GBContext = {
     attributes,
+    exportTrackEvents: true,
   };
   if (features) {
     context.features = features;
@@ -116,19 +117,6 @@ export function evaluateFeatures({
       if (result.on) {
         // reduced feature definition
         evaluatedFeatures[key] = { defaultValue: true };
-      }
-      if (feature.rules) {
-        // track any removely evaluated experiments
-        for (const rule of feature.rules) {
-          if (rule.tracks) {
-            rule.tracks.forEach((track) => {
-              trackExperiments.push({
-                experiment: track.experiment,
-                result: track.result,
-              });
-            });
-          }
-        }
       }
     }
     const gbExperiments = gb.getExperiments();
@@ -154,11 +142,10 @@ export function evaluateFeatures({
           ),
         };
         evaluatedExperiments.push(evaluatedExperiment);
-
-        // track experiment
-        trackExperiments.push({ experiment: evaluatedExperiment, result });
       }
     }
+
+    trackExperiments = gb.getTrackedExperiments();
   }
 
   return {
