@@ -112,7 +112,6 @@ export function evaluateFeatures({
 
     const gbFeatures = gb.getFeatures();
     for (const key in gbFeatures) {
-      const feature = gbFeatures[key];
       const result = gb.evalFeature(key);
       if (result.on) {
         // reduced feature definition
