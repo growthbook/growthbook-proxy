@@ -17,7 +17,9 @@ export async function fetchFeatures({
   ctx: Context;
   ssEvalEnabled?: boolean;
 }) {
-  const path = `/api/features/${apiKey}`;
+  const path = ssEvalEnabled
+    ? `/api/eval/features/${apiKey}`
+    : `/api/features/${apiKey}`;
   if (!featuresCache) {
     return;
   }
