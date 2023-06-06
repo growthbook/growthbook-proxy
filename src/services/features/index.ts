@@ -90,15 +90,10 @@ export function evaluateFeatures({
   const evaluatedFeatures: Record<string, any> = {};
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const evaluatedExperiments: any[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let trackExperiments: { experiment: any; result: any }[] = [];
 
   const features = payload?.features;
   const experiments = payload?.experiments;
-  const context: GBContext = {
-    attributes,
-    exportTrackEvents: true,
-  };
+  const context: GBContext = { attributes };
   if (features) {
     context.features = features;
   }
@@ -114,12 +109,26 @@ export function evaluateFeatures({
 
     const gbFeatures = gb.getFeatures();
     for (const key in gbFeatures) {
+      const feature = gbFeatures[key];
+      // todo: push any existing feature rules into reduced payload
+
       const result = gb.evalFeature(key);
       if (result.on) {
         // reduced feature definition
-        evaluatedFeatures[key] = { defaultValue: true };
+        evaluatedFeatures[key] = {
+          defaultValue: result.value,
+        };
+        if (result.source === "experiment") {
+          evaluatedFeatures[key].rules = [
+            {
+              force: result.value,
+              tracks: [{ experiment: result.experiment, result }],
+            },
+          ];
+        }
       }
     }
+
     const gbExperiments = gb.getExperiments();
     for (const experiment of gbExperiments) {
       const result = gb.run(experiment);
@@ -127,35 +136,31 @@ export function evaluateFeatures({
         // reduced experiment definition
         const evaluatedExperiment = {
           key: experiment.key,
-          coverage: 1,
-          hashAttribute: experiment.hashAttribute,
-          hashVersion: experiment.hashVersion,
-          phase: experiment.phase,
-          seed: experiment.seed,
-          status: experiment.status,
-          urlPatterns: experiment.urlPatterns,
           variations: experiment.variations.map((v, i) =>
             result.variationId === i ? v : {}
           ),
-          weights: Array.from(
-            { length: experiment.variations.length },
-            (_, i) => (i === result.variationId ? 1 : 0)
-          ),
+          ranges: experiment.ranges,
+          // filters?
+          seed: experiment.seed,
+          // name?
+          phase: experiment.phase,
+          urlPatterns: experiment.urlPatterns,
+          weights: experiment.weights,
+          // condition?
+          coverage: experiment.coverage,
+          // force?
+          hashAttribute: experiment.hashAttribute,
+          hashVersion: experiment.hashVersion,
+          // active?
         };
         evaluatedExperiments.push(evaluatedExperiment);
       }
     }
-
-    trackExperiments = gb.getTrackedExperiments();
   }
 
   return {
     ...payload,
     features: evaluatedFeatures,
     experiments: evaluatedExperiments,
-    trackExperiments: [
-      ...(payload.trackExperiments ?? []),
-      ...trackExperiments,
-    ],
   };
 }
