@@ -17,7 +17,7 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
 
   const connection = registrar.getConnection(res.locals.apiKey);
 
-  // Block server-side evaluation calls on this endpoint
+  // Block remote evaluation calls on this endpoint
   const remoteEvalEnabled = !!connection?.remoteEvalEnabled;
   if (remoteEvalEnabled) {
     return res.status(400).json({
