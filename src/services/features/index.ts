@@ -135,24 +135,12 @@ export function evaluateFeatures({
       if (result.inExperiment) {
         // reduced experiment definition
         const evaluatedExperiment = {
-          key: experiment.key,
+          ...experiment,
           variations: experiment.variations.map((v, i) =>
             result.variationId === i ? v : {}
           ),
-          ranges: experiment.ranges,
-          // filters?
-          seed: experiment.seed,
-          // name?
-          phase: experiment.phase,
-          urlPatterns: experiment.urlPatterns,
-          weights: experiment.weights,
-          // condition?
-          coverage: experiment.coverage,
-          // force?
-          hashAttribute: experiment.hashAttribute,
-          hashVersion: experiment.hashVersion,
-          // active?
         };
+        delete evaluatedExperiment.condition;
         evaluatedExperiments.push(evaluatedExperiment);
       }
     }
