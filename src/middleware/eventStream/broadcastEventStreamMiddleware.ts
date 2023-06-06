@@ -20,14 +20,15 @@ export const broadcastEventStreamMiddleware = async (
       ? await featuresCache.get(apiKey)
       : undefined;
 
-    const ssEvalEnabled = !!registrar.getConnection(apiKey)?.ssEvalEnabled;
+    const remoteEvalEnabled =
+      !!registrar.getConnection(apiKey)?.remoteEvalEnabled;
 
     eventStreamManager.publish({
       apiKey,
       event: "features",
       payload: req.body,
       oldPayload: oldEntry?.payload,
-      ssEvalEnabled,
+      remoteEvalEnabled,
     });
   }
   next();

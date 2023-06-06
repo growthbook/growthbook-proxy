@@ -42,15 +42,15 @@ const interceptor = (proxyTarget: string) =>
             .set(apiKey, responseJson)
             .catch((e) => logger.error(e, "Unable to set cache"));
 
-          const ssEvalEnabled =
-            !!registrar.getConnection(apiKey)?.ssEvalEnabled;
+          const remoteEvalEnabled =
+            !!registrar.getConnection(apiKey)?.remoteEvalEnabled;
 
           eventStreamManager.publish({
             apiKey,
             event: "features",
             payload: responseJson,
             oldPayload: oldEntry?.payload,
-            ssEvalEnabled,
+            remoteEvalEnabled,
           });
         } catch (e) {
           logger.error(e, "Unable to parse response");

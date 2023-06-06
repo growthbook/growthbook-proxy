@@ -66,7 +66,7 @@ export class SSEManager {
     event,
     payload,
     oldPayload,
-    ssEvalEnabled = false,
+    remoteEvalEnabled = false,
   }: {
     apiKey: string;
     event: string;
@@ -74,7 +74,7 @@ export class SSEManager {
     payload: any;
     /* eslint-disable @typescript-eslint/no-explicit-any */
     oldPayload?: any;
-    ssEvalEnabled?: boolean;
+    remoteEvalEnabled?: boolean;
   }) {
     this.appContext?.verboseDebugging &&
       logger.info(
@@ -87,7 +87,7 @@ export class SSEManager {
         this.appContext?.verboseDebugging &&
           logger.info({ payload, event }, "publishing SSE");
         scopedChannel.channel.publish(
-          !ssEvalEnabled ? payload : { update: true },
+          !remoteEvalEnabled ? payload : { update: true },
           event
         );
       } else {
@@ -97,7 +97,7 @@ export class SSEManager {
           this.appContext?.verboseDebugging &&
             logger.info({ payload, event }, "publishing SSE");
           scopedChannel.channel.publish(
-            !ssEvalEnabled ? payload : { update: true },
+            !remoteEvalEnabled ? payload : { update: true },
             event
           );
           return;

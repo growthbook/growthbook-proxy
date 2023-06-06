@@ -234,14 +234,14 @@ export class RedisCache {
               this.appContext?.verboseDebugging &&
                 logger.info({ payload }, "RedisCache.subscribe: publish SSE");
 
-              const ssEvalEnabled =
-                !!registrar.getConnection(key)?.ssEvalEnabled;
+              const remoteEvalEnabled =
+                !!registrar.getConnection(key)?.remoteEvalEnabled;
 
               eventStreamManager.publish({
                 apiKey: key,
                 event: "features",
                 payload,
-                ssEvalEnabled,
+                remoteEvalEnabled,
               });
             }
 

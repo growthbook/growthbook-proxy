@@ -18,8 +18,8 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   const connection = registrar.getConnection(res.locals.apiKey);
 
   // Block server-side evaluation calls on this endpoint
-  const ssEvalEnabled = !!connection?.ssEvalEnabled;
-  if (ssEvalEnabled) {
+  const remoteEvalEnabled = !!connection?.remoteEvalEnabled;
+  if (remoteEvalEnabled) {
     return res.status(400).json({
       status: 400,
       error: "Failed to get features",
@@ -75,8 +75,8 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
   const connection = registrar.getConnection(res.locals.apiKey);
 
   // Block raw features calls on this endpoint
-  const ssEvalEnabled = !!connection?.ssEvalEnabled;
-  if (!ssEvalEnabled) {
+  const remoteEvalEnabled = !!connection?.remoteEvalEnabled;
+  if (!remoteEvalEnabled) {
     return res.status(400).json({
       status: 400,
       error: "Failed to get features",
@@ -101,7 +101,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
     const resp = await fetchFeatures({
       apiKey: res.locals.apiKey,
       ctx: req.app.locals?.ctx,
-      ssEvalEnabled: true,
+      remoteEvalEnabled: true,
     });
     if (resp?.payload) {
       payload = resp?.payload;
@@ -118,7 +118,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
     fetchFeatures({
       apiKey: res.locals.apiKey,
       ctx: req.app.locals?.ctx,
-      ssEvalEnabled: true,
+      remoteEvalEnabled: true,
     }).catch((e) => {
       logger.error(e, "Unable to refresh stale cache");
     });

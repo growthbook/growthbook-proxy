@@ -11,13 +11,13 @@ const activeFetches: Record<string, any> = {};
 export async function fetchFeatures({
   apiKey,
   ctx,
-  ssEvalEnabled = false,
+  remoteEvalEnabled = false,
 }: {
   apiKey: string;
   ctx: Context;
-  ssEvalEnabled?: boolean;
+  remoteEvalEnabled?: boolean;
 }) {
-  const path = ssEvalEnabled
+  const path = remoteEvalEnabled
     ? `/api/eval/features/${apiKey}`
     : `/api/features/${apiKey}`;
   if (!featuresCache) {
@@ -36,7 +36,7 @@ export async function fetchFeatures({
     const headers: any = {
       "User-Agent": `GrowthBook Proxy`,
     };
-    if (ssEvalEnabled) {
+    if (remoteEvalEnabled) {
       if (!ctx.secretApiKey) {
         throw new Error("missing required context for fetching features");
       }
@@ -64,7 +64,7 @@ export async function fetchFeatures({
         event: "features",
         payload,
         oldPayload: oldEntry?.payload,
-        ssEvalEnabled,
+        remoteEvalEnabled,
       });
     }
 
@@ -109,9 +109,6 @@ export function evaluateFeatures({
 
     const gbFeatures = gb.getFeatures();
     for (const key in gbFeatures) {
-      const feature = gbFeatures[key];
-      // todo: push any existing feature rules into reduced payload
-
       const result = gb.evalFeature(key);
       if (result.on) {
         // reduced feature definition
