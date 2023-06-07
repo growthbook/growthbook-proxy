@@ -25,10 +25,9 @@ export const broadcastEventStreamMiddleware = async (
 
     eventStreamManager.publish({
       apiKey,
-      event: "features",
+      event: remoteEvalEnabled ? "features-updated" : "features",
       payload: req.body,
       oldPayload: oldEntry?.payload,
-      remoteEvalEnabled,
     });
   }
   next();

@@ -47,10 +47,9 @@ const interceptor = (proxyTarget: string) =>
 
           eventStreamManager.publish({
             apiKey,
-            event: "features",
+            event: remoteEvalEnabled ? "features-updated" : "features",
             payload: responseJson,
             oldPayload: oldEntry?.payload,
-            remoteEvalEnabled,
           });
         } catch (e) {
           logger.error(e, "Unable to parse response");

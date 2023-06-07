@@ -239,9 +239,8 @@ export class RedisCache {
 
               eventStreamManager.publish({
                 apiKey: key,
-                event: "features",
+                event: remoteEvalEnabled ? "features-updated" : "features",
                 payload,
-                remoteEvalEnabled,
               });
             }
 
