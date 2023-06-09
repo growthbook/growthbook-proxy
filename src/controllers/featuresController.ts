@@ -128,16 +128,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
 
   // Evaluate features using provided attributes
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let attributes: Record<string, any> = {};
-  try {
-    // reverse: encodeURIComponent( JSON.stringify( ... ) )
-    if (typeof req.query.attributes === "string") {
-      attributes = JSON.parse(req.query.attributes);
-    }
-  } catch (e) {
-    logger.error(e, "Unable to parse attributes");
-  }
-
+  const attributes: Record<string, any> = req.body?.attributes || {};
   payload = evaluateFeatures({ payload, attributes, ctx: req.app.locals?.ctx });
 
   return res.status(200).json(payload);
@@ -163,10 +154,11 @@ featuresRouter.get(
   getFeatures
 );
 
-// get evaluated features for user, with cache layer for raw feature definitions
-featuresRouter.get(
+// get evaluated features for user, with cache layer for raw feature definitions. Uses a POST to encode attributes
+featuresRouter.post(
   "/eval/features/*",
   apiKeyMiddleware,
+  express.json(),
   sseSupportMiddleware,
   getEvaluatedFeatures
 );
