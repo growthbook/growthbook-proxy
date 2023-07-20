@@ -89,3 +89,11 @@ Although we recommend terminating SSL using your load balancer, you can also con
 - `USE_HTTP2` - "true" or "1" to enable
 - `HTTPS_CERT` - The SSL certificate
 - `HTTPS_KEY` - The SSL key
+
+### Observability (OpenTelemetry)
+
+The GrowthBook Proxy is instrumented with OpenTelemetry to publish observability metrics, traces, and logs.
+
+To enable, you must change the Docker CMD from the default `yarn start` to `yarn start:with-tracing`.
+
+The standard [OTEL\_\* Environment Variables](https://opentelemetry.io/docs/concepts/sdk-configuration/) are supported, such as `OTEL_SERVICE_NAME` and `OTEL_EXPORTER_OTLP_ENDPOINT`.
