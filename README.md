@@ -51,6 +51,7 @@ The GrowthBook Proxy supports a number of configuration options available via en
 - `GROWTHBOOK_API_HOST` - Set this to the host and port of your GrowthBook API instance
 - `SECRET_API_KEY` - Create a secret API key in GrowthBook by going to **Settings -> API Keys**
 - `NODE_ENV` - Set to "production" to hide debug and informational log messages
+- `PAYLOAD_SIZE_LIMIT` - Set the payload size limit of the express server. Default: 50mb
 
 ### Caching
 By default, features are cached in memory in GrowthBook Proxy; you may provide your own cache service via Redis or Mongo. To fully utilize the GrowthBook Proxy, we highly recommend using Redis, which is a prerequisite for real-time updates when your proxy is horizontally scaled (as proxy instances are kept in-sync using Redis pub/sub).

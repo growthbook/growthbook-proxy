@@ -80,10 +80,6 @@ featuresRouter.get(
 featuresRouter.post(
   "/proxy/features",
   apiKeyMiddleware,
-  express.json({
-    verify: (req: Request, res: Response, buf: Buffer) =>
-      (res.locals.rawBody = buf),
-  }),
   webhookVerificationMiddleware,
   reencryptionMiddleware,
   broadcastEventStreamMiddleware,
