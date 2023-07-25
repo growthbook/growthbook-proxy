@@ -1,10 +1,15 @@
-import express from "express";
+import express, { Express } from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
 import { CacheEngine, Context } from "./types";
 dotenv.config({ path: "./.env.local" });
 
-export default async () => {
+export default async (): Promise<{
+  app: Express;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  server: any;
+  context: Partial<Context>;
+}> => {
   const context: Partial<Context> = {
     growthbookApiHost: process.env.GROWTHBOOK_API_HOST,
     secretApiKey: process.env.SECRET_API_KEY,
