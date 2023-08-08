@@ -38,6 +38,7 @@ export interface Context {
   proxyAllRequests?: boolean;
   environment?: "development" | "production";
   verboseDebugging?: boolean;
+  maxPayloadSize?: string;
 }
 
 export type CacheEngine = "memory" | "redis" | "mongo";
