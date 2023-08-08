@@ -1,4 +1,5 @@
 import express, { NextFunction, Request, Response } from "express";
+import dotenv from "dotenv";
 import readThroughCacheMiddleware from "../middleware/cache/readThroughCacheMiddleware";
 import { featuresCache } from "../services/cache";
 import { registrar } from "../services/registrar";
@@ -9,6 +10,7 @@ import { broadcastEventStreamMiddleware } from "../middleware/eventStream/broadc
 import refreshStaleCacheMiddleware from "../middleware/cache/refreshStaleCacheMiddleware";
 import { sseSupportMiddleware } from "../middleware/sseSupportMiddleware";
 import logger from "../services/logger";
+dotenv.config({ path: "./.env.local" });
 
 const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   if (!registrar?.growthbookApiHost) {
