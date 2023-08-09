@@ -33,6 +33,7 @@ docker run -d -p 3300:3300 \
 
 Then, simply point your GrowthBook SDKs to the GrowthBook Proxy instead of the GrowthBook API.
 
+### Self-hosted customers
 You will also need to ensure that your self-hosted GrowthBook instance is configured to use the proxy server. This includes setting environment variables:
 ```
 PROXY_ENABLED=1
@@ -42,6 +43,9 @@ PROXY_HOST_PUBLIC=https://proxy.example.com
 SECRET_API_KEY=something_secret
 ```
 See GrowthBook's [Proxy documentation](https://docs.growthbook.io/self-host/proxy#standalone) for more information.
+
+### Cloud customers
+For GrowthBook Cloud customers, use the GrowthBook app UI to create an API key in **Settings -> API Keys**. Additionally, you will need to set proxy's `GROWTHBOOK_API_HOST` environment variable to the cloud API server: `https://api.growthbook.io`.
 
 
 ## Configuration
@@ -57,8 +61,8 @@ By default, features are cached in memory in GrowthBook Proxy; you may provide y
 
 - `CACHE_ENGINE` - One of: `memory`, `redis`, or `mongo`
 - `CACHE_CONNECTION_URL` - The URL of your Redis or Mongo Database
-- `CACHE_STALE_TTL` - Number of seconds until a cache entry is considered stale
-- `CACHE_EXPIRES_TTL` - Number of seconds until a cache entry is expired
+- `CACHE_STALE_TTL` - Number of seconds until a cache entry is considered stale (default is `60` = 1 minute)
+- `CACHE_EXPIRES_TTL` - Number of seconds until a cache entry is expired (default is `600` = 10 minutes)
 
 #### Redis Cluster
 Redis-specific options for cluster mode:<br />
@@ -90,6 +94,7 @@ Although we recommend terminating SSL using your load balancer, you can also con
 - `HTTPS_CERT` - The SSL certificate
 - `HTTPS_KEY` - The SSL key
 
+
 ### Observability (OpenTelemetry)
 
 The GrowthBook Proxy is instrumented with OpenTelemetry to publish observability metrics, traces, and logs.
@@ -97,3 +102,12 @@ The GrowthBook Proxy is instrumented with OpenTelemetry to publish observability
 To enable, you must change the Docker CMD from the default `yarn start` to `yarn start:with-tracing`.
 
 The standard [OTEL\_\* Environment Variables](https://opentelemetry.io/docs/concepts/sdk-configuration/) are supported, such as `OTEL_SERVICE_NAME` and `OTEL_EXPORTER_OTLP_ENDPOINT`.
+
+
+### Other common configuration options
+
+- `MAX_PAYLOAD_SIZE` - The maximum size of a request body (default is `"2mb"`)
+- `VERBOSE_DEBUGGING` - "true" or "1" to enable verbose debugging
+- `ENABLE_EVENT_STREAM` - "true" or "1" to enable streaming (on by default)
+- `EVENT_STREAM_MAX_DURATION_MS` - The maximum duration of a SSE connection before the client is forced to reconnect (default is `60000` = 1 minute)
+- `EVENT_STREAM_PING_INTERVAL_MS` - The interval between SSE "ping" messages sent to the client (default is `30000` = 30 seconds)

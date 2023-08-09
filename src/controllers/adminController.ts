@@ -56,7 +56,9 @@ export const adminRouter = express.Router();
 adminRouter.post(
   "/connection",
   adminMiddleware,
-  express.json(),
+  express.json({
+    limit: process.env.MAX_PAYLOAD_SIZE ?? "2mb",
+  }),
   postConnection
 );
 

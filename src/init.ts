@@ -19,6 +19,7 @@ export default async (): Promise<{
     verboseDebugging: ["true", "1"].includes(
       process.env.VERBOSE_DEBUGGING ?? "0"
     ),
+    maxPayloadSize: process.env.MAX_PAYLOAD_SIZE ?? "2mb",
     // SSE settings:
     enableEventStream: ["true", "1"].includes(
       process.env.ENABLE_EVENT_STREAM ?? "1"
