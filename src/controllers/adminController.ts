@@ -1,9 +1,7 @@
 import express, { Request, Response } from "express";
-import dotenv from "dotenv";
 import { registrar } from "../services/registrar";
 import { adminMiddleware } from "../middleware/adminMiddleware";
 import logger from "../services/logger";
-dotenv.config({ path: "./.env.local" });
 
 const postConnection = (req: Request, res: Response) => {
   const apiKey = req.body.apiKey;

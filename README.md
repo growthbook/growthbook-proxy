@@ -45,7 +45,7 @@ SECRET_API_KEY=something_secret
 See GrowthBook's [Proxy documentation](https://docs.growthbook.io/self-host/proxy#standalone) for more information.
 
 ### Cloud customers
-For GrowthBook Cloud customers, use the GrowthBook app UI to create an API key in **Settings -> API Keys**. Additionally, you will need to set proxy's `GROWTHBOOK_API_HOST` environment variable to the cloud API server: `https://cdn.growthbook.io`.
+For GrowthBook Cloud customers, use the GrowthBook app UI to create an API key in **Settings -> API Keys**. Additionally, you will need to set proxy's `GROWTHBOOK_API_HOST` environment variable to the cloud API server: `https://api.growthbook.io`.
 
 
 ## Configuration
