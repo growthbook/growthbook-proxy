@@ -12,6 +12,10 @@ export default (req: Request, res: Response, next: NextFunction) => {
     scopedMiddlewares[registrar.growthbookApiHost] = createProxyMiddleware({
       target: registrar.growthbookApiHost,
       changeOrigin: true,
+      followRedirects: true,
+      ...(process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0"
+        ? { secure: false }
+        : {}),
     });
   }
   return scopedMiddlewares[registrar.growthbookApiHost](req, res, next);
