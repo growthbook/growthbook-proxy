@@ -98,7 +98,10 @@ export class Registrar {
       "User-Agent": `GrowthBook Proxy`,
     };
     const resp = (await got
-      .get(url, { headers })
+      .get(url, {
+        headers,
+        rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0",
+      })
       .json()
       .catch((e) => logger.error(e, "polling error"))) as
       | { connections: ConnectionDoc[] }

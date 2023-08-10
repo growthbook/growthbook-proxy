@@ -24,7 +24,10 @@ export default ({ proxyTarget }: { proxyTarget: string }) =>
     activeFetchUrls.add(url);
     // eslint-disable-next-line no-async-promise-executor
     const entry = await got
-      .get(url, { headers: { "User-Agent": `GrowthBook Proxy` } })
+      .get(url, {
+        headers: { "User-Agent": `GrowthBook Proxy` },
+        rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0",
+      })
       .json()
       .catch((e) => logger.error(e, "Refresh stale cache error"))
       .finally(() => activeFetchUrls.delete(url));
