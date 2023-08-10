@@ -92,7 +92,7 @@ export class Registrar {
   }
 
   private async pollForConnections() {
-    const url = `${this.growthbookApiHost}/api/v1/sdk-connections?withProxy=1&limit=100`;
+    const url = `${this.growthbookApiHost}/api/v1/sdk-connections?limit=100`;
     const headers = {
       Authorization: `Bearer ${this.secretApiKey}`,
       "User-Agent": `GrowthBook Proxy`,
