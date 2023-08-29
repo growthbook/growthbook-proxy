@@ -81,6 +81,7 @@ featuresRouter.post(
   "/proxy/features",
   apiKeyMiddleware,
   express.json({
+    limit: process.env.MAX_PAYLOAD_SIZE ?? "2mb",
     verify: (req: Request, res: Response, buf: Buffer) =>
       (res.locals.rawBody = buf),
   }),

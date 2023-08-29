@@ -78,6 +78,10 @@ export default async ({ proxyTarget }: { proxyTarget: string }) => {
         res.status(500).json({ message: "Proxy error" });
       },
       logLevel: "silent",
+      followRedirects: true,
+      ...(process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0"
+        ? { secure: false }
+        : {}),
     });
   }
 

@@ -92,13 +92,16 @@ export class Registrar {
   }
 
   private async pollForConnections() {
-    const url = `${this.growthbookApiHost}/api/v1/sdk-connections?withProxy=1&limit=100`;
+    const url = `${this.growthbookApiHost}/api/v1/sdk-connections?limit=100`;
     const headers = {
       Authorization: `Bearer ${this.secretApiKey}`,
       "User-Agent": `GrowthBook Proxy`,
     };
     const resp = (await got
-      .get(url, { headers })
+      .get(url, {
+        headers,
+        rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0",
+      })
       .json()
       .catch((e) => logger.error(e, "polling error"))) as
       | { connections: ConnectionDoc[] }
