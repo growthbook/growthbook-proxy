@@ -17,6 +17,6 @@
     "incremental": true
   },
   "include": [
-    "packages/**/*"
+    "src/**/*"
   ]
 }

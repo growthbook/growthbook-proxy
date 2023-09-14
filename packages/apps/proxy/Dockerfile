@@ -7,7 +7,7 @@ COPY yarn.lock ./yarn.lock
 RUN yarn install --frozen-lockfile --ignore-optional
 
 # Build the app and do a clean install with only production dependencies
-COPY packages/apps/proxy ./src
+COPY proxy ./src
 COPY tsconfig.json ./tsconfig.json
 RUN \
   yarn build \
