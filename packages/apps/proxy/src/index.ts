@@ -1,4 +1,4 @@
-import hello from "@growthbook/proxy-eval";
+import { hello } from "@growthbook/proxy-eval";
 import init from "./init";
 import { GrowthBookProxy, growthBookProxy } from "./app";
 

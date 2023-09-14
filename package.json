@@ -13,11 +13,11 @@
   "scripts": {
     "lint": "wsrun -r lint",
     "build:clean": "wsrun -r build:clean",
-    "build:deps": "wsrun -p proxy-eval -c build",
-    "build:apps": "wsrun -p proxy -c build",
+    "build:deps": "wsrun -p @growthbook/proxy-eval -c build",
+    "build:apps": "wsrun -p @growthbook/proxy -c build",
     "build": "yarn build:deps && yarn build:apps",
     "type-check": "wsrun -r type-check",
-    "start": "wsrun -p proxy -c start",
+    "start": "wsrun -p @growthbook/proxy -c start",
     "dev": "wsrun -r dev"
   },
   "workspaces": [
