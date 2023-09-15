@@ -1,10 +1,8 @@
-import { hello } from "@growthbook/proxy-eval";
 import init from "./init";
 import { GrowthBookProxy, growthBookProxy } from "./app";
 
 // Sample implementation for the GrowthBookProxy
 (async () => {
-  hello();
   const { app, server, context } = await init();
 
   // creating and starting the proxy is a one-liner

@@ -1,4 +1,5 @@
 import express, { NextFunction, Request, Response } from "express";
+import { evaluateFeatures } from "@growthbook/proxy-eval";
 import readThroughCacheMiddleware from "../middleware/cache/readThroughCacheMiddleware";
 import { featuresCache } from "../services/cache";
 import { registrar } from "../services/registrar";
@@ -8,7 +9,7 @@ import { reencryptionMiddleware } from "../middleware/reencryptionMiddleware";
 import { broadcastEventStreamMiddleware } from "../middleware/eventStream/broadcastEventStreamMiddleware";
 import { sseSupportMiddleware } from "../middleware/sseSupportMiddleware";
 import logger from "../services/logger";
-import { evaluateFeatures, fetchFeatures } from "../services/features";
+import { fetchFeatures } from "../services/features";
 
 const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   if (!registrar?.growthbookApiHost) {
