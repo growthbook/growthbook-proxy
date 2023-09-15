@@ -8,6 +8,7 @@ const ConnectionFields: Set<string> = new Set([
   "signingKey",
   "encryptionKey",
   "useEncryption",
+  "remoteEvalEnabled",
 ]);
 
 export type ApiKey = string;
@@ -16,6 +17,7 @@ export interface Connection {
   signingKey: string;
   encryptionKey?: string;
   useEncryption: boolean;
+  remoteEvalEnabled: boolean;
   connected: boolean; // Set to true once used. When false, force a cache read-through so that GB server may validate the connection.
 }
 
@@ -24,6 +26,7 @@ interface ConnectionDoc {
   encryptPayload: boolean;
   encryptionKey: string;
   proxySigningKey: string;
+  remoteEvalEnabled?: boolean;
 }
 
 export class Registrar {
@@ -92,16 +95,13 @@ export class Registrar {
   }
 
   private async pollForConnections() {
-    const url = `${this.growthbookApiHost}/api/v1/sdk-connections?limit=100`;
+    const url = `${this.growthbookApiHost}/api/v1/sdk-connections?withProxy=1&limit=100`;
     const headers = {
       Authorization: `Bearer ${this.secretApiKey}`,
       "User-Agent": `GrowthBook Proxy`,
     };
     const resp = (await got
-      .get(url, {
-        headers,
-        rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0",
-      })
+      .get(url, { headers })
       .json()
       .catch((e) => logger.error(e, "polling error"))) as
       | { connections: ConnectionDoc[] }
@@ -117,6 +117,7 @@ export class Registrar {
           signingKey: doc.proxySigningKey,
           encryptionKey: doc.encryptionKey,
           useEncryption: doc.encryptPayload,
+          remoteEvalEnabled: !!doc.remoteEvalEnabled,
         };
         this.setConnection(doc.key, connection);
         newKeys.add(doc.key);

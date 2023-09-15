@@ -8,6 +8,8 @@ interface ScopedChannel {
   channel: SSEChannel;
 }
 
+export type EventType = "features" | "features-updated";
+
 export class SSEManager {
   private scopedChannels = new Map<string, ScopedChannel>();
 
@@ -61,40 +63,44 @@ export class SSEManager {
     return counts;
   }
 
-  public publish(
-    apiKey: string,
-    event: string,
+  public publish({
+    apiKey,
+    event,
+    payload,
+    oldPayload,
+  }: {
+    apiKey: string;
+    event: EventType;
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    payload: any,
+    payload: any;
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    oldPayload?: any
-  ) {
+    oldPayload?: any;
+    remoteEvalEnabled?: boolean;
+  }) {
     this.appContext?.verboseDebugging &&
       logger.info(
         { apiKey, event, payload, oldPayload },
         "EventStreamManager.publish"
       );
     const scopedChannel = this.getScopedChannel(apiKey);
-    if (scopedChannel) {
-      if (oldPayload === undefined) {
-        this.appContext?.verboseDebugging &&
-          logger.info({ payload, event }, "publishing SSE");
-        scopedChannel.channel.publish(payload, event);
-      } else {
-        const hasChanges =
-          JSON.stringify(payload) !== JSON.stringify(oldPayload);
-        if (hasChanges) {
-          this.appContext?.verboseDebugging &&
-            logger.info({ payload, event }, "publishing SSE");
-          scopedChannel.channel.publish(payload, event);
-          return;
-        }
-        this.appContext?.verboseDebugging &&
-          logger.info({ payload, event }, "skipping SSE publish, no changes");
-      }
+    if (!scopedChannel) {
+      this.appContext?.verboseDebugging &&
+        logger.info("No scoped channel found");
       return;
     }
-    this.appContext?.verboseDebugging && logger.info("No scoped channel found");
+
+    const hasChanges = JSON.stringify(payload) !== JSON.stringify(oldPayload);
+    if (!hasChanges) {
+      this.appContext?.verboseDebugging &&
+        logger.info({ payload, event }, "skipping SSE publish, no changes");
+      return;
+    }
+
+    if (event === "features-updated") {
+      // change payload to a "please refetch" beacon
+      payload = "";
+    }
+    scopedChannel.channel.publish(payload, event);
   }
 
   public closeAll() {

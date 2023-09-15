@@ -8,6 +8,7 @@ import {
 import { featuresCache } from "../../services/cache";
 import logger from "../../services/logger";
 import { eventStreamManager } from "../../services/eventStreamManager";
+import { registrar } from "../../services/registrar";
 
 const scopedMiddlewares: Record<string, RequestHandler> = {};
 const errorCounts: Record<string, number> = {};
@@ -41,12 +42,15 @@ const interceptor = (proxyTarget: string) =>
             .set(apiKey, responseJson)
             .catch((e) => logger.error(e, "Unable to set cache"));
 
-          eventStreamManager.publish(
+          const remoteEvalEnabled =
+            !!registrar.getConnection(apiKey)?.remoteEvalEnabled;
+
+          eventStreamManager.publish({
             apiKey,
-            "features",
-            responseJson,
-            oldEntry?.payload
-          );
+            event: remoteEvalEnabled ? "features-updated" : "features",
+            payload: responseJson,
+            oldPayload: oldEntry?.payload,
+          });
         } catch (e) {
           logger.error(e, "Unable to parse response");
         }
@@ -78,10 +82,6 @@ export default async ({ proxyTarget }: { proxyTarget: string }) => {
         res.status(500).json({ message: "Proxy error" });
       },
       logLevel: "silent",
-      followRedirects: true,
-      ...(process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0"
-        ? { secure: false }
-        : {}),
     });
   }
 

@@ -22,6 +22,10 @@ export class MemoryCache {
     if (!entry) {
       return undefined;
     }
+
+    entry.staleOn = new Date(entry.staleOn);
+    entry.expiresOn = new Date(entry.expiresOn);
+
     if (!this.allowStale && entry.staleOn < new Date()) {
       return undefined;
     }

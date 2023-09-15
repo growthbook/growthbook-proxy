@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import logger from "../logger";
 import { eventStreamManager } from "../eventStreamManager";
 import { Context } from "../../types";
+import { registrar } from "../registrar";
 import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, CacheSettings } from "./index";
 
@@ -112,6 +113,10 @@ export class RedisCache {
     if (!entry) {
       return undefined;
     }
+
+    entry.staleOn = new Date(entry.staleOn);
+    entry.expiresOn = new Date(entry.expiresOn);
+
     if (!this.allowStale && entry.staleOn < new Date()) {
       return undefined;
     }
@@ -158,10 +163,12 @@ export class RedisCache {
       const hasChanges =
         JSON.stringify(oldEntry?.payload) !== JSON.stringify(payload);
       if (hasChanges) {
-        logger.info(
-          { payload },
-          "RedisCache.set: publish to Redis subscribers"
-        );
+        if (this.appContext?.verboseDebugging) {
+          logger.info(
+            { payload },
+            "RedisCache.set: publish to Redis subscribers"
+          );
+        }
 
         this.client.publish(
           "set",
@@ -174,10 +181,12 @@ export class RedisCache {
         return;
       }
 
-      logger.info(
-        { payload, oldPayload: oldEntry?.payload },
-        "RedisCache.set: do not publish to Redis subscribers (no changes)"
-      );
+      if (this.appContext?.verboseDebugging) {
+        logger.info(
+          { payload, oldPayload: oldEntry?.payload },
+          "RedisCache.set: do not publish to Redis subscribers (no changes)"
+        );
+      }
     }
   }
 
@@ -225,7 +234,14 @@ export class RedisCache {
               this.appContext?.verboseDebugging &&
                 logger.info({ payload }, "RedisCache.subscribe: publish SSE");
 
-              eventStreamManager.publish(key, "features", payload);
+              const remoteEvalEnabled =
+                !!registrar.getConnection(key)?.remoteEvalEnabled;
+
+              eventStreamManager.publish({
+                apiKey: key,
+                event: remoteEvalEnabled ? "features-updated" : "features",
+                payload,
+              });
             }
 
             // 2. update MemoryCache

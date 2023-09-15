@@ -3,6 +3,7 @@ import { eventStreamManager } from "../../services/eventStreamManager";
 import { featuresCache } from "../../services/cache";
 import { Context } from "../../types";
 import logger from "../../services/logger";
+import { registrar } from "../../services/registrar";
 
 export const broadcastEventStreamMiddleware = async (
   req: Request,
@@ -19,7 +20,15 @@ export const broadcastEventStreamMiddleware = async (
       ? await featuresCache.get(apiKey)
       : undefined;
 
-    eventStreamManager.publish(apiKey, "features", req.body, oldEntry?.payload);
+    const remoteEvalEnabled =
+      !!registrar.getConnection(apiKey)?.remoteEvalEnabled;
+
+    eventStreamManager.publish({
+      apiKey,
+      event: remoteEvalEnabled ? "features-updated" : "features",
+      payload: req.body,
+      oldPayload: oldEntry?.payload,
+    });
   }
   next();
 };
