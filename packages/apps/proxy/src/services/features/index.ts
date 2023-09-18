@@ -16,7 +16,9 @@ export async function fetchFeatures({
   ctx: Context;
   remoteEvalEnabled?: boolean;
 }) {
-  const path = `/api/features/${apiKey}`;
+  const path = remoteEvalEnabled
+    ? `/api/v1/features/${apiKey}`
+    : `/api/features/${apiKey}`;
   if (!featuresCache) {
     return;
   }
