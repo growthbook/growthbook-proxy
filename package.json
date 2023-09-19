@@ -4,7 +4,7 @@
     "node": ">=16"
   },
   "description": "GrowthBook proxy server for caching, realtime updates, telemetry, etc",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "main": "dist/app.js",
   "license": "MIT",
   "repository": {
@@ -39,7 +39,7 @@
     "@types/pino": "^7.0.5",
     "@types/spdy": "^3.4.5",
     "@types/uuid": "^9.0.1",
-    "@typescript-eslint/eslint-plugin": "^5.48.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.2",
     "@typescript-eslint/parser": "^5.48.0",
     "concurrently": "^7.6.0",
     "eslint": "^8.31.0",
