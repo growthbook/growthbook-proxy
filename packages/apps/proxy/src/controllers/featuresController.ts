@@ -130,7 +130,22 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
   // Evaluate features using provided attributes
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const attributes: Record<string, any> = req.body?.attributes || {};
-  payload = evaluateFeatures({ payload, attributes, ctx: req.app.locals?.ctx });
+  const forcedVariations: Record<string, number> =
+    req.body?.forcedVariations || {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const forcedFeatures: Map<string, any> = new Map(
+    req.body.forcedFeatures || []
+  );
+  const url = req.body?.url;
+
+  payload = evaluateFeatures({
+    payload,
+    attributes,
+    forcedVariations,
+    forcedFeatures,
+    url,
+    ctx: req.app.locals?.ctx,
+  });
 
   return res.status(200).json(payload);
 };

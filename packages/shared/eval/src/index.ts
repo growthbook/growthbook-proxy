@@ -3,12 +3,19 @@ import { GrowthBook, Context as GBContext } from "@growthbook/growthbook";
 export function evaluateFeatures({
   payload,
   attributes,
+  forcedVariations,
+  forcedFeatures,
+  url,
   ctx,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   attributes: Record<string, any>;
+  forcedVariations?: Record<string, number>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  forcedFeatures?: Map<string, any>;
+  url?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ctx?: any;
 }) {
@@ -26,9 +33,18 @@ export function evaluateFeatures({
   if (experiments) {
     context.experiments = experiments;
   }
+  if (forcedVariations) {
+    context.forcedVariations = forcedVariations;
+  }
+  if (url !== undefined) {
+    context.url = url;
+  }
 
   if (features || experiments) {
     const gb = new GrowthBook(context);
+    if (forcedFeatures) {
+      gb.setForcedFeatures(forcedFeatures);
+    }
     if (ctx?.verboseDebugging) {
       gb.debug = true;
     }
