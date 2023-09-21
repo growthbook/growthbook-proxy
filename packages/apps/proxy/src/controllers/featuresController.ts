@@ -172,7 +172,7 @@ featuresRouter.get(
 
 // get evaluated features for user, with cache layer for raw feature definitions. Uses a POST to encode attributes
 featuresRouter.post(
-  "/eval/*",
+  "/api/eval/*",
   apiKeyMiddleware,
   express.json(),
   sseSupportMiddleware,
