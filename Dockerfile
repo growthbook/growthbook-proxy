@@ -1,4 +1,4 @@
-FROM node:16-slim
+FROM node:16-alpine
 WORKDIR /usr/local/src/app
 
 # Yarn install with dev dependencies
@@ -16,6 +16,8 @@ RUN \
 
 # Directory with build info (git commit sha, build date)
 COPY buildinfo* ./buildinfo
+
+USER node
 
 EXPOSE 3300
 CMD ["yarn","start"]
