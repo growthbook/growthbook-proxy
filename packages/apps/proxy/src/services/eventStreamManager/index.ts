@@ -34,10 +34,11 @@ export class SSEManager {
         try {
           scopedChannel.channel.subscribe(req, res);
 
-          logger.info(
-            this.getSubscriberCounts(),
-            `EventSource subscriber counts`
-          );
+          this.appContext?.verboseDebugging &&
+            logger.info(
+              this.getSubscriberCounts(),
+              `EventSource subscriber counts`
+            );
         } catch (e) {
           logger.error(e, "Unable to subscribe to SSE channel");
         }

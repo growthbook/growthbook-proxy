@@ -21,9 +21,10 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   // Block remote evaluation calls on this endpoint
   const remoteEvalEnabled = !!connection?.remoteEvalEnabled;
   if (remoteEvalEnabled) {
+    res.removeHeader("x-sse-support");
     return res.status(400).json({
       status: 400,
-      error: "Failed to get features",
+      error: "Failed to get features (remote eval not supported)",
     });
   }
 
@@ -78,9 +79,10 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
   // Block raw features calls on this endpoint
   const remoteEvalEnabled = !!connection?.remoteEvalEnabled;
   if (!remoteEvalEnabled) {
+    res.removeHeader("x-sse-support");
     return res.status(400).json({
       status: 400,
-      error: "Failed to get features",
+      error: "Failed to get features (remote eval required)",
     });
   }
 
