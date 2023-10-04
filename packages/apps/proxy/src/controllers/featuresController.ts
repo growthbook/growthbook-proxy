@@ -10,6 +10,7 @@ import { broadcastEventStreamMiddleware } from "../middleware/eventStream/broadc
 import { sseSupportMiddleware } from "../middleware/sseSupportMiddleware";
 import logger from "../services/logger";
 import { fetchFeatures } from "../services/features";
+import { Context } from "../types";
 
 const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   if (!registrar?.growthbookApiHost) {
@@ -162,35 +163,41 @@ const postFeatures = async (req: Request, res: Response) => {
   return res.status(200).json({ message: "Success" });
 };
 
-export const featuresRouter = express.Router();
+export const featuresRouter = (ctx: Context) => {
+  const router = express.Router();
 
 // proxy clients' "get features" endpoint call to GrowthBook, with cache layer
-featuresRouter.get(
-  "/api/features/*",
-  apiKeyMiddleware,
-  sseSupportMiddleware,
-  getFeatures
-);
+  router.get(
+    "/api/features/*",
+    apiKeyMiddleware,
+    sseSupportMiddleware,
+    getFeatures
+  );
 
 // get evaluated features for user, with cache layer for raw feature definitions. Uses a POST to encode attributes
-featuresRouter.post(
-  "/api/eval/*",
-  apiKeyMiddleware,
-  express.json(),
-  sseSupportMiddleware,
-  getEvaluatedFeatures
-);
+  if (ctx.enableRemoteEval) {
+    router.post(
+      "/api/eval/*",
+      apiKeyMiddleware,
+      express.json(),
+      sseSupportMiddleware,
+      getEvaluatedFeatures
+    );
+  }
 
 // subscribe to GrowthBook's "post features" updates, refresh cache, publish to subscribed clients
-featuresRouter.post(
-  "/proxy/features",
-  apiKeyMiddleware,
-  express.json({
-    verify: (req: Request, res: Response, buf: Buffer) =>
-      (res.locals.rawBody = buf),
-  }),
-  webhookVerificationMiddleware,
-  reencryptionMiddleware,
-  broadcastEventStreamMiddleware,
-  postFeatures
-);
+  router.post(
+    "/proxy/features",
+    apiKeyMiddleware,
+    express.json({
+      verify: (req: Request, res: Response, buf: Buffer) =>
+        (res.locals.rawBody = buf),
+    }),
+    webhookVerificationMiddleware,
+    reencryptionMiddleware,
+    broadcastEventStreamMiddleware,
+    postFeatures
+  );
+
+  return router;
+};

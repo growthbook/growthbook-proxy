@@ -90,7 +90,7 @@ export const growthBookProxy = async (
   ctx.enableAdmin && app.use("/admin", adminRouter);
 
   ctx.enableEventStream && app.use("/sub", eventStreamRouter);
-  app.use("/", featuresRouter);
+  app.use("/", featuresRouter(ctx));
 
   ctx.proxyAllRequests && app.all("/*", proxyMiddleware);
 

@@ -28,6 +28,8 @@ export default async () => {
     eventStreamPingIntervalMs: parseInt(
       process.env.EVENT_STREAM_PING_INTERVAL_MS ?? "30000"
     ),
+    // Remote eval settings:
+    enableRemoteEval: ["true", "1"].includes(process.env.ENABLE_REMOTE_EVAL ?? "1"),
     // Cache settings:
     cacheSettings: {
       cacheEngine: (process.env.CACHE_ENGINE || "memory") as CacheEngine,
