@@ -20,6 +20,7 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
+    "@growthbook/growthbook": "^0.29.0"
   },
   "devDependencies": {
     "rimraf": "^3.0.2",
