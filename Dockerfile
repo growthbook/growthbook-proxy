@@ -1,4 +1,4 @@
-FROM node:16-slim
+FROM node:18-slim
 WORKDIR /usr/local/src/app
 
 # Yarn install with dev dependencies
