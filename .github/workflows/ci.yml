@@ -33,6 +33,13 @@ jobs:
           # Main app
           yarn install
 
+      - name: Build app
+        run: |
+          # Main app
+          yarn build
+        env:
+          CI: true
+
       - name: Lint and Type-check
         run: |
           # Linting
