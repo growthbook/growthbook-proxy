@@ -1,17 +1,15 @@
 {
-  "name": "@growthbook/proxy",
+  "private": true,
+  "name": "proxy-monorepo",
+  "repository": "https://github.com/growthbook/growthbook-proxy",
   "engines": {
     "node": ">=16"
   },
   "description": "GrowthBook proxy server for caching, realtime updates, telemetry, etc",
-  "version": "1.0.22",
-  "main": "dist/app.js",
   "license": "MIT",
-  "repository": "https://github.com/growthbook/growthbook-proxy",
-  "private": true,
   "author": "Bryce Fitzsimons",
   "scripts": {
-    "lint": "wsrun -r lint",
+    "lint": "eslint './**/*.{ts,tsx,js,jsx}' --fix --max-warnings 0 --cache --cache-strategy content",
     "build:clean": "wsrun -r build:clean",
     "build:deps": "wsrun -p @growthbook/proxy-eval -c build",
     "build:apps": "wsrun -p @growthbook/proxy -c build",
@@ -23,17 +21,10 @@
   "workspaces": [
     "packages/**"
   ],
-  "dependencies": {
-    "wsrun": "^5.2.4"
-  },
   "devDependencies": {
-    "concurrently": "^7.6.0",
+    "wsrun": "^5.2.4",
     "eslint": "^8.31.0",
-    "eslint-config-prettier": "^8.6.0",
     "eslint-import-resolver-typescript": "^3.5.2",
-    "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "nodemon": "^2.0.20",
-    "typescript": "4.7.4"
+    "eslint-plugin-import": "^2.26.0"
   }
 }

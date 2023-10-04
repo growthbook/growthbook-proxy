@@ -13,26 +13,15 @@
   },
   "author": "Bryce Fitzsimons",
   "scripts": {
-    "lint": "eslint 'src/**/*.{ts,js}' --fix --max-warnings 0 --cache --cache-strategy content",
     "build:clean": "rimraf -rf dist",
-    "build": "tsc",
+    "build:typescript": "tsc",
+    "build": "yarn build:clean && yarn build:typescript",
     "type-check": "tsc --pretty --noEmit",
     "dev": "tsc --watch"
   },
   "dependencies": {
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.48.0",
-    "@typescript-eslint/parser": "^5.48.0",
-    "concurrently": "^7.6.0",
-    "eslint": "^8.31.0",
-    "eslint-config-prettier": "^8.6.0",
-    "eslint-import-resolver-typescript": "^3.5.2",
-    "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "nodemon": "^2.0.20",
-    "pino-pretty": "^9.1.1",
-    "prettier": "^2.8.1",
     "rimraf": "^3.0.2",
     "typescript": "4.7.4"
   }
