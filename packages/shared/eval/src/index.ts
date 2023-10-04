@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { GrowthBook, Context as GBContext } from "@growthbook/growthbook";
 
 export function evaluateFeatures({
@@ -8,20 +9,14 @@ export function evaluateFeatures({
   url,
   ctx,
 }: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   attributes: Record<string, any>;
   forcedVariations?: Record<string, number>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   forcedFeatures?: Map<string, any>;
   url?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ctx?: any;
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const evaluatedFeatures: Record<string, any> = {};
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const evaluatedExperiments: any[] = [];
 
   const features = payload?.features;
@@ -75,7 +70,6 @@ export function evaluateFeatures({
         // reduced experiment definition
         const evaluatedExperiment = {
           ...experiment,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           variations: experiment.variations.map((v: any, i: number) =>
             result.variationId === i ? v : {}
           ),

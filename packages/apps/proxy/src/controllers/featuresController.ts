@@ -166,7 +166,7 @@ const postFeatures = async (req: Request, res: Response) => {
 export const featuresRouter = (ctx: Context) => {
   const router = express.Router();
 
-// proxy clients' "get features" endpoint call to GrowthBook, with cache layer
+  // proxy clients' "get features" endpoint call to GrowthBook, with cache layer
   router.get(
     "/api/features/*",
     apiKeyMiddleware,
@@ -174,7 +174,7 @@ export const featuresRouter = (ctx: Context) => {
     getFeatures
   );
 
-// get evaluated features for user, with cache layer for raw feature definitions. Uses a POST to encode attributes
+  // get evaluated features for user, with cache layer for raw feature definitions. Uses a POST to encode attributes
   if (ctx.enableRemoteEval) {
     router.post(
       "/api/eval/*",
@@ -185,7 +185,7 @@ export const featuresRouter = (ctx: Context) => {
     );
   }
 
-// subscribe to GrowthBook's "post features" updates, refresh cache, publish to subscribed clients
+  // subscribe to GrowthBook's "post features" updates, refresh cache, publish to subscribed clients
   router.post(
     "/proxy/features",
     apiKeyMiddleware,
