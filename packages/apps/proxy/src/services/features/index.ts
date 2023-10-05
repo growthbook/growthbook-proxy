@@ -1,4 +1,3 @@
-import got from "got";
 import { Context } from "../../types";
 import { featuresCache } from "../cache";
 import logger from "../logger";
@@ -41,9 +40,8 @@ export async function fetchFeatures({
       }
       headers["Authorization"] = `Bearer ${ctx.secretApiKey}`;
     }
-    promise = got
-      .get(url, { headers })
-      .json()
+    promise = fetch(url, { headers })
+      .then(resp => resp.json())
       .catch((e) => logger.error(e, "Refresh stale cache error"))
       .finally(() => delete activeFetches[url]);
 

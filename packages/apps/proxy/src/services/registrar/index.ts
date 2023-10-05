@@ -1,4 +1,3 @@
-import got from "got";
 import { Context } from "../../types";
 import logger from "../logger";
 import { getApiHostFromEnv, getConnectionsFromEnv } from "./helper";
@@ -100,9 +99,8 @@ export class Registrar {
       Authorization: `Bearer ${this.secretApiKey}`,
       "User-Agent": `GrowthBook Proxy`,
     };
-    const resp = (await got
-      .get(url, { headers })
-      .json()
+    const resp = (await fetch(url, { headers })
+      .then(resp => resp.json())
       .catch((e) => logger.error(e, "polling error"))) as
       | { connections: ConnectionDoc[] }
       | undefined;

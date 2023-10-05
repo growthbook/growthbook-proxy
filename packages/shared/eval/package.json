@@ -1,8 +1,5 @@
 {
   "name": "@growthbook/proxy-eval",
-  "engines": {
-    "node": ">=16"
-  },
   "description": "Remote evaluation service for proxies, edge workers, or backend APIs",
   "version": "1.0.0",
   "main": "dist/index.js",
@@ -23,7 +20,7 @@
     "@growthbook/growthbook": "^0.29.0"
   },
   "devDependencies": {
-    "rimraf": "^3.0.2",
-    "typescript": "4.7.4"
+    "rimraf": "^5.0.5",
+    "typescript": "5.2.2"
   }
 }
