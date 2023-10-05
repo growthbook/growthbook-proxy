@@ -1,4 +1,4 @@
-name: Deploy to NPM
+name: "Eval: deploy to NPM"
 
 on:
   workflow_dispatch:
@@ -27,4 +27,5 @@ jobs:
           npm set //registry.npmjs.org/:_authToken $NPM_TOKEN
           yarn install
           yarn build
+          cd packages/shared/eval
           npm publish

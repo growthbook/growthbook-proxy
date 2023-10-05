@@ -1,4 +1,4 @@
-name: Deploy
+name: "Proxy: deploy"
 
 on:
   # Push to the main branch
