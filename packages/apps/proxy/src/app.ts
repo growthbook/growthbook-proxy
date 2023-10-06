@@ -56,6 +56,7 @@ const defaultContext: Context = {
   enableAdmin: false,
   enableEventStream: true,
   enableEventStreamHeaders: true,
+  enableRemoteEval: true,
   proxyAllRequests: false,
 };
 
