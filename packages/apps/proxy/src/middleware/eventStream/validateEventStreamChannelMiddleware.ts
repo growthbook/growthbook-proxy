@@ -6,7 +6,7 @@ import logger from "../../services/logger";
 export const validateEventStreamChannelMiddleware = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const ctx = req.app.locals?.ctx as Context;
   ctx?.verboseDebugging && logger.info("validateEventStreamChannelMiddleware");

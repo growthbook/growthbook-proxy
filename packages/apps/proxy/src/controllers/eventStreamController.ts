@@ -16,5 +16,5 @@ eventStreamRouter.use(apiKeyMiddleware);
 eventStreamRouter.get(
   "/:apiKey",
   validateEventStreamChannelMiddleware,
-  getSubscribeToEventStream
+  getSubscribeToEventStream,
 );

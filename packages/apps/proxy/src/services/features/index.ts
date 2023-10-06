@@ -41,7 +41,7 @@ export async function fetchFeatures({
       headers["Authorization"] = `Bearer ${ctx.secretApiKey}`;
     }
     promise = fetch(url, { headers })
-      .then(resp => resp.json())
+      .then((resp) => resp.json())
       .catch((e) => logger.error(e, "Refresh stale cache error"))
       .finally(() => delete activeFetches[url]);
 

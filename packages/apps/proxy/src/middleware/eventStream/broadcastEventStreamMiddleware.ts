@@ -8,7 +8,7 @@ import { registrar } from "../../services/registrar";
 export const broadcastEventStreamMiddleware = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const ctx = req.app.locals?.ctx as Context;
   ctx?.verboseDebugging && logger.info("broadcastEventStreamMiddleware");

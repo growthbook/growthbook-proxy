@@ -5,7 +5,7 @@ import { encrypt } from "../services/encryption";
 export const reencryptionMiddleware = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const connection = registrar.getConnection(res.locals.apiKey);
 
@@ -15,14 +15,14 @@ export const reencryptionMiddleware = async (
     if (!("encryptedFeatures" in req.body)) {
       req.body.encryptedFeatures = await encrypt(
         JSON.stringify(req.body.features),
-        connection.encryptionKey
+        connection.encryptionKey,
       );
       req.body.features = {};
     }
     if ("experiments" in req.body && !("encryptedExperiments" in req.body)) {
       req.body.encryptedExperiments = await encrypt(
         JSON.stringify(req.body.experiments),
-        connection.encryptionKey
+        connection.encryptionKey,
       );
       req.body.experiments = [];
     }

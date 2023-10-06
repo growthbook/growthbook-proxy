@@ -28,7 +28,7 @@ export default (req: Request, res: Response, next: NextFunction) => {
     ctx?.verboseDebugging &&
       logger.warn(
         { signingKey: connection?.signingKey, computed, sig },
-        "Signatures do not match!"
+        "Signatures do not match!",
       );
     return res.status(401).json({ message: "Signatures do not match!" });
   }

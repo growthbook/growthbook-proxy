@@ -12,25 +12,25 @@ export default async () => {
     enableAdmin: ["true", "1"].includes(process.env.ENABLE_ADMIN ?? "0"),
     adminKey: process.env.ADMIN_KEY,
     verboseDebugging: ["true", "1"].includes(
-      process.env.VERBOSE_DEBUGGING ?? "0"
+      process.env.VERBOSE_DEBUGGING ?? "0",
     ),
     maxPayloadSize: process.env.MAX_PAYLOAD_SIZE ?? "2mb",
     // SSE settings:
     enableEventStream: ["true", "1"].includes(
-      process.env.ENABLE_EVENT_STREAM ?? "1"
+      process.env.ENABLE_EVENT_STREAM ?? "1",
     ),
     enableEventStreamHeaders: ["true", "1"].includes(
-      process.env.ENABLE_EVENT_STREAM_HEADERS ?? "1"
+      process.env.ENABLE_EVENT_STREAM_HEADERS ?? "1",
     ),
     eventStreamMaxDurationMs: parseInt(
-      process.env.EVENT_STREAM_MAX_DURATION_MS ?? "60000"
+      process.env.EVENT_STREAM_MAX_DURATION_MS ?? "60000",
     ),
     eventStreamPingIntervalMs: parseInt(
-      process.env.EVENT_STREAM_PING_INTERVAL_MS ?? "30000"
+      process.env.EVENT_STREAM_PING_INTERVAL_MS ?? "30000",
     ),
     // Remote eval settings:
     enableRemoteEval: ["true", "1"].includes(
-      process.env.ENABLE_REMOTE_EVAL ?? "1"
+      process.env.ENABLE_REMOTE_EVAL ?? "1",
     ),
     // Cache settings:
     cacheSettings: {
@@ -45,7 +45,7 @@ export default async () => {
       collectionName: process.env.CACHE_COLLECTION_NAME || undefined,
       // Redis only - pub/sub:
       publishPayloadToChannel: ["true", "1"].includes(
-        process.env.PUBLISH_PAYLOAD_TO_CHANNEL ?? "0"
+        process.env.PUBLISH_PAYLOAD_TO_CHANNEL ?? "0",
       ),
       // Redis only - cluster:
       useCluster: ["true", "1"].includes(process.env.USE_CLUSTER ?? "0"),
@@ -89,7 +89,7 @@ export default async () => {
         key: HTTPS_KEY,
         cert: HTTPS_CERT,
       },
-      app
+      app,
     );
     server.listen(PROXY_PORT, () => {
       console.info(`GrowthBook proxy running over HTTP2, port ${PROXY_PORT}`);

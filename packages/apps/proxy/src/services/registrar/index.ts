@@ -61,7 +61,7 @@ export class Registrar {
 
   public async startConnectionPolling(
     secretApiKey: string,
-    connectionPollingFrequency?: number
+    connectionPollingFrequency?: number,
   ) {
     this.secretApiKey = secretApiKey;
     if (connectionPollingFrequency) {
@@ -100,7 +100,7 @@ export class Registrar {
       "User-Agent": `GrowthBook Proxy`,
     };
     const resp = (await fetch(url, { headers })
-      .then(resp => resp.json())
+      .then((resp) => resp.json())
       .catch((e) => logger.error(e, "polling error"))) as
       | { connections: ConnectionDoc[] }
       | undefined;
@@ -133,7 +133,7 @@ export class Registrar {
         JSON.stringify(newConnections) !== JSON.stringify(oldConnections);
       if (hasChanges) {
         logger.info(
-          `SDK connections count: ${Object.keys(newConnections).length}`
+          `SDK connections count: ${Object.keys(newConnections).length}`,
         );
       }
     }
@@ -169,7 +169,7 @@ export const initializeRegistrar = async (context: Context) => {
     }
     await registrar.startConnectionPolling(
       context.secretApiKey,
-      context.connectionPollingFrequency
+      context.connectionPollingFrequency,
     );
   }
 

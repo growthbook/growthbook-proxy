@@ -42,7 +42,7 @@ export const getConnectionsFromEnv = (): Connection[] => {
  * into { prefix: suffix[] } groups
  * */
 const groupEnvVarsByPrefix = (
-  strings: string[]
+  strings: string[],
 ): Record<string, Record<string, string>> => {
   return strings.reduce(
     (groups: Record<string, Record<string, string>>, str) => {
@@ -56,6 +56,6 @@ const groupEnvVarsByPrefix = (
       }
       return groups;
     },
-    {}
+    {},
   );
 };

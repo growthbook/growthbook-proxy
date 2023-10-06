@@ -19,7 +19,7 @@ const interceptor = (proxyTarget: string) =>
       responseBuffer,
       proxyRes,
       req: IncomingMessage,
-      res: ServerResponse
+      res: ServerResponse,
     ) => {
       // got response, reset error count
       errorCounts[proxyTarget] = 0;
@@ -56,7 +56,7 @@ const interceptor = (proxyTarget: string) =>
         }
       }
       return response;
-    }
+    },
   );
 
 export default async ({ proxyTarget }: { proxyTarget: string }) => {

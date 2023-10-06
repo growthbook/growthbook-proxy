@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { GrowthBook, Context as GBContext, AutoExperiment } from "@growthbook/growthbook";
+import { GrowthBook, Context as GBContext } from "@growthbook/growthbook";
 
 export function evaluateFeatures({
   payload,
@@ -54,9 +54,13 @@ export function evaluateFeatures({
         };
         if (result.source === "experiment") {
           // reduced experiment definition for tracking
-          const scrubbedResultExperiment = result?.experimentResult?.variationId !== undefined
-            ? scrubExperiment(result.experiment, result.experimentResult.variationId)
-            : result.experiment;
+          const scrubbedResultExperiment =
+            result?.experimentResult?.variationId !== undefined
+              ? scrubExperiment(
+                  result.experiment,
+                  result.experimentResult.variationId,
+                )
+              : result.experiment;
           evaluatedFeatures[key].rules = [
             {
               force: result.value,
@@ -72,7 +76,10 @@ export function evaluateFeatures({
       const result = gb.run(experiment);
       if (result.inExperiment) {
         // reduced experiment definition
-        const evaluatedExperiment = scrubExperiment(experiment, result.variationId);
+        const evaluatedExperiment = scrubExperiment(
+          experiment,
+          result.variationId,
+        );
         evaluatedExperiments.push(evaluatedExperiment);
       }
     }
@@ -89,7 +96,7 @@ function scrubExperiment(experiment: any, allowedVariation: number) {
   const scrubbedExperiment = {
     ...experiment,
     variations: experiment.variations.map((v: any, i: number) =>
-      allowedVariation === i ? v : {}
+      allowedVariation === i ? v : {},
     ),
   };
   delete scrubbedExperiment.condition;

@@ -2,7 +2,7 @@ import { webcrypto as crypto } from "node:crypto";
 
 export async function encrypt(
   plainText: string,
-  keyString: string | undefined
+  keyString: string | undefined,
 ): Promise<string> {
   if (!keyString) {
     throw new Error("Unable to encrypt the feature list.");
@@ -16,7 +16,7 @@ export async function encrypt(
       length: 128,
     },
     true,
-    ["encrypt", "decrypt"]
+    ["encrypt", "decrypt"],
   );
   const iv = crypto.getRandomValues(new Uint8Array(16));
   const encryptedBuffer = await crypto.subtle.encrypt(
@@ -25,7 +25,7 @@ export async function encrypt(
       iv,
     },
     key,
-    new TextEncoder().encode(plainText)
+    new TextEncoder().encode(plainText),
   );
   return bufToBase64(iv) + "." + bufToBase64(encryptedBuffer);
 }

@@ -37,7 +37,7 @@ export class SSEManager {
           this.appContext?.verboseDebugging &&
             logger.info(
               this.getSubscriberCounts(),
-              `EventSource subscriber counts`
+              `EventSource subscriber counts`,
             );
         } catch (e) {
           logger.error(e, "Unable to subscribe to SSE channel");
@@ -81,7 +81,7 @@ export class SSEManager {
     this.appContext?.verboseDebugging &&
       logger.info(
         { apiKey, event, payload, oldPayload },
-        "EventStreamManager.publish"
+        "EventStreamManager.publish",
       );
     const scopedChannel = this.getScopedChannel(apiKey);
     if (!scopedChannel) {
@@ -120,7 +120,7 @@ export class SSEManager {
             maxStreamDuration: this.appContext.eventStreamMaxDurationMs,
             pingInterval: this.appContext.eventStreamPingIntervalMs,
           },
-          this.appContext
+          this.appContext,
         ),
       });
       scopedChannel = this.scopedChannels.get(apiKey);

@@ -54,7 +54,7 @@ export class MongoCache {
       await this.collection.createIndex({ key: 1 }, { unique: true });
       await this.collection.createIndex(
         { "entry.expiresOn": 1 },
-        { expireAfterSeconds: this.expiresTTL / 1000 }
+        { expireAfterSeconds: this.expiresTTL / 1000 },
       );
     }
   }

@@ -11,7 +11,7 @@ const RE_API_KEY = /(?:api|sub|eval)\/.*?\/?([^/?]*)\/?(?:\?.*)?$/;
 export const apiKeyMiddleware = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const ctx = req.app.locals?.ctx as Context;
   ctx?.verboseDebugging && logger.info("apiKeyMiddleware");

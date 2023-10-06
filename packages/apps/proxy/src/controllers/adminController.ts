@@ -59,7 +59,7 @@ adminRouter.post(
   express.json({
     limit: process.env.MAX_PAYLOAD_SIZE ?? "2mb",
   }),
-  postConnection
+  postConnection,
 );
 
 adminRouter.get("/connection/:apiKey", adminMiddleware, getConnection);

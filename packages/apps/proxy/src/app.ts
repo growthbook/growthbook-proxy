@@ -61,7 +61,7 @@ const defaultContext: Context = {
 
 export const growthBookProxy = async (
   app: Express,
-  context?: Partial<Context>
+  context?: Partial<Context>,
 ): Promise<GrowthBookProxy> => {
   const packageJson = require("../package.json");
   const version = (packageJson.version ?? "unknown") + "";

@@ -49,7 +49,7 @@ export class SSEChannel {
       historySize = 1,
       rewind = 0,
     }: Partial<Options>,
-    appContext?: Context
+    appContext?: Context,
   ) {
     this.options = {
       pingInterval,
@@ -66,7 +66,7 @@ export class SSEChannel {
     if (this.options.pingInterval) {
       this.pingTimer = setInterval(
         () => this.publish(),
-        this.options.pingInterval
+        this.options.pingInterval,
       );
     }
   }
@@ -76,7 +76,7 @@ export class SSEChannel {
     this.appContext?.verboseDebugging &&
       logger.info(
         { eventName: eventName || "[ping]", clients: this.clients.size },
-        "ssePubsub.subscribe: publish"
+        "ssePubsub.subscribe: publish",
       );
     if (!this.active) {
       logger.warn("ssePubsub.publish: Channel closed");
@@ -113,7 +113,7 @@ export class SSEChannel {
     [...this.clients]
       .filter(
         (c) =>
-          !eventName || !c.events || this.hasEventMatch(c.events, eventName)
+          !eventName || !c.events || this.hasEventMatch(c.events, eventName),
       )
       .forEach((c) => c.res.write(output));
 
@@ -148,7 +148,7 @@ export class SSEChannel {
     if (rewind) {
       this.messages
         .filter((m) =>
-          c.events ? this.hasEventMatch(c.events, m.eventName) : true
+          c.events ? this.hasEventMatch(c.events, m.eventName) : true,
         )
         .slice(0 - rewind)
         .forEach((m) => {
@@ -222,12 +222,12 @@ export class SSEChannel {
 
   private hasEventMatch(
     subscriptionList: (string | RegExp)[],
-    eventName: string
+    eventName: string,
   ) {
     return (
       !subscriptionList ||
       subscriptionList.some((pat) =>
-        pat instanceof RegExp ? pat.test(eventName) : pat === eventName
+        pat instanceof RegExp ? pat.test(eventName) : pat === eventName,
       )
     );
   }

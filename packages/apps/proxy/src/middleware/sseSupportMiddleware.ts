@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from "express";
 export const sseSupportMiddleware = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   if (req.app.locals?.ctx?.enableEventStreamHeaders) {
     res.setHeader("x-sse-support", "enabled");

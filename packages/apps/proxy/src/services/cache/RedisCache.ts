@@ -40,7 +40,7 @@ export class RedisCache {
       clusterRootNodesJSON,
       clusterOptionsJSON,
     }: CacheSettings = {},
-    appContext?: Context
+    appContext?: Context,
   ) {
     this.connectionUrl = connectionUrl;
     this.staleTTL = staleTTL * 1000;
@@ -72,7 +72,7 @@ export class RedisCache {
       if (this.clusterRootNodes) {
         this.client = new Redis.Cluster(
           this.clusterRootNodes,
-          this.clusterOptions
+          this.clusterOptions,
         );
       } else {
         throw new Error("No cluster root nodes");
@@ -147,7 +147,7 @@ export class RedisCache {
       key,
       JSON.stringify(entry),
       "EX",
-      this.expiresTTL / 1000
+      this.expiresTTL / 1000,
     );
 
     // refresh MemoryCache
@@ -166,7 +166,7 @@ export class RedisCache {
         if (this.appContext?.verboseDebugging) {
           logger.info(
             { payload },
-            "RedisCache.set: publish to Redis subscribers"
+            "RedisCache.set: publish to Redis subscribers",
           );
         }
 
@@ -176,7 +176,7 @@ export class RedisCache {
             uuid: this.clientUUID,
             key,
             payload,
-          })
+          }),
         );
         return;
       }
@@ -184,7 +184,7 @@ export class RedisCache {
       if (this.appContext?.verboseDebugging) {
         logger.info(
           { payload, oldPayload: oldEntry?.payload },
-          "RedisCache.set: do not publish to Redis subscribers (no changes)"
+          "RedisCache.set: do not publish to Redis subscribers (no changes)",
         );
       }
     }
@@ -226,7 +226,7 @@ export class RedisCache {
             this.appContext?.verboseDebugging &&
               logger.info(
                 { payload },
-                "RedisCache.subscribe: got 'set' message"
+                "RedisCache.subscribe: got 'set' message",
               );
 
             // 1. emit SSE to SDK clients
@@ -257,7 +257,7 @@ export class RedisCache {
             logger.error(e, "Error parsing message from Redis pub/sub");
           }
         }
-      }
+      },
     );
   }
 

@@ -137,7 +137,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
     req.body?.forcedVariations || {};
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const forcedFeatures: Map<string, any> = new Map(
-    req.body.forcedFeatures || []
+    req.body.forcedFeatures || [],
   );
   const url = req.body?.url;
 
@@ -171,7 +171,7 @@ export const featuresRouter = (ctx: Context) => {
     "/api/features/*",
     apiKeyMiddleware,
     sseSupportMiddleware,
-    getFeatures
+    getFeatures,
   );
 
   // get evaluated features for user, with cache layer for raw feature definitions. Uses a POST to encode attributes
@@ -181,7 +181,7 @@ export const featuresRouter = (ctx: Context) => {
       apiKeyMiddleware,
       express.json(),
       sseSupportMiddleware,
-      getEvaluatedFeatures
+      getEvaluatedFeatures,
     );
   }
 
@@ -196,7 +196,7 @@ export const featuresRouter = (ctx: Context) => {
     webhookVerificationMiddleware,
     reencryptionMiddleware,
     broadcastEventStreamMiddleware,
-    postFeatures
+    postFeatures,
   );
 
   return router;
