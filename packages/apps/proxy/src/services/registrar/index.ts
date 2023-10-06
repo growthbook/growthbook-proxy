@@ -1,6 +1,7 @@
 import { Context } from "../../types";
 import logger from "../logger";
 import { getApiHostFromEnv, getConnectionsFromEnv } from "./helper";
+import https from "https";
 
 const ConnectionFields: Set<string> = new Set([
   "apiKey",
@@ -99,7 +100,12 @@ export class Registrar {
       Authorization: `Bearer ${this.secretApiKey}`,
       "User-Agent": `GrowthBook Proxy`,
     };
-    const resp = (await fetch(url, { headers })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fetchOptions: any = { headers };
+    if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0") {
+      fetchOptions.agent = new https.Agent({ rejectUnauthorized: false })
+    }
+    const resp = (await fetch(url, fetchOptions)
       .then((resp) => resp.json())
       .catch((e) => logger.error(e, "polling error"))) as
       | { connections: ConnectionDoc[] }
