@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { GrowthBook, Context as GBContext } from "@growthbook/growthbook";
+import { GrowthBook, Context as GBContext, AutoExperiment } from "@growthbook/growthbook";
 
 export function evaluateFeatures({
   payload,
@@ -47,16 +47,20 @@ export function evaluateFeatures({
     const gbFeatures = gb.getFeatures();
     for (const key in gbFeatures) {
       const result = gb.evalFeature(key);
-      if (result.on) {
+      if (result.on || result.experiment) {
         // reduced feature definition
         evaluatedFeatures[key] = {
           defaultValue: result.value,
         };
         if (result.source === "experiment") {
+          // reduced experiment definition for tracking
+          const scrubbedResultExperiment = result?.experimentResult?.variationId !== undefined
+            ? scrubExperiment(result.experiment, result.experimentResult.variationId)
+            : result.experiment;
           evaluatedFeatures[key].rules = [
             {
               force: result.value,
-              tracks: [{ experiment: result.experiment, result }],
+              tracks: [{ experiment: scrubbedResultExperiment, result }],
             },
           ];
         }
@@ -68,13 +72,7 @@ export function evaluateFeatures({
       const result = gb.run(experiment);
       if (result.inExperiment) {
         // reduced experiment definition
-        const evaluatedExperiment = {
-          ...experiment,
-          variations: experiment.variations.map((v: any, i: number) =>
-            result.variationId === i ? v : {}
-          ),
-        };
-        delete evaluatedExperiment.condition;
+        const evaluatedExperiment = scrubExperiment(experiment, result.variationId);
         evaluatedExperiments.push(evaluatedExperiment);
       }
     }
@@ -85,4 +83,15 @@ export function evaluateFeatures({
     features: evaluatedFeatures,
     experiments: evaluatedExperiments,
   };
+}
+
+function scrubExperiment(experiment: any, allowedVariation: number) {
+  const scrubbedExperiment = {
+    ...experiment,
+    variations: experiment.variations.map((v: any, i: number) =>
+      allowedVariation === i ? v : {}
+    ),
+  };
+  delete scrubbedExperiment.condition;
+  return scrubbedExperiment;
 }
