@@ -6,7 +6,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/growthbook/growthbook-proxy"
+    "url": "git+https://github.com/growthbook/growthbook-proxy.git",
+    "directory": "packages/shared/eval"
   },
   "author": "Bryce Fitzsimons",
   "scripts": {
