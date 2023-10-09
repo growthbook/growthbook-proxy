@@ -1,0 +1,26 @@
+{
+  "name": "@growthbook/proxy-eval",
+  "description": "Remote evaluation service for proxies, edge workers, or backend APIs",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/growthbook/growthbook-proxy"
+  },
+  "author": "Bryce Fitzsimons",
+  "scripts": {
+    "build:clean": "rimraf -rf dist",
+    "build:typescript": "tsc",
+    "build": "yarn build:clean && yarn build:typescript",
+    "type-check": "tsc --pretty --noEmit",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@growthbook/growthbook": "^0.29.0"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5",
+    "typescript": "5.2.2"
+  }
+}
