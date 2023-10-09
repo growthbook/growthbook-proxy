@@ -28,4 +28,4 @@ jobs:
           yarn install
           yarn build
           cd packages/shared/eval
-          npm publish --access public
+          npm publish

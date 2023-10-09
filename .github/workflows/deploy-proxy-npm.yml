@@ -27,5 +27,5 @@ jobs:
           npm set //registry.npmjs.org/:_authToken $NPM_TOKEN
           yarn install
           yarn build
-          cd packages/app/proxy
+          cd packages/apps/proxy
           npm publish
