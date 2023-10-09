@@ -1,8 +1,8 @@
+import * as https from "https";
 import { Context } from "../../types";
 import { featuresCache } from "../cache";
 import logger from "../logger";
 import { eventStreamManager } from "../eventStreamManager";
-import * as https from "https";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const activeFetches: Record<string, any> = {};
@@ -45,7 +45,7 @@ export async function fetchFeatures({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fetchOptions: any = { headers };
     if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0") {
-      fetchOptions.agent = new https.Agent({ rejectUnauthorized: false })
+      fetchOptions.agent = new https.Agent({ rejectUnauthorized: false });
     }
     promise = fetch(url, fetchOptions)
       .then((resp) => resp.json())
