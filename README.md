@@ -4,21 +4,45 @@
 
 The GrowthBook Proxy server sits between your application and GrowthBook. It turbocharges your GrowthBook implementation by providing **speed**, **scalability**, **security**, and **real-time** feature rollouts.
 
-### Features:
+### Features
 
 - :zap: **Caching** - Significantly faster feature lookups!
   - In-memory cache plus an optional distributed layer (Redis or MongoDB)
   - Automatic cache invalidation when features change in GrowthBook (using WebHooks)
 - :satellite: **Streaming** - Updates your application in real-time as features are changed or toggled (Javascript and React only)
-- :lock: **Secure** - Private-key authentication between GrowthBook and GrowthBook Proxy
+- :lock: **Remote Evaluation** - Hide your features' business logic in insecure environments
+- :key: **Secure** - Private-key authentication between GrowthBook and GrowthBook Proxy
 - :left_right_arrow: **Horizontally Scalable** - Support millions of concurrent users
 
-### Coming soon:
+### Coming soon
 
-- Server-side targeting and feature evaluation
 - Realtime feature usage monitoring and alerting
 - Additional support for edge deployments
-- Streaming support for more SDKs
+- Streaming and Remote Evaluation support for more SDKs
+
+## About this Repository ###
+
+The GrowthBook Proxy repository is a mono-repo containing the following packages:
+
+| Package                  | link                                | description                                                                                                                               |
+|--------------------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| `@growthbook/proxy`      | [apps/proxy](packages/apps/proxy)   | The GrowthBook Proxy server. The remainder of this document pertains to this package.                                                     |
+| `@growthbook/proxy-eval` | [shared/eval](packages/shared/eval) | The remote evaluation engine used by the GrowthBook Proxy server. This package may be included into other back ends, edge functions, etc. |
+
+### What's new
+
+**Version 1.1.0**
+- Remote evaluation support added
+- Released `@growthbook/proxy-eval` package; reformatted codebase as a mono-repo
+- Minimum supported Node.js version is now 18.0.0.
+
+**Older versions**
+- Redis cluster support
+- Horizontal scaling support for proxy cluster using Redis pub/sub
+- Streaming support (SSE)
+- Graceful shutdown
+- Stampede protection & debouncer for cache misses
+
 
 ## Installation
 
@@ -106,6 +130,11 @@ If the GrowthBook app your proxy is connecting to is using a self-signed certifi
 
 - `MAX_PAYLOAD_SIZE` - The maximum size of a request body (default is `"2mb"`)
 - `VERBOSE_DEBUGGING` - "true" or "1" to enable verbose debugging
+
+**Streaming**
 - `ENABLE_EVENT_STREAM` - "true" or "1" to enable streaming (on by default)
 - `EVENT_STREAM_MAX_DURATION_MS` - The maximum duration of a SSE connection before the client is forced to reconnect (default is `60000` = 1 minute)
 - `EVENT_STREAM_PING_INTERVAL_MS` - The interval between SSE "ping" messages sent to the client (default is `30000` = 30 seconds)
+
+**Remote Evaluation**
+- `ENABLE_REMOTE_EVAL` - "true" or "1" to enable remote evaluation (on by default)
