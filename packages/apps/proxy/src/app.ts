@@ -43,7 +43,7 @@ const defaultContext: Context = {
   secretApiKey: "",
   createConnectionsFromEnv: true,
   pollForConnections: true,
-  connectionPollingFrequency: 10000,
+  connectionPollingFrequency: 60000,
   enableCache: true,
   cacheSettings: {
     cacheEngine: "memory",
@@ -69,6 +69,9 @@ export const growthBookProxy = async (
 
   const ctx: Context = { ...defaultContext, ...context };
   app.locals.ctx = ctx;
+  if (!ctx.growthbookApiHost) console.error("GROWTHBOOK_API_HOST is missing");
+  if (!ctx.secretApiKey) console.error("SECRET_API_KEY is missing");
+
 
   // initialize
   initializeLogger(ctx);

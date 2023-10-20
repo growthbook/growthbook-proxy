@@ -95,53 +95,92 @@ export class Registrar {
   }
 
   private async pollForConnections() {
-    const url = `${this.growthbookApiHost}/api/v1/sdk-connections?withProxy=1&limit=100`;
-    const headers = {
-      Authorization: `Bearer ${this.secretApiKey}`,
-      "User-Agent": `GrowthBook Proxy`,
-    };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const fetchOptions: any = { headers };
-    if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0") {
-      fetchOptions.agent = new https.Agent({ rejectUnauthorized: false });
-    }
-    const resp = (await fetch(url, fetchOptions)
-      .then((resp) => resp.json())
-      .catch((e) => logger.error(e, "polling error"))) as
-      | { connections: ConnectionDoc[] }
-      | undefined;
+    const limit = 100; // max 100
+    let offset = 0;
+    let page = 0;
+    const maxPages = 10;
+    let respConnections: { [key: string]: Partial<Connection> } = {};
 
-    if (resp?.connections) {
-      const oldConnections = this.getAllConnections();
+    while (page <= maxPages) {
+      page++;
+      const url = `${this.growthbookApiHost}/api/v1/sdk-connections?withProxy=1&limit=${limit}&offset=${offset}`;
+      const headers = {
+        Authorization: `Bearer ${this.secretApiKey}`,
+        "User-Agent": `GrowthBook Proxy`,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fetchOptions: any = { headers };
+      if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0") {
+        fetchOptions.agent = new https.Agent({ rejectUnauthorized: false });
+      }
 
-      const newKeys: Set<string> = new Set();
-      resp.connections.forEach((doc: ConnectionDoc) => {
-        const connection: Partial<Connection> = {
+      const resp = await fetch(url, fetchOptions);
+      if (!resp.ok) {
+        logger.error(`polling error: status code is ${resp.status}`);
+        logger.error(resp.text());
+        return;
+      }
+
+      let data: {
+          connections: ConnectionDoc[];
+          limit: number;
+          offset: number;
+          total: number;
+          hasMore: boolean;
+          nextOffset: number | null;
+        } | undefined = undefined;
+      try {
+        data = await resp.json();
+      } catch (e) {
+        logger.error(e, "polling error");
+        logger.error(resp.text());
+      }
+
+      if (!data?.connections) {
+        logger.error("polling error: no data");
+        return;
+      }
+
+      data.connections.forEach((doc: ConnectionDoc) => {
+        respConnections[doc.key] = {
           apiKey: doc.key,
           signingKey: doc.proxySigningKey,
           encryptionKey: doc.encryptionKey,
           useEncryption: doc.encryptPayload,
           remoteEvalEnabled: !!doc.remoteEvalEnabled,
         };
-        this.setConnection(doc.key, connection);
-        newKeys.add(doc.key);
       });
 
-      // clean up stale connections
-      for (const key in oldConnections) {
-        if (!newKeys.has(key)) {
-          this.deleteConnection(key);
-        }
+      if (data.hasMore && data.nextOffset !== null) {
+        offset = data.nextOffset;
+      } else {
+        break; // No more results to fetch
       }
+    }
 
-      const newConnections = this.getAllConnections();
-      const hasChanges =
-        JSON.stringify(newConnections) !== JSON.stringify(oldConnections);
-      if (hasChanges) {
-        logger.info(
-          `SDK connections count: ${Object.keys(newConnections).length}`,
-        );
+    const oldConnections = this.getAllConnections();
+
+    // add any new connections
+    for (const key in respConnections) {
+      const connection = respConnections[key];
+      this.setConnection(key, connection);
+    }
+    // clean up stale connections
+    const newKeys: Set<string> = new Set(Object.keys(respConnections));
+    for (const key in oldConnections) {
+      if (!newKeys.has(key)) {
+        this.deleteConnection(key);
       }
+    }
+
+    const newConnections = this.getAllConnections();
+
+    const hasChanges =
+      JSON.stringify(newConnections) !== JSON.stringify(oldConnections);
+    if (hasChanges) {
+      logger.info(
+        `SDK connections count: ${Object.keys(newConnections).length}`,
+      );
     }
   }
 }
