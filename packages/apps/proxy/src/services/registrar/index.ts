@@ -6,6 +6,7 @@ import { getApiHostFromEnv, getConnectionsFromEnv } from "./helper";
 const ConnectionFields: Set<string> = new Set([
   "apiKey",
   "signingKey",
+  "organization",
   "encryptionKey",
   "useEncryption",
   "remoteEvalEnabled",
@@ -15,6 +16,7 @@ export type ApiKey = string;
 export interface Connection {
   apiKey: string;
   signingKey: string;
+  organization?: string;
   encryptionKey?: string;
   useEncryption: boolean;
   remoteEvalEnabled: boolean;
@@ -23,6 +25,7 @@ export interface Connection {
 
 interface ConnectionDoc {
   key: string;
+  organization?: string;
   encryptPayload: boolean;
   encryptionKey: string;
   proxySigningKey: string;
@@ -116,7 +119,7 @@ export class Registrar {
 
       const resp = await fetch(url, fetchOptions);
       if (!resp.ok) {
-        logger.error(`polling error: status code is ${resp.status}`);
+        logger.error(`connection polling error: status code is ${resp.status}`);
         logger.error(resp.text());
         return;
       }
@@ -132,12 +135,16 @@ export class Registrar {
       try {
         data = await resp.json();
       } catch (e) {
-        logger.error(e, "polling error");
+        logger.error(e, "connection polling error");
         logger.error(resp.text());
       }
 
       if (!data?.connections) {
-        logger.error("polling error: no data");
+        logger.error("connection polling error: no data");
+        return;
+      }
+      if (Object.keys(data.connections).length === 0) {
+        logger.warn("connection polling: no connections found");
         return;
       }
 
@@ -145,6 +152,7 @@ export class Registrar {
         respConnections[doc.key] = {
           apiKey: doc.key,
           signingKey: doc.proxySigningKey,
+          organization: doc?.organization,
           encryptionKey: doc.encryptionKey,
           useEncryption: doc.encryptPayload,
           remoteEvalEnabled: !!doc.remoteEvalEnabled,

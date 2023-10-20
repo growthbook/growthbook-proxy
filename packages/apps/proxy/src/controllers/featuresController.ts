@@ -106,6 +106,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
       apiKey: res.locals.apiKey,
       ctx: req.app.locals?.ctx,
       remoteEvalEnabled: true,
+      organization: connection?.organization,
     });
     if (resp?.payload) {
       payload = resp?.payload;
@@ -123,6 +124,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
       apiKey: res.locals.apiKey,
       ctx: req.app.locals?.ctx,
       remoteEvalEnabled: true,
+      organization: connection?.organization,
     }).catch((e) => {
       logger.error(e, "Unable to refresh stale cache");
     });
