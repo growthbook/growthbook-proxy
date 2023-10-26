@@ -38,6 +38,7 @@ export class Registrar {
   private secretApiKey = "";
   private getConnectionsPollingInterval: NodeJS.Timeout | null = null;
   private getConnectionsPollingFrequency: number = 1000 * 60; // 1 min;
+  private multiOrg = false;
 
   public getConnection(apiKey: ApiKey): Connection | undefined {
     return this.connections.get(apiKey);
@@ -63,13 +64,13 @@ export class Registrar {
     return this.connections.delete(apiKey);
   }
 
-  public async startConnectionPolling(
-    secretApiKey: string,
-    connectionPollingFrequency?: number,
-  ) {
-    this.secretApiKey = secretApiKey;
-    if (connectionPollingFrequency) {
-      this.getConnectionsPollingFrequency = connectionPollingFrequency;
+  public async startConnectionPolling(context: Context) {
+    this.secretApiKey = context.secretApiKey;
+    if (context.connectionPollingFrequency) {
+      this.getConnectionsPollingFrequency = context.connectionPollingFrequency;
+    }
+    if (context.multiOrg) {
+      this.multiOrg = context.multiOrg;
     }
 
     this.getConnectionsPollingInterval = setInterval(async () => {
@@ -106,7 +107,7 @@ export class Registrar {
 
     while (page <= maxPages) {
       page++;
-      const url = `${this.growthbookApiHost}/api/v1/sdk-connections?withProxy=1&limit=${limit}&offset=${offset}`;
+      const url = `${this.growthbookApiHost}/api/v1/sdk-connections?withProxy=1&limit=${limit}&offset=${offset}${this.multiOrg ? "&multiOrg=1" : ""}`;
       const headers = {
         Authorization: `Bearer ${this.secretApiKey}`,
         "User-Agent": `GrowthBook Proxy`,
@@ -126,11 +127,11 @@ export class Registrar {
 
       let data: {
           connections: ConnectionDoc[];
-          limit: number;
-          offset: number;
-          total: number;
-          hasMore: boolean;
-          nextOffset: number | null;
+          limit?: number;
+          offset?: number;
+          total?: number;
+          hasMore?: boolean;
+          nextOffset?: number | null;
         } | undefined = undefined;
       try {
         data = await resp.json();
@@ -159,7 +160,7 @@ export class Registrar {
         };
       });
 
-      if (data.hasMore && data.nextOffset !== null) {
+      if (data.hasMore && data.nextOffset) {
         offset = data.nextOffset;
       } else {
         break; // No more results to fetch
@@ -220,10 +221,7 @@ export const initializeRegistrar = async (context: Context) => {
     if (!context.growthbookApiHost || !context.secretApiKey) {
       throw new Error("missing required context for polling for connections");
     }
-    await registrar.startConnectionPolling(
-      context.secretApiKey,
-      context.connectionPollingFrequency,
-    );
+    await registrar.startConnectionPolling(context);
   }
 
   Object.freeze(registrar);

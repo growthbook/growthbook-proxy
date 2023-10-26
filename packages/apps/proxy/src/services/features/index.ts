@@ -43,7 +43,7 @@ export async function fetchFeatures({
       }
       headers["Authorization"] = `Bearer ${ctx.secretApiKey}`;
     }
-    if (organization) {
+    if (organization && ctx.multiOrg) {
       headers["X-Organization"] = organization;
     }
 
