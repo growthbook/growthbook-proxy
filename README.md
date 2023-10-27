@@ -63,7 +63,7 @@ docker run -d -p 3300:3300 \
 
 Then, simply point your GrowthBook SDKs to the GrowthBook Proxy instead of the GrowthBook API.
 
-You will need to create a "readonly" secret API key in GrowthBook by going to **Settings -> API Keys** (you can also use a Personal Access Token if preferred). This key will be used to authenticate your proxy server with the GrowthBook app.
+You will need to create a "readonly" secret API key in GrowthBook by going to **Settings -> API Keys** (you can also use a Personal Access Token if preferred). Or you can use a custom SECRET_API_KEY of your choosing<sup>✻</sup>. Whichever method you choose, this key will be used to authenticate your proxy server with the GrowthBook app.
 
 ### Self-hosted customers
 
@@ -73,6 +73,9 @@ You will also need to ensure that your self-hosted GrowthBook instance is config
 PROXY_ENABLED=1
 PROXY_HOST_PUBLIC=https://proxy.example.com
 ```
+
+✻ _If you are using a custom SECRET_API_KEY, you should also add an environment variable to your GrowthBook instance (ex: `SECRET_API_KEY=key_abc123`)._
+
 
 ### Cloud customers
 
