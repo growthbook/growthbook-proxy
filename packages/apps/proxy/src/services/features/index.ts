@@ -11,10 +11,12 @@ export async function fetchFeatures({
   apiKey,
   ctx,
   remoteEvalEnabled = false,
+  organization,
 }: {
   apiKey: string;
   ctx: Context;
   remoteEvalEnabled?: boolean;
+  organization?: string; // for multi-orgs
 }) {
   const path = remoteEvalEnabled
     ? `/api/v1/sdk-payload/${apiKey}`
@@ -40,6 +42,9 @@ export async function fetchFeatures({
         throw new Error("missing required context for fetching features");
       }
       headers["Authorization"] = `Bearer ${ctx.secretApiKey}`;
+    }
+    if (organization && ctx.multiOrg) {
+      headers["X-Organization"] = organization;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

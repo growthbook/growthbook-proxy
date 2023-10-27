@@ -31,6 +31,7 @@ export interface Context {
   enableCors?: boolean;
   enableAdmin?: boolean;
   adminKey?: string;
+  multiOrg?: boolean;
   enableEventStream?: boolean;
   enableEventStreamHeaders?: boolean;
   eventStreamMaxDurationMs?: number;

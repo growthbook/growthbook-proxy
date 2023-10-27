@@ -46,12 +46,12 @@
   resolved "https://registry.yarnpkg.com/@eslint/js/-/js-8.50.0.tgz#9e93b850f0f3fa35f5fa59adfd03adae8488e484"
   integrity sha512-NCC3zz2+nvYd+Ckfh87rA47zfu2QsQpvc6k1yzTk+b9KzRj0wkGa8LSoGOXN6Zv4lRf/EIoZ80biDh9HOI+RNQ==
 
-"@growthbook/growthbook@^0.29.0":
-  version "0.29.0"
-  resolved "https://registry.yarnpkg.com/@growthbook/growthbook/-/growthbook-0.29.0.tgz#357f005d9fc28b4b018358d1dd2839066fca807a"
-  integrity sha512-hRYtBw1cg3fqjBRKRfazkRfCJyFpIxjdEUjmwkFaSBorzVDiX35gcp8x83vytQdx5E9xfQo3x/m9Z1yEMDrN7A==
+"@growthbook/growthbook@^0.30.0":
+  version "0.30.0"
+  resolved "https://registry.yarnpkg.com/@growthbook/growthbook/-/growthbook-0.30.0.tgz#52532c2d5dfa7c017815027678bb241421c308b1"
+  integrity sha512-ennMHKZIhAZokHHcnA9/tOTLFdBB4DQR0WHT8Lf1pD80jWVv8JBCAzsV1jzSjYUQhb8R8pLR2Kho0IfgjzIZGQ==
   dependencies:
-    dom-mutator "^0.5.0"
+    dom-mutator "^0.6.0"
 
 "@humanwhocodes/config-array@^0.11.11":
   version "0.11.11"
@@ -948,10 +948,10 @@ doctrine@^3.0.0:
   dependencies:
     esutils "^2.0.2"
 
-dom-mutator@^0.5.0:
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/dom-mutator/-/dom-mutator-0.5.0.tgz#cd59f0afcc012e7f018717a9c79ce6a225c46782"
-  integrity sha512-bbeX8HWE8JGzraFgbVBX4ws2g3heZFuTtrleQBuN7huy+7n2n7etSuVnot3/1z3jdY2MiwuvoS4Ep1UT2rrGBw==
+dom-mutator@^0.6.0:
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/dom-mutator/-/dom-mutator-0.6.0.tgz#079d7a4b3e8981a562cd777548b99baab51d65c5"
+  integrity sha512-iCt9o0aYfXMUkz/43ZOAUFQYotjGB+GNbYJiJdz4TgXkyToXbbRy5S6FbTp72lRBtfpUMwEc1KmpFEU4CZeoNg==
 
 dotenv@^16.0.3:
   version "16.3.1"

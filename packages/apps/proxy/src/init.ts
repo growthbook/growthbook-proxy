@@ -11,27 +11,15 @@ export default async () => {
     environment: process.env.NODE_ENV as Context["environment"],
     enableAdmin: ["true", "1"].includes(process.env.ENABLE_ADMIN ?? "0"),
     adminKey: process.env.ADMIN_KEY,
+    multiOrg: ["true", "1"].includes(process.env.MULTI_ORG ?? "0"),
     verboseDebugging: ["true", "1"].includes(
       process.env.VERBOSE_DEBUGGING ?? "0",
     ),
     maxPayloadSize: process.env.MAX_PAYLOAD_SIZE ?? "2mb",
-    // SSE settings:
-    enableEventStream: ["true", "1"].includes(
-      process.env.ENABLE_EVENT_STREAM ?? "1",
-    ),
-    enableEventStreamHeaders: ["true", "1"].includes(
-      process.env.ENABLE_EVENT_STREAM_HEADERS ?? "1",
-    ),
-    eventStreamMaxDurationMs: parseInt(
-      process.env.EVENT_STREAM_MAX_DURATION_MS ?? "60000",
-    ),
-    eventStreamPingIntervalMs: parseInt(
-      process.env.EVENT_STREAM_PING_INTERVAL_MS ?? "30000",
-    ),
-    // Remote eval settings:
-    enableRemoteEval: ["true", "1"].includes(
-      process.env.ENABLE_REMOTE_EVAL ?? "1",
-    ),
+    // SDK Connections settings:
+    createConnectionsFromEnv: ["true", "1"].includes(process.env.CREATE_CONNECTIONS_FROM_ENV ?? "1"),
+    pollForConnections: ["true", "1"].includes(process.env.POLL_FOR_CONNECTIONS ?? "1"),
+    connectionPollingFrequency: parseInt(process.env.CONNECTION_POLLING_FREQUENCY ?? "60000"),
     // Cache settings:
     cacheSettings: {
       cacheEngine: (process.env.CACHE_ENGINE || "memory") as CacheEngine,
@@ -59,6 +47,23 @@ export default async () => {
         ? JSON.parse(process.env.CLUSTER_OPTIONS_JSON)
         : undefined,
     },
+    // SSE settings:
+    enableEventStream: ["true", "1"].includes(
+      process.env.ENABLE_EVENT_STREAM ?? "1",
+    ),
+    enableEventStreamHeaders: ["true", "1"].includes(
+      process.env.ENABLE_EVENT_STREAM_HEADERS ?? "1",
+    ),
+    eventStreamMaxDurationMs: parseInt(
+      process.env.EVENT_STREAM_MAX_DURATION_MS ?? "60000",
+    ),
+    eventStreamPingIntervalMs: parseInt(
+      process.env.EVENT_STREAM_PING_INTERVAL_MS ?? "30000",
+    ),
+    // Remote eval settings:
+    enableRemoteEval: ["true", "1"].includes(
+      process.env.ENABLE_REMOTE_EVAL ?? "1",
+    ),
   };
 
   // Express configuration consts:
