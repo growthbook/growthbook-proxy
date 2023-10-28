@@ -276,7 +276,8 @@ export class RedisCache {
         try {
           const url = new URL(node);
           const host = url.hostname + url.pathname;
-          const port = parseInt(url.port);
+          // If no port is specified we use the default one
+          const port = url.port ? parseInt(url.port) : 6379;
           return { host, port };
         } catch (e) {
           logger.error(e, "Error parsing Redis cluster node");
