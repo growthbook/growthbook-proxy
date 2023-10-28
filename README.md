@@ -110,7 +110,7 @@ Redis-specific options for cluster mode:<br />
 _(Note that CACHE_CONNECTION_URL is ignored when using cluster mode)_
 
 - `USE_CLUSTER` - "true" or "1" to enable (default: `false`)
-- `CLUSTER_ROOT_NODES` - simple: comma-separated URLs to your cluster seed nodes
+- `CLUSTER_ROOT_NODES` - simple: comma-separated URLs to your cluster seed nodes. This need to be in the URL format (e.g redis://localhost:6379)
 - `CLUSTER_ROOT_NODES_JSON` - advanced: JSON array of ClusterNode objects (ioredis)
 - `CLUSTER_OPTIONS_JSON` - advanced: JSON object of ClusterOptions (ioredis)
 
