@@ -275,7 +275,7 @@ export class RedisCache {
       .map((node) => {
         try {
           const url = new URL(node);
-          const host = url.protocol + "//" + url.hostname + url.pathname;
+          const host = url.hostname + url.pathname;
           const port = parseInt(url.port);
           return { host, port };
         } catch (e) {
