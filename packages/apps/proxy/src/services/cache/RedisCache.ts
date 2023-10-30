@@ -22,7 +22,6 @@ export class RedisCache {
   public readonly allowStale: boolean;
 
   private readonly useCluster: boolean;
-  private readonly clusterRootNodes?: ClusterNode[];
   private readonly clusterOptions?: ClusterOptions;
 
   private readonly appContext?: Context;
@@ -48,8 +47,7 @@ export class RedisCache {
     this.allowStale = allowStale;
     this.publishPayloadToChannel = publishPayloadToChannel;
     this.useCluster = useCluster;
-    this.clusterRootNodes =
-      clusterRootNodesJSON ?? this.transformRootNodes(clusterRootNodes);
+    this.clusterRootNodes = clusterRootNodesJSON;
     this.clusterOptions = clusterOptionsJSON;
 
     this.appContext = appContext;
@@ -267,23 +265,5 @@ export class RedisCache {
 
   public getsubscriberClient() {
     return this.subscriberClient;
-  }
-
-  private transformRootNodes(rootNodes?: string[]): ClusterNode[] | undefined {
-    if (!rootNodes) return undefined;
-    return rootNodes
-      .map((node) => {
-        try {
-          const url = new URL(node);
-          const host = url.hostname + url.pathname;
-          // If no port is specified we use the default one
-          const port = url.port ? parseInt(url.port) : 6379;
-          return { host, port };
-        } catch (e) {
-          logger.error(e, "Error parsing Redis cluster node");
-          return undefined;
-        }
-      })
-      .filter(Boolean) as ClusterNode[];
   }
 }
