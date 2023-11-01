@@ -31,6 +31,10 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ### What's new
 
+**Version 1.1.2**
+- Fix max payload size bug
+- Deprecate `CLUSTER_ROOT_NODES` in favor of `CLUSTER_ROOT_NODES_JSON`
+
 **Version 1.1.1**
 - Multi organization support
 - Support paginated SDK Connection polling
@@ -110,9 +114,8 @@ Redis-specific options for cluster mode:<br />
 _(Note that CACHE_CONNECTION_URL is ignored when using cluster mode)_
 
 - `USE_CLUSTER` - "true" or "1" to enable (default: `false`)
-- `CLUSTER_ROOT_NODES` - simple: comma-separated URLs to your cluster seed nodes
-- `CLUSTER_ROOT_NODES_JSON` - advanced: JSON array of ClusterNode objects (ioredis)
-- `CLUSTER_OPTIONS_JSON` - advanced: JSON object of ClusterOptions (ioredis)
+- `CLUSTER_ROOT_NODES_JSON` - JSON array of ClusterNode objects (ioredis)
+- `CLUSTER_OPTIONS_JSON` - JSON object of ClusterOptions (ioredis)
 
 #### MongoDB
 

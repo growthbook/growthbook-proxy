@@ -11,6 +11,7 @@ import { sseSupportMiddleware } from "../middleware/sseSupportMiddleware";
 import logger from "../services/logger";
 import { fetchFeatures } from "../services/features";
 import { Context } from "../types";
+import { MAX_PAYLOAD_SIZE } from "../init";
 
 const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   if (!registrar?.growthbookApiHost) {
@@ -181,7 +182,9 @@ export const featuresRouter = (ctx: Context) => {
     router.post(
       "/api/eval/*",
       apiKeyMiddleware,
-      express.json(),
+      express.json({
+        limit: process.env.MAX_PAYLOAD_SIZE ?? MAX_PAYLOAD_SIZE,
+      }),
       sseSupportMiddleware,
       getEvaluatedFeatures,
     );
@@ -192,6 +195,7 @@ export const featuresRouter = (ctx: Context) => {
     "/proxy/features",
     apiKeyMiddleware,
     express.json({
+      limit: process.env.MAX_PAYLOAD_SIZE ?? MAX_PAYLOAD_SIZE,
       verify: (req: Request, res: Response, buf: Buffer) =>
         (res.locals.rawBody = buf),
     }),

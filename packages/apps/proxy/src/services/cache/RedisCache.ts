@@ -22,7 +22,7 @@ export class RedisCache {
   public readonly allowStale: boolean;
 
   private readonly useCluster: boolean;
-  private readonly clusterRootNodes?: ClusterNode[];
+  private readonly clusterRootNodesJSON?: ClusterNode[];
   private readonly clusterOptions?: ClusterOptions;
 
   private readonly appContext?: Context;
@@ -36,7 +36,6 @@ export class RedisCache {
       useAdditionalMemoryCache,
       publishPayloadToChannel = false,
       useCluster = false,
-      clusterRootNodes,
       clusterRootNodesJSON,
       clusterOptionsJSON,
     }: CacheSettings = {},
@@ -48,8 +47,7 @@ export class RedisCache {
     this.allowStale = allowStale;
     this.publishPayloadToChannel = publishPayloadToChannel;
     this.useCluster = useCluster;
-    this.clusterRootNodes =
-      clusterRootNodesJSON ?? this.transformRootNodes(clusterRootNodes);
+    this.clusterRootNodesJSON = clusterRootNodesJSON;
     this.clusterOptions = clusterOptionsJSON;
 
     this.appContext = appContext;
@@ -69,9 +67,9 @@ export class RedisCache {
         ? new Redis(this.connectionUrl)
         : new Redis();
     } else {
-      if (this.clusterRootNodes) {
+      if (this.clusterRootNodesJSON) {
         this.client = new Redis.Cluster(
-          this.clusterRootNodes,
+          this.clusterRootNodesJSON,
           this.clusterOptions,
         );
       } else {
@@ -267,22 +265,5 @@ export class RedisCache {
 
   public getsubscriberClient() {
     return this.subscriberClient;
-  }
-
-  private transformRootNodes(rootNodes?: string[]): ClusterNode[] | undefined {
-    if (!rootNodes) return undefined;
-    return rootNodes
-      .map((node) => {
-        try {
-          const url = new URL(node);
-          const host = url.protocol + "//" + url.hostname + url.pathname;
-          const port = parseInt(url.port);
-          return { host, port };
-        } catch (e) {
-          logger.error(e, "Error parsing Redis cluster node");
-          return undefined;
-        }
-      })
-      .filter(Boolean) as ClusterNode[];
   }
 }

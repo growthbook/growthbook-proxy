@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import { CacheEngine, Context } from "./types";
 dotenv.config({ path: "./.env.local" });
 
+export const MAX_PAYLOAD_SIZE = "2mb";
+
 export default async () => {
   const context: Partial<Context> = {
     growthbookApiHost: process.env.GROWTHBOOK_API_HOST,
@@ -15,7 +17,7 @@ export default async () => {
     verboseDebugging: ["true", "1"].includes(
       process.env.VERBOSE_DEBUGGING ?? "0",
     ),
-    maxPayloadSize: process.env.MAX_PAYLOAD_SIZE ?? "2mb",
+    maxPayloadSize: process.env.MAX_PAYLOAD_SIZE ?? MAX_PAYLOAD_SIZE,
     // SDK Connections settings:
     createConnectionsFromEnv: ["true", "1"].includes(process.env.CREATE_CONNECTIONS_FROM_ENV ?? "1"),
     pollForConnections: ["true", "1"].includes(process.env.POLL_FOR_CONNECTIONS ?? "1"),
@@ -37,9 +39,6 @@ export default async () => {
       ),
       // Redis only - cluster:
       useCluster: ["true", "1"].includes(process.env.USE_CLUSTER ?? "0"),
-      clusterRootNodes: process.env.CLUSTER_ROOT_NODES
-        ? process.env.CLUSTER_ROOT_NODES.replace(" ", "").split(",")
-        : undefined,
       clusterRootNodesJSON: process.env.CLUSTER_ROOT_NODES_JSON
         ? JSON.parse(process.env.CLUSTER_ROOT_NODES_JSON)
         : undefined,

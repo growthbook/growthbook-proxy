@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import { registrar } from "../services/registrar";
 import { adminMiddleware } from "../middleware/adminMiddleware";
 import logger from "../services/logger";
+import { MAX_PAYLOAD_SIZE } from "../init";
 
 const postConnection = (req: Request, res: Response) => {
   const apiKey = req.body.apiKey;
@@ -57,7 +58,7 @@ adminRouter.post(
   "/connection",
   adminMiddleware,
   express.json({
-    limit: process.env.MAX_PAYLOAD_SIZE ?? "2mb",
+    limit: process.env.MAX_PAYLOAD_SIZE ?? MAX_PAYLOAD_SIZE,
   }),
   postConnection,
 );
