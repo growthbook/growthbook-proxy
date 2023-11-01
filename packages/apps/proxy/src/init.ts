@@ -37,9 +37,6 @@ export default async () => {
       ),
       // Redis only - cluster:
       useCluster: ["true", "1"].includes(process.env.USE_CLUSTER ?? "0"),
-      clusterRootNodes: process.env.CLUSTER_ROOT_NODES
-        ? process.env.CLUSTER_ROOT_NODES.replace(" ", "").split(",")
-        : undefined,
       clusterRootNodesJSON: process.env.CLUSTER_ROOT_NODES_JSON
         ? JSON.parse(process.env.CLUSTER_ROOT_NODES_JSON)
         : undefined,
