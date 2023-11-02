@@ -49,7 +49,7 @@ export async function fetchFeatures({
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fetchOptions: any = { headers };
-    if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0") {
+    if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
       fetchOptions.agent = new https.Agent({ rejectUnauthorized: false });
     }
     promise = fetch(url, fetchOptions)
