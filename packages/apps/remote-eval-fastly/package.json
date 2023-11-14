@@ -1,0 +1,19 @@
+{
+  "type": "module",
+  "engines": {
+    "node": "^16 || >=18"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@fastly/js-compute": "^3.7.3",
+    "@growthbook/growthbook": "^0.30.0",
+    "@growthbook/proxy-eval": "^1.0.0"
+  },
+  "scripts": {
+    "prebuild": "tsc",
+    "build": "js-compute-runtime build/index.js bin/main.wasm",
+    "deploy": "fastly compute publish"
+  }
+}

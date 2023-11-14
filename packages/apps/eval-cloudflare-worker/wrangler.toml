@@ -5,15 +5,15 @@ compatibility_date = "2023-10-25"
 # Variable bindings. These are arbitrary, plaintext strings (similar to environment variables)
 # Note: Use secrets to store sensitive data.
 # Docs: https://developers.cloudflare.com/workers/platform/environment-variables
-# [vars]
-# MY_VARIABLE = "production_value"
-
+[vars]
+KV_BINDING_NAME = "GB_KV_STORE"
+SECRET_API_KEY = "secret_admin_IkKrtgprnvAyIkdtz7oyB4MdHlsRrzmVeqjeSDfQss"
+API_HOST = "http://localhost:3100"
 # Bind a KV Namespace. Use KV as persistent storage for small key-value pairs.
 # Docs: https://developers.cloudflare.com/workers/runtime-apis/kv
-# [[kv_namespaces]]
-# binding = "MY_KV_NAMESPACE"
-# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-
+[[kv_namespaces]]
+binding = "GB_KV_STORE"
+id = "9b3ef86029384cf1b5c1d784b3cc6a6a"
 # Bind an R2 Bucket. Use R2 to store arbitrarily large blobs of data, such as files.
 # Docs: https://developers.cloudflare.com/r2/api/workers/workers-api-usage/
 # [[r2_buckets]]

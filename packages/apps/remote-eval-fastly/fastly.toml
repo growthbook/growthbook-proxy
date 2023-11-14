@@ -1,0 +1,14 @@
+# This file describes a Fastly Compute package. To learn more visit:
+# https://developer.fastly.com/reference/fastly-toml/
+
+authors = [""]
+cloned_from = "https://github.com/fastly/compute-starter-kit-typescript"
+description = ""
+language = "javascript"
+manifest_version = 3
+name = "remote-eval-fastly"
+service_id = "bGG0XDoqSGDoOlf7s8gfe1"
+[scripts]
+  build = "npm run build"
+  post_init = "npm install"
+env_vars = ["SECRET_API_KEY=secret_admin_IkKrtgprnvAyIkdtz7oyB4MdHlsRrzmVeqjeSDfQss", "API_HOST=localhost:3100"]

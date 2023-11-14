@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { GrowthBook, Context as GBContext } from "@growthbook/growthbook";
+import type { Polyfills } from "@growthbook/growthbook";
 
 export function evaluateFeatures({
   payload,
@@ -15,6 +16,7 @@ export function evaluateFeatures({
   forcedFeatures?: Map<string, any>;
   url?: string;
   ctx?: any;
+  polyfills?: Partial<Polyfills>;
 }) {
   const evaluatedFeatures: Record<string, any> = {};
   const evaluatedExperiments: any[] = [];

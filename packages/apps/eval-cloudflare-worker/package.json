@@ -12,5 +12,10 @@
     "itty-router": "^3.0.12",
     "typescript": "^5.0.4",
     "wrangler": "^3.0.0"
+  },
+  "dependencies": {
+    "@growthbook/growthbook": "^0.30.0",
+    "@growthbook/proxy-eval": "^1.0.0",
+    "wrangler": "^3.15.0"
   }
 }
