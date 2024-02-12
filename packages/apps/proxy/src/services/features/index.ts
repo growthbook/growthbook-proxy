@@ -53,14 +53,27 @@ export async function fetchFeatures({
       fetchOptions.agent = new https.Agent({ rejectUnauthorized: false });
     }
     promise = fetch(url, fetchOptions)
-      .then((resp) => resp.json())
-      .catch((e) => logger.error(e, "Refresh stale cache error"))
+      .then((resp) => {
+        if (!resp.ok) {
+          throw new Error(`HTTP error: ${resp.status}`);
+        }
+        return resp.json();
+      })
+      .catch((e) => {
+        logger.error(e, "Refresh stale cache error");
+        return Promise.reject(e);
+      })
       .finally(() => delete activeFetches[url]);
 
     activeFetches[url] = promise;
   }
 
-  const payload = await promise;
+  let payload: unknown = null;
+  try {
+    payload = await promise;
+  } catch (e) {
+    // ignore, logging handled in promise
+  }
 
   if (payload) {
     logger.debug("cache STALE, refreshing cache...");

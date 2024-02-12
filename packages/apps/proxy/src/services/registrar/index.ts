@@ -103,11 +103,15 @@ export class Registrar {
     let offset = 0;
     let page = 0;
     const maxPages = 10;
-    let respConnections: { [key: string]: Partial<Connection> } = {};
+    const respConnections: { [key: string]: Partial<Connection> } = {};
 
     while (page <= maxPages) {
       page++;
-      const url = `${this.growthbookApiHost}/api/v1/sdk-connections?withProxy=1&limit=${limit}&offset=${offset}${this.multiOrg ? "&multiOrg=1" : ""}`;
+      const url = `${
+        this.growthbookApiHost
+      }/api/v1/sdk-connections?withProxy=1&limit=${limit}&offset=${offset}${
+        this.multiOrg ? "&multiOrg=1" : ""
+      }`;
       const headers = {
         Authorization: `Bearer ${this.secretApiKey}`,
         "User-Agent": `GrowthBook Proxy`,
@@ -125,14 +129,16 @@ export class Registrar {
         return;
       }
 
-      let data: {
-          connections: ConnectionDoc[];
-          limit?: number;
-          offset?: number;
-          total?: number;
-          hasMore?: boolean;
-          nextOffset?: number | null;
-        } | undefined = undefined;
+      let data:
+        | {
+            connections: ConnectionDoc[];
+            limit?: number;
+            offset?: number;
+            total?: number;
+            hasMore?: boolean;
+            nextOffset?: number | null;
+          }
+        | undefined = undefined;
       try {
         data = await resp.json();
       } catch (e) {
