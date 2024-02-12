@@ -29,4 +29,8 @@ jobs:
           printf '%(%Y-%m-%dT%H:%M:%SZ)T' > buildinfo/DATE
           # Build and push the docker image
           docker build -t growthbook/proxy:latest -t growthbook/proxy:git-${GITHUB_SHA::7} .
+          tag=$(git tag --points-at HEAD)
+          if [ -n "$tag" ]; then
+            docker tag growthbook/proxy:latest growthbook/proxy:"$tag"
+          fi
           docker push -a growthbook/proxy
