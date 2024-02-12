@@ -8,7 +8,10 @@ export const MAX_PAYLOAD_SIZE = "2mb";
 
 export default async () => {
   const context: Partial<Context> = {
-    growthbookApiHost: process.env.GROWTHBOOK_API_HOST,
+    growthbookApiHost: (process.env.GROWTHBOOK_API_HOST ?? "").replace(
+      /\/*$/,
+      "",
+    ),
     secretApiKey: process.env.SECRET_API_KEY,
     environment: process.env.NODE_ENV as Context["environment"],
     enableAdmin: ["true", "1"].includes(process.env.ENABLE_ADMIN ?? "0"),
@@ -19,9 +22,15 @@ export default async () => {
     ),
     maxPayloadSize: process.env.MAX_PAYLOAD_SIZE ?? MAX_PAYLOAD_SIZE,
     // SDK Connections settings:
-    createConnectionsFromEnv: ["true", "1"].includes(process.env.CREATE_CONNECTIONS_FROM_ENV ?? "1"),
-    pollForConnections: ["true", "1"].includes(process.env.POLL_FOR_CONNECTIONS ?? "1"),
-    connectionPollingFrequency: parseInt(process.env.CONNECTION_POLLING_FREQUENCY ?? "60000"),
+    createConnectionsFromEnv: ["true", "1"].includes(
+      process.env.CREATE_CONNECTIONS_FROM_ENV ?? "1",
+    ),
+    pollForConnections: ["true", "1"].includes(
+      process.env.POLL_FOR_CONNECTIONS ?? "1",
+    ),
+    connectionPollingFrequency: parseInt(
+      process.env.CONNECTION_POLLING_FREQUENCY ?? "60000",
+    ),
     // Cache settings:
     cacheSettings: {
       cacheEngine: (process.env.CACHE_ENGINE || "memory") as CacheEngine,
