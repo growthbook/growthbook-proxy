@@ -72,7 +72,6 @@ export const growthBookProxy = async (
   if (!ctx.growthbookApiHost) console.error("GROWTHBOOK_API_HOST is missing");
   if (!ctx.secretApiKey) console.error("SECRET_API_KEY is missing");
 
-
   // initialize
   initializeLogger(ctx);
   await initializeRegistrar(ctx);
