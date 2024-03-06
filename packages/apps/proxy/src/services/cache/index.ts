@@ -21,7 +21,6 @@ export interface CacheSettings {
   collectionName?: string; // for MongoCache
   useAdditionalMemoryCache?: boolean;
   publishPayloadToChannel?: boolean; // for RedisCache pub/sub
-  skipSSE?: boolean; // for RedisCache (typically for non-sdk-payload usage)
   useCluster?: boolean; // for RedisCache
   clusterRootNodesJSON?: ClusterNode[]; // for RedisCache
   clusterOptionsJSON?: ClusterOptions; // for RedisCache
