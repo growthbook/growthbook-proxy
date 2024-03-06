@@ -19,7 +19,9 @@ export async function evaluateFeatures({
   forcedVariations?: Record<string, number>;
   forcedFeatures?: Map<string, any>;
   url?: string;
-  stickyBucketService?: (StickyBucketService & { onEvaluate?: () => Promise<void> }) | null;
+  stickyBucketService?:
+    | (StickyBucketService & { onEvaluate?: () => Promise<void> })
+    | null;
   ctx?: any;
 }) {
   const evaluatedFeatures: Record<string, any> = {};

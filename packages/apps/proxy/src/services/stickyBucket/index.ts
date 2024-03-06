@@ -6,7 +6,10 @@ import { RedisStickyBucketService } from "./RedisStickyBucketService";
 
 // enhanced StickyBucketService, optimized for opening connections and listening to remote eval lifecycle events
 export let stickyBucketService:
-  | (StickyBucketService & { connect: () => Promise<void>, onEvaluate?: () => Promise<void> })
+  | (StickyBucketService & {
+      connect: () => Promise<void>;
+      onEvaluate?: () => Promise<void>;
+    })
   | null = null;
 
 export interface StickyBucketSettings {

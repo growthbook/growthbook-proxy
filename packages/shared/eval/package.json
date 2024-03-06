@@ -1,7 +1,7 @@
 {
   "name": "@growthbook/proxy-eval",
   "description": "Remote evaluation service for proxies, edge workers, or backend APIs",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "dist/index.js",
   "license": "MIT",
   "repository": {

@@ -55,6 +55,23 @@ export default async () => {
         ? JSON.parse(process.env.CLUSTER_OPTIONS_JSON)
         : undefined,
     },
+    // SSE settings:
+    enableEventStream: ["true", "1"].includes(
+      process.env.ENABLE_EVENT_STREAM ?? "1",
+    ),
+    enableEventStreamHeaders: ["true", "1"].includes(
+      process.env.ENABLE_EVENT_STREAM_HEADERS ?? "1",
+    ),
+    eventStreamMaxDurationMs: parseInt(
+      process.env.EVENT_STREAM_MAX_DURATION_MS ?? "60000",
+    ),
+    eventStreamPingIntervalMs: parseInt(
+      process.env.EVENT_STREAM_PING_INTERVAL_MS ?? "30000",
+    ),
+    // Remote eval settings:
+    enableRemoteEval: ["true", "1"].includes(
+      process.env.ENABLE_REMOTE_EVAL ?? "1",
+    ),
     // Sticky Bucket settings (for remote eval):
     enableStickyBucketing: ["true", "1"].includes(
       process.env.ENABLE_STICKY_BUCKETING ?? "0",
@@ -74,23 +91,6 @@ export default async () => {
         ? JSON.parse(process.env.STICKY_BUCKET_CLUSTER_OPTIONS_JSON)
         : undefined,
     },
-    // SSE settings:
-    enableEventStream: ["true", "1"].includes(
-      process.env.ENABLE_EVENT_STREAM ?? "1",
-    ),
-    enableEventStreamHeaders: ["true", "1"].includes(
-      process.env.ENABLE_EVENT_STREAM_HEADERS ?? "1",
-    ),
-    eventStreamMaxDurationMs: parseInt(
-      process.env.EVENT_STREAM_MAX_DURATION_MS ?? "60000",
-    ),
-    eventStreamPingIntervalMs: parseInt(
-      process.env.EVENT_STREAM_PING_INTERVAL_MS ?? "30000",
-    ),
-    // Remote eval settings:
-    enableRemoteEval: ["true", "1"].includes(
-      process.env.ENABLE_REMOTE_EVAL ?? "1",
-    ),
   };
 
   // Express configuration consts:
