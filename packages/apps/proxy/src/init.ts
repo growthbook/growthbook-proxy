@@ -1,7 +1,7 @@
 import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
-import { CacheEngine, Context } from "./types";
+import { CacheEngine, Context, StickyBucketEngine } from "./types";
 dotenv.config({ path: "./.env.local" });
 
 export const MAX_PAYLOAD_SIZE = "2mb";
@@ -72,6 +72,25 @@ export default async () => {
     enableRemoteEval: ["true", "1"].includes(
       process.env.ENABLE_REMOTE_EVAL ?? "1",
     ),
+    // Sticky Bucket settings (for remote eval):
+    enableStickyBucketing: ["true", "1"].includes(
+      process.env.ENABLE_STICKY_BUCKETING ?? "0",
+    ),
+    stickyBucketSettings: {
+      engine: (process.env.STICKY_BUCKET_ENGINE ||
+        "none") as StickyBucketEngine,
+      connectionUrl: process.env.STICKY_BUCKET_CONNECTION_URL,
+      // Redis only - cluster:
+      useCluster: ["true", "1"].includes(
+        process.env.STICKY_BUCKET_USE_CLUSTER ?? "0",
+      ),
+      clusterRootNodesJSON: process.env.STICKY_BUCKET_CLUSTER_ROOT_NODES_JSON
+        ? JSON.parse(process.env.STICKY_BUCKET_CLUSTER_ROOT_NODES_JSON)
+        : undefined,
+      clusterOptionsJSON: process.env.STICKY_BUCKET_CLUSTER_OPTIONS_JSON
+        ? JSON.parse(process.env.STICKY_BUCKET_CLUSTER_OPTIONS_JSON)
+        : undefined,
+    },
   };
 
   // Express configuration consts:

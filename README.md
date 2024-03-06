@@ -31,6 +31,11 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ### What's new
 
+**Version 1.1.4**
+- Support Redis-based sticky bucketing for remote evaluation
+- Update remote evaluation to allow for buffered sticky bucket writes
+- Update SDK version to support sticky bucketing and prerequisite flags
+
 **Version 1.1.2**
 - Fix max payload size bug
 - Deprecate `CLUSTER_ROOT_NODES` in favor of `CLUSTER_ROOT_NODES_JSON`
@@ -149,6 +154,12 @@ If the GrowthBook app your proxy is connecting to is using a self-signed certifi
 
 **Remote Evaluation**
 - `ENABLE_REMOTE_EVAL` - "true" or "1" to enable remote evaluation (default: `true`)
+- `ENABLE_STICKY_BUCKETING` - "true" or "1" to enable sticky bucketing for remote evaluation. Requires a Redis connection (default: `false`)
+  - `STICKY_BUCKET_ENGINE` - One of: `redis`, `none` (only Redis is supported) (default: `none`)
+  - `STICKY_BUCKET_CONNECTION_URL` - The URL of your Redis Database
+  - `STICKY_BUCKET_USE_CLUSTER` - "true" or "1" to enable Redis cluster mode (default: `false`)
+  - `STICKY_BUCKET_CLUSTER_ROOT_NODES_JSON` - JSON array of ClusterNode objects (ioredis)
+  - `STICKY_BUCKET_CLUSTER_OPTIONS_JSON` - JSON object of ClusterOptions (ioredis)
 
 **Misc**
 - `MAX_PAYLOAD_SIZE` - The maximum size of a request body (default: `"2mb"`)

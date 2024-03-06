@@ -31,7 +31,7 @@
     "pino-http": "^8.3.1",
     "spdy": "^4.0.2",
     "uuid": "^9.0.0",
-    "@growthbook/proxy-eval": "^1.0.0"
+    "@growthbook/proxy-eval": "^1.0.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.14",
@@ -44,6 +44,7 @@
     "nodemon": "^3.0.1",
     "pino-pretty": "^10.3.1",
     "rimraf": "^5.0.5",
-    "typescript": "5.2.2"
+    "typescript": "5.2.2",
+    "@growthbook/growthbook": "^0.34.0"
   }
 }

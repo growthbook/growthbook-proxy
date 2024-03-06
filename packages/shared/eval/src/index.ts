@@ -1,12 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { GrowthBook, Context as GBContext } from "@growthbook/growthbook";
+import {
+  GrowthBook,
+  Context as GBContext,
+  StickyBucketService,
+} from "@growthbook/growthbook";
 
-export function evaluateFeatures({
+export async function evaluateFeatures({
   payload,
   attributes,
   forcedVariations,
   forcedFeatures,
   url,
+  stickyBucketService = null,
   ctx,
 }: {
   payload: any;
@@ -14,6 +19,9 @@ export function evaluateFeatures({
   forcedVariations?: Record<string, number>;
   forcedFeatures?: Map<string, any>;
   url?: string;
+  stickyBucketService?:
+    | (StickyBucketService & { onEvaluate?: () => Promise<void> })
+    | null;
   ctx?: any;
 }) {
   const evaluatedFeatures: Record<string, any> = {};
@@ -34,6 +42,9 @@ export function evaluateFeatures({
   if (url !== undefined) {
     context.url = url;
   }
+  if (stickyBucketService) {
+    context.stickyBucketService = stickyBucketService;
+  }
 
   if (features || experiments) {
     const gb = new GrowthBook(context);
@@ -42,6 +53,9 @@ export function evaluateFeatures({
     }
     if (ctx?.verboseDebugging) {
       gb.debug = true;
+    }
+    if (stickyBucketService) {
+      await gb.refreshStickyBuckets();
     }
 
     const gbFeatures = gb.getFeatures();
@@ -84,6 +98,8 @@ export function evaluateFeatures({
       }
     }
   }
+
+  stickyBucketService?.onEvaluate?.();
 
   return {
     ...payload,
