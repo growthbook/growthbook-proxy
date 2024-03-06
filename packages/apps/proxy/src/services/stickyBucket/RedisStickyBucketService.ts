@@ -14,7 +14,7 @@ export interface StickyAssignmentsDocument {
   assignments: StickyAssignments;
 }
 
-// Mostly taken from the JS SDK
+// Mostly taken from the JS SDK, with write buffer for when remote eval finishes
 
 export class RedisStickyBucketService extends StickyBucketService {
   private client: Redis | Cluster | undefined;
@@ -22,6 +22,8 @@ export class RedisStickyBucketService extends StickyBucketService {
   private readonly useCluster: boolean;
   private readonly clusterRootNodesJSON?: ClusterNode[];
   private readonly clusterOptions?: ClusterOptions;
+
+  private writeBuffer: Record<string, string> = {};
 
   public constructor({
     connectionUrl,
@@ -62,7 +64,7 @@ export class RedisStickyBucketService extends StickyBucketService {
         `${attributeName}||${attributeValue}`,
     );
     if (!this.client) return docs;
-    this.client.mget(...keys).then((values) => {
+    await this.client.mget(...keys).then((values) => {
       values.forEach((raw) => {
         try {
           const data = JSON.parse(raw || "{}");
@@ -86,7 +88,14 @@ export class RedisStickyBucketService extends StickyBucketService {
   public async saveAssignments(doc: StickyAssignmentsDocument) {
     const key = `${doc.attributeName}||${doc.attributeValue}`;
     if (!this.client) return;
-    await this.client.set(key, JSON.stringify(doc));
+    this.writeBuffer[key] = JSON.stringify(doc);
+  }
+
+  public async onEvaluate() {
+    if (!this.client) return;
+    if (Object.keys(this.writeBuffer).length === 0) return;
+    this.client.mset(this.writeBuffer);
+    this.writeBuffer = {};
   }
 
   public getClient() {

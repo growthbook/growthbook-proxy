@@ -145,7 +145,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
   );
   const url = req.body?.url;
 
-  payload = evaluateFeatures({
+  payload = await evaluateFeatures({
     payload,
     attributes,
     forcedVariations,

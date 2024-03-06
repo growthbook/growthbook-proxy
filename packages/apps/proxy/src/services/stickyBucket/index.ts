@@ -4,8 +4,9 @@ import { Context } from "../../types";
 import logger from "../logger";
 import { RedisStickyBucketService } from "./RedisStickyBucketService";
 
+// enhanced StickyBucketService, optimized for opening connections and listening to remote eval lifecycle events
 export let stickyBucketService:
-  | (StickyBucketService & { connect: () => Promise<void> })
+  | (StickyBucketService & { connect: () => Promise<void>, onEvaluate?: () => Promise<void> })
   | null = null;
 
 export interface StickyBucketSettings {
@@ -26,5 +27,4 @@ export const initializeStickyBucketService = async (context: Context) => {
       await stickyBucketService.connect();
     }
   }
-  Object.freeze(stickyBucketService);
 };
