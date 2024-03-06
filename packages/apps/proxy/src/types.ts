@@ -3,6 +3,7 @@ import { HttpLogger } from "pino-http";
 import { Connection, Registrar } from "./services/registrar";
 import { EventStreamManager } from "./services/eventStreamManager";
 import { FeaturesCache, CacheSettings } from "./services/cache";
+import { StickyBucketSettings } from "./services/stickyBucket";
 
 export interface GrowthBookProxy {
   app: Express;
@@ -27,6 +28,9 @@ export interface Context {
   cacheSettings?: {
     cacheEngine: CacheEngine;
   } & CacheSettings;
+  stickyBucketSettings?: {
+    engine: StickyBucketEngine;
+  } & StickyBucketSettings;
   enableHealthCheck?: boolean;
   enableCors?: boolean;
   enableAdmin?: boolean;
@@ -37,6 +41,7 @@ export interface Context {
   eventStreamMaxDurationMs?: number;
   eventStreamPingIntervalMs?: number;
   enableRemoteEval?: boolean;
+  enableStickyBucketing?: boolean;
   proxyAllRequests?: boolean;
   environment?: "development" | "production";
   verboseDebugging?: boolean;
@@ -44,3 +49,4 @@ export interface Context {
 }
 
 export type CacheEngine = "memory" | "redis" | "mongo";
+export type StickyBucketEngine = "redis" | "none";

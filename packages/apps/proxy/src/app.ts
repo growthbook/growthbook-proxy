@@ -14,6 +14,7 @@ import {
 } from "./services/eventStreamManager";
 import { Context, GrowthBookProxy } from "./types";
 import logger, { initializeLogger } from "./services/logger";
+import { initializeStickyBucketService } from "./services/stickyBucket";
 
 export { Context, GrowthBookProxy, CacheEngine } from "./types";
 
@@ -57,6 +58,7 @@ const defaultContext: Context = {
   enableEventStream: true,
   enableEventStreamHeaders: true,
   enableRemoteEval: true,
+  enableStickyBucketing: false,
   proxyAllRequests: false,
 };
 
@@ -76,6 +78,9 @@ export const growthBookProxy = async (
   initializeLogger(ctx);
   await initializeRegistrar(ctx);
   ctx.enableCache && (await initializeCache(ctx));
+  ctx.enableRemoteEval &&
+    ctx.enableStickyBucketing &&
+    (await initializeStickyBucketService(ctx));
   ctx.enableEventStream && initializeEventStreamManager(ctx);
 
   // set up handlers

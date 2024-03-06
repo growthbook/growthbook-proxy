@@ -51,10 +51,10 @@
   resolved "https://registry.yarnpkg.com/@eslint/js/-/js-8.56.0.tgz#ef20350fec605a7f7035a01764731b2de0f3782b"
   integrity sha512-gMsVel9D7f2HLkBma9VbtzZRehRogVRfbr++f06nL2vnCGCNlzOD+/MUov/F4p8myyAHspEhVobgjpX64q5m6A==
 
-"@growthbook/growthbook@^0.30.0":
-  version "0.30.0"
-  resolved "https://registry.yarnpkg.com/@growthbook/growthbook/-/growthbook-0.30.0.tgz#52532c2d5dfa7c017815027678bb241421c308b1"
-  integrity sha512-ennMHKZIhAZokHHcnA9/tOTLFdBB4DQR0WHT8Lf1pD80jWVv8JBCAzsV1jzSjYUQhb8R8pLR2Kho0IfgjzIZGQ==
+"@growthbook/growthbook@^0.34.0":
+  version "0.34.0"
+  resolved "https://registry.yarnpkg.com/@growthbook/growthbook/-/growthbook-0.34.0.tgz#df5275fafbbe055c7cfeea2953a4218a9ec9027f"
+  integrity sha512-3K5JL8QftX7y77EpieYg9anXVYb6+ZafTsrNCWp0HOdmtf4lxHOzCUYwuYDaS3bvmaeIUWJ5hYcOTc6WhNbfJw==
   dependencies:
     dom-mutator "^0.6.0"
 

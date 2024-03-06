@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from "express";
 import { evaluateFeatures } from "@growthbook/proxy-eval";
 import readThroughCacheMiddleware from "../middleware/cache/readThroughCacheMiddleware";
 import { featuresCache } from "../services/cache";
+import { stickyBucketService } from "../services/stickyBucket";
 import { registrar } from "../services/registrar";
 import { apiKeyMiddleware } from "../middleware/apiKeyMiddleware";
 import webhookVerificationMiddleware from "../middleware/webhookVerificationMiddleware";
@@ -150,6 +151,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
     forcedVariations,
     forcedFeatures,
     url,
+    stickyBucketService,
     ctx: req.app.locals?.ctx,
   });
 
