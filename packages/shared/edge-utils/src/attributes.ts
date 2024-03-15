@@ -3,12 +3,14 @@ import { Attributes } from "@growthbook/growthbook";
 
 // Get the user's attributes by merging the cookie and any new information
 export function getUserAttributes(
-  ctx: Context
+  ctx: Context,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  req: any
 ): Attributes {
   // get any saved attributes from the cookie
-  const attributes = ctx.helpers?.getCookieAttributes?.() || {};
+  const attributes = ctx.helpers?.getCookieAttributes?.(ctx, req) || {};
   // enhance the attributes with any new information
-  const autoAttributes = getAutoAttributes(ctx);
+  const autoAttributes = getAutoAttributes(ctx, req);
   return { ...attributes, ...autoAttributes };
 }
 
@@ -16,7 +18,9 @@ export function getUserAttributes(
 // - Try to get the UUID from the cookie via helpers.getAttributes
 // - Or create a new one and store in the cookie via helpers.setAttributes
 export function getUUID(
-  ctx: Context
+  ctx: Context,
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  req: any
 ) {
   const { config, helpers } = ctx;
 
@@ -43,7 +47,7 @@ export function getUUID(
   };
 
   // get the existing UUID from cookie if set, otherwise create one
-  const attributes = getCookieAttributes() || {};
+  const attributes = getCookieAttributes(ctx, req) || {};
   if (attributes[uuidKey]) return attributes[uuidKey];
 
   return genUUID();
@@ -53,7 +57,9 @@ export function getUUID(
 // - UUID will come from the cookie or be generated
 // - Other attributes come from the request headers and URL
 export function getAutoAttributes(
-  ctx: Context
+  ctx: Context,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  req: any,
 ): Attributes {
   const { config, helpers } = ctx;
 
@@ -65,12 +71,12 @@ export function getAutoAttributes(
 
   // UUID
   if (attributeKeys.uuid) {
-    autoAttributes[attributeKeys.uuid] = getUUID(ctx);
+    autoAttributes[attributeKeys.uuid] = getUUID(ctx, req);
   }
 
   // browser and deviceType
   if (attributeKeys?.browser || attributeKeys?.deviceType) {
-    const ua = getHeader?.("user-agent") || "";
+    const ua = getHeader?.(req, "user-agent") || "";
     if (attributeKeys?.browser) {
       autoAttributes[attributeKeys.browser] = ua.match(/Edg/)
         ? "edge"
@@ -88,7 +94,7 @@ export function getAutoAttributes(
   }
 
   // URL
-  const url = getUrl?.() || "";
+  const url = getUrl?.(req) || "";
   if (attributeKeys.url) {
     autoAttributes[attributeKeys.url] = url;
   }
@@ -107,5 +113,5 @@ export function getAutoAttributes(
     } catch (e) {}
   }
 
-  return attributeKeys;
+  return autoAttributes;
 }

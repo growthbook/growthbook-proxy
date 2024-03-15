@@ -10,6 +10,7 @@ export interface Config {
   environment?: string;
   crypto?: any;
   maxPayloadSize?: string;
+  attributeCookieName?: string;
   attributeKeys: {
     uuid?: string;
     browser?: string;
@@ -22,9 +23,9 @@ export interface Config {
 }
 
 export interface Helpers {
-  getRequestURL?: () => string;
-  getRequestHeader?: (key: string) => string;
-  setResponseHeader?: (key: string, value: string) => void;
-  getCookieAttributes?: () => Attributes;
-  setCookieAttributes?: (attributes: Attributes) => void;
+  getRequestURL?: (req: any) => string;
+  getRequestHeader?: (req: any, key: string) => string | undefined;
+  setResponseHeader?: (res: any, key: string, value: string) => void;
+  getCookieAttributes?: (ctx: Context, req: any) => Attributes;
+  setCookieAttributes?: (ctx: Context, res: any, attributes: Attributes) => void;
 }

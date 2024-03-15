@@ -3,6 +3,13 @@ import * as crypto from "crypto";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
 import { Context, defaultContext } from "@growthbook/edge-utils";
+import {
+  getCookieAttributes,
+  getRequestHeader,
+  getRequestURL,
+  setCookieAttributes,
+  setResponseHeader
+} from "./helpers";
 dotenv.config({ path: "./.env.local" });
 
 export default async () => {
@@ -12,6 +19,7 @@ export default async () => {
   // config
   context.config.environment = process.env.NODE_ENV ?? "production";
   "MAX_PAYLOAD_SIZE" in process.env ? (context.config.maxPayloadSize = process.env.MAX_PAYLOAD_SIZE) : "2mb";
+  "ATTRIBUTE_COOKIE_NAME" in process.env ? (context.config.attributeCookieName = process.env.ATTRIBUTE_COOKIE_NAME) : "gb-user-attributes";
 
   // config.crypto
   context.config.crypto = crypto;
@@ -26,7 +34,11 @@ export default async () => {
   "ATTRIBUTE_QUERY" in process.env && (context.config.attributeKeys.query = process.env.ATTRIBUTE_QUERY);
 
   // config.helpers
-  // todo: import from helpers.ts
+  context.helpers.getRequestURL = getRequestURL;
+  context.helpers.getRequestHeader = getRequestHeader;
+  context.helpers.setResponseHeader = setResponseHeader;
+  context.helpers.getCookieAttributes = getCookieAttributes;
+  context.helpers.setCookieAttributes = setCookieAttributes;
 
 
   // Express configuration consts:
@@ -41,7 +53,7 @@ export default async () => {
         return port;
       }
     }
-    return 3300;
+    return 3301;
   }
   const PROXY_PORT = getPort();
 
@@ -60,11 +72,11 @@ export default async () => {
       app,
     );
     server.listen(PROXY_PORT, () => {
-      console.info(`GrowthBook proxy running over HTTP2, port ${PROXY_PORT}`);
+      console.info(`GrowthBook edge for Express running over HTTP2, port ${PROXY_PORT}`);
     });
   } else {
     server = app.listen(PROXY_PORT, () => {
-      console.info(`GrowthBook proxy running over HTTP1.1, port ${PROXY_PORT}`);
+      console.info(`GrowthBook edge for Express running over HTTP1.1, port ${PROXY_PORT}`);
     });
   }
 
