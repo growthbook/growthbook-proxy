@@ -11,7 +11,7 @@
   "scripts": {
     "lint": "eslint './**/*.{ts,tsx,js,jsx}' --fix --max-warnings 0 --cache --cache-strategy content",
     "build:clean": "wsrun -r build:clean",
-    "build:deps": "wsrun -p @growthbook/proxy-eval -c build",
+    "build:deps": "wsrun -p @growthbook/proxy-eval @growthbook/edge-utils -c build",
     "build:apps": "wsrun -p @growthbook/proxy -c build",
     "build": "yarn build:deps && yarn build:apps",
     "type-check": "wsrun -r type-check",
