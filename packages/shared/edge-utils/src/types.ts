@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Attributes } from "@growthbook/growthbook";
 
 export interface Context {
@@ -6,7 +7,9 @@ export interface Context {
 }
 
 export interface Config {
-  crypto?: Crypto;
+  environment?: string;
+  crypto?: any;
+  maxPayloadSize?: string;
   attributeKeys: {
     uuid?: string;
     browser?: string;
