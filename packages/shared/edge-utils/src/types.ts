@@ -1,6 +1,8 @@
+import { Attributes } from "@growthbook/growthbook";
+
 export interface Context {
-  config?: Config;
-  helpers?: Helpers;
+  config: Config;
+  helpers: Helpers;
 }
 
 export interface Config {
@@ -20,6 +22,6 @@ export interface Helpers {
   getRequestURL?: () => string;
   getRequestHeader?: (key: string) => string;
   setResponseHeader?: (key: string, value: string) => void;
-  getAttributes?: () => Record<string, unknown>;
-  setAttributes?: (attributes: Record<string, unknown>) => void;
+  getCookieAttributes?: () => Attributes;
+  setCookieAttributes?: (attributes: Attributes) => void;
 }

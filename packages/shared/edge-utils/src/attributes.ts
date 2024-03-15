@@ -1,24 +1,36 @@
 import { Context } from "./types";
+import { Attributes } from "@growthbook/growthbook";
 
-export const getUUID = (
+// Get the user's attributes by merging the cookie and any new information
+export function getUserAttributes(
   ctx: Context
-) => {
+): Attributes {
+  // get any saved attributes from the cookie
+  const attributes = ctx.helpers?.getCookieAttributes?.() || {};
+  // enhance the attributes with any new information
+  const autoAttributes = getAutoAttributes(ctx);
+  return { ...attributes, ...autoAttributes };
+}
+
+// Get or create a UUID for the user:
+// - Try to get the UUID from the cookie via helpers.getAttributes
+// - Or create a new one and store in the cookie via helpers.setAttributes
+export function getUUID(
+  ctx: Context
+) {
   const { config, helpers } = ctx;
+
   const crypto = config?.crypto || globalThis?.crypto;
-  const getAttributes = helpers?.getAttributes;
-  const setAttributes = helpers?.setAttributes;
+  const getCookieAttributes = helpers?.getCookieAttributes;
+  const setCookieAttributes = helpers?.setCookieAttributes;
 
   const attributeKeys = config?.attributeKeys || {};
   const uuidKey = attributeKeys?.uuid || "id";
 
-  if (!crypto || !getAttributes || !setAttributes) {
+  if (!crypto || !getCookieAttributes || !setCookieAttributes) {
     throw new Error("Missing required dependencies");
   }
 
-  // const COOKIE_NAME = "gbuuid";
-  // const COOKIE_DAYS = 400; // 400 days is the max cookie duration for chrome
-
-  // use crypto.randomUUID if set
   const genUUID = () => {
     if (crypto.randomUUID) return crypto.randomUUID();
     return ("" + 1e7 + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
@@ -30,20 +42,19 @@ export const getUUID = (
     );
   };
 
-  // get the existing UUID from cookie if set, otherwise create one and store it in the cookie
-  const attributes = getAttributes() || {};
+  // get the existing UUID from cookie if set, otherwise create one
+  const attributes = getCookieAttributes() || {};
   if (attributes[uuidKey]) return attributes[uuidKey];
 
-  const uuid = genUUID();
-  // todo: we're setting cookie here via setAttributes. do we need to do this, or handle it later?
-  setAttributes({ ...attributes, [uuidKey]: uuid });
-  return uuid;
-};
+  return genUUID();
+}
 
-
-export const getAutoAttributes = (
+// Infer attributes from the request
+// - UUID will come from the cookie or be generated
+// - Other attributes come from the request headers and URL
+export function getAutoAttributes(
   ctx: Context
-) => {
+): Attributes {
   const { config, helpers } = ctx;
 
   const getHeader = helpers?.getRequestHeader;
@@ -59,7 +70,7 @@ export const getAutoAttributes = (
 
   // browser and deviceType
   if (attributeKeys?.browser || attributeKeys?.deviceType) {
-    const ua = getHeader?.("User-Agent") || "";
+    const ua = getHeader?.("user-agent") || "";
     if (attributeKeys?.browser) {
       autoAttributes[attributeKeys.browser] = ua.match(/Edg/)
         ? "edge"

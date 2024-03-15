@@ -1,4 +1,5 @@
 export { Context, Config, Helpers } from "./types";
 
-export { getUUID, getAutoAttributes } from "./attributes";
+export { defaultContext } from "./config";
+export { getUserAttributes, getUUID, getAutoAttributes } from "./attributes";
 
