@@ -20,10 +20,10 @@ export default {
 			element(element: Element) {
 				/**
 				 * code goes here for injecting into the response
-				 * 
+				 *
 				 */
 			},
 		});
 		return rewriter.transform(response);
-	}
+	},
 };

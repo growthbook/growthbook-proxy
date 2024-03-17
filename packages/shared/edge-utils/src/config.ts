@@ -2,6 +2,7 @@ import { Context } from "./types";
 
 export const defaultContext: Context = {
   config: {
+    proxyTarget: "/",
     attributeKeys: {
       uuid: "uuid",
       browser: "browser",
@@ -10,7 +11,7 @@ export const defaultContext: Context = {
       path: "path",
       host: "host",
       query: "query",
-    }
+    },
   },
-  helpers: {}
-}
+  helpers: {},
+};

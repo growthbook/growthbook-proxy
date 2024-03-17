@@ -1,11 +1,11 @@
-import { Context } from "./types";
 import { Attributes } from "@growthbook/growthbook";
+import { Context } from "./types";
 
 // Get the user's attributes by merging the cookie and any new information
 export function getUserAttributes(
   ctx: Context,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  req: any
+  req: any,
 ): Attributes {
   // get any saved attributes from the cookie
   const attributes = ctx.helpers?.getCookieAttributes?.(ctx, req) || {};
@@ -19,8 +19,8 @@ export function getUserAttributes(
 // - Or create a new one and store in the cookie via helpers.setAttributes
 export function getUUID(
   ctx: Context,
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-  req: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  req: any,
 ) {
   const { config, helpers } = ctx;
 
@@ -39,10 +39,10 @@ export function getUUID(
     if (crypto.randomUUID) return crypto.randomUUID();
     return ("" + 1e7 + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
       (
-        ((c as unknown) as number) ^
+        (c as unknown as number) ^
         (crypto.getRandomValues(new Uint8Array(1))[0] &
-          (15 >> (((c as unknown) as number) / 4)))
-      ).toString(16)
+          (15 >> ((c as unknown as number) / 4)))
+      ).toString(16),
     );
   };
 
@@ -81,15 +81,17 @@ export function getAutoAttributes(
       autoAttributes[attributeKeys.browser] = ua.match(/Edg/)
         ? "edge"
         : ua.match(/Chrome/)
-          ? "chrome"
-          : ua.match(/Firefox/)
-            ? "firefox"
-            : ua.match(/Safari/)
-              ? "safari"
-              : "unknown";
+        ? "chrome"
+        : ua.match(/Firefox/)
+        ? "firefox"
+        : ua.match(/Safari/)
+        ? "safari"
+        : "unknown";
     }
     if (attributeKeys?.deviceType) {
-      autoAttributes[attributeKeys.deviceType] = ua.match(/Mobi/) ? "mobile" : "desktop";
+      autoAttributes[attributeKeys.deviceType] = ua.match(/Mobi/)
+        ? "mobile"
+        : "desktop";
     }
   }
 
@@ -110,7 +112,9 @@ export function getAutoAttributes(
       if (attributeKeys.query) {
         autoAttributes[attributeKeys.query] = urlObj.search;
       }
-    } catch (e) {}
+    } catch (e) {
+      // ignore
+    }
   }
 
   return autoAttributes;
