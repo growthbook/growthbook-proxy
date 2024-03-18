@@ -29,10 +29,9 @@ export default async (env) => {
 	context.helpers.getRequestMethod = getRequestMethod;
 	context.helpers.getRequestHeader = getRequestHeader;
 	context.helpers.setResponseHeader = setResponseHeader;
-	// need to add something for this context.helpers.proxyRequest = proxyRequest;
+	// need to add something for context.helpers.proxyRequest = proxyRequest;
 	context.helpers.getCookieAttributes = getCookieAttributes;
 	context.helpers.setCookieAttributes = setCookieAttributes;
-
 	function getPort() {
 		if (env.PORT) {
 			const port = parseInt(env.PORT);
@@ -42,4 +41,5 @@ export default async (env) => {
 		}
 		return 3301;
 	}
-	const PROXY_PORT = getPort();
+	context.proxy_port = getPort();
+};
