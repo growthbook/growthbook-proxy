@@ -8,7 +8,7 @@ export const defaultContext: Context = {
       clientKey: "",
     },
     attributeKeys: {
-      uuid: "uuid",
+      uuid: "id",
       browser: "browser",
       deviceType: "deviceType",
       url: "url",

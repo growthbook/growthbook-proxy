@@ -1,4 +1,4 @@
-import { GrowthBook, isURLTargeted } from "@growthbook/growthbook";
+import { AutoExperiment, GrowthBook, isURLTargeted } from "@growthbook/growthbook";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
 import { JSDOM } from "jsdom";
@@ -9,16 +9,22 @@ export async function edgeApp(context: Context, req: any, res: any, next?: any) 
   if (context.helpers.getRequestMethod?.(req) !== "GET") {
     return context.helpers.proxyRequest?.(context, req, res, next);
   }
+  // todo: temp filter
+  if (newUrl.length > "http://127.0.0.1:3001/".length) {
+    return context.helpers.proxyRequest?.(context, req, res, next);
+  }
 
   const attributes = getUserAttributes(context, req);
   // todo: polyfill localStorage -> edge key/val for SDK cache?
   const growthbook = new GrowthBook({
     apiHost: context.config.growthbook.apiHost,
     clientKey: context.config.growthbook.clientKey,
+    url: newUrl,
+    isBrowser: true,
     attributes,
   });
   await growthbook.loadFeatures();
-  const targetedExperiments = getTargetedExperiments(growthbook, newUrl);
+  let targetedExperiments = getTargetedExperiments(growthbook, newUrl);
   const shouldFetch = targetedExperiments.length > 0;
 
   if (shouldFetch) {
@@ -26,19 +32,17 @@ export async function edgeApp(context: Context, req: any, res: any, next?: any) 
     const response = await fetch(newUrl);
     let body = await response.text();
 
+    // todo: switch DOM mutation mode (mutate, inject script) based on config?
     let dom = new JSDOM(body);
+    // @ts-ignore
+    globalThis.window = dom.window;
     globalThis.document = dom.window.document;
-    const bodyEl = document.body;
-    const el = document.createElement("h1");
-    const text = document.createTextNode("Growthbook Edge...");
-    el.appendChild(text);
-    bodyEl.appendChild(el);
+    // get mutationObserver from JSDOM
+    globalThis.MutationObserver = dom.window.MutationObserver;
 
     await growthbook.setURL(newUrl);
 
     body = dom.serialize();
-    // todo: get mutations, apply to DOM -> body
-
     return res.send(body);
   }
 
@@ -66,12 +70,11 @@ function getDefaultDestinationURL(context: Context, req: any): string {
 function getTargetedExperiments(
   growthbook: GrowthBook,
   url: string
-): string[] {
+): AutoExperiment[] {
   const experiments = growthbook.getExperiments();
-  const targetedExperiments = experiments.filter((e) => {
+  return experiments.filter((e) => {
     if (e.manual) return false;
     if (!e.urlPatterns) return false;
     return isURLTargeted(url, e.urlPatterns);
   });
-  return targetedExperiments.map((e) => e.key);
 }
