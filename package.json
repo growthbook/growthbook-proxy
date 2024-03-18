@@ -17,7 +17,7 @@
     "type-check": "wsrun -r type-check",
     "start": "wsrun -p @growthbook/proxy -c start",
     "dev": "wsrun -r dev",
-    "dev:edge": "wsrun -p @growthbook/edge-express @growthbook/edge-utils -c dev"
+    "dev:edge": "wsrun -p @growthbook/edge-utils @growthbook/edge-express -c dev"
   },
   "workspaces": [
     "packages/**"

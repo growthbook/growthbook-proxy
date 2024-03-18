@@ -1,6 +1,7 @@
 import { GrowthBook, isURLTargeted } from "@growthbook/growthbook";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
+import { JSDOM } from "jsdom";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function edgeApp(context: Context, req: any, res: any, next?: any) {
@@ -25,11 +26,17 @@ export async function edgeApp(context: Context, req: any, res: any, next?: any) 
     const response = await fetch(newUrl);
     let body = await response.text();
 
-    // prove that we can inject stuff:
-    body += `\n<h1>Growthbook Edge...</h1>`;
-    // only need this if we want to run DOM mutations on edge:
-    // todo: body to DOM
+    let dom = new JSDOM(body);
+    globalThis.document = dom.window.document;
+    const bodyEl = document.body;
+    const el = document.createElement("h1");
+    const text = document.createTextNode("Growthbook Edge...");
+    el.appendChild(text);
+    bodyEl.appendChild(el);
+
     await growthbook.setURL(newUrl);
+
+    body = dom.serialize();
     // todo: get mutations, apply to DOM -> body
 
     return res.send(body);
