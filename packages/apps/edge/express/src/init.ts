@@ -27,9 +27,11 @@ export default async () => {
   "ATTRIBUTE_COOKIE_NAME" in process.env
     ? (context.config.attributeCookieName = process.env.ATTRIBUTE_COOKIE_NAME)
     : "gb-user-attributes";
-
-  // config.crypto
   context.config.crypto = crypto;
+
+  // config.growthbook
+  context.config.growthbook.apiHost = process.env.GROWTHBOOK_API_HOST ?? "";
+  context.config.growthbook.clientKey = process.env.GROWTHBOOK_CLIENT_KEY ?? "";
 
   // config.attributeKeys
   "ATTRIBUTE_UUID" in process.env &&

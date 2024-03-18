@@ -12,6 +12,10 @@ export interface Config {
   crypto?: any;
   maxPayloadSize?: string;
   attributeCookieName?: string;
+  growthbook: {
+    apiHost: string;
+    clientKey: string;
+  }
   attributeKeys: {
     uuid?: string;
     browser?: string;
