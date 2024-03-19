@@ -18,6 +18,9 @@ export function getRequestHeader(req: Request, key: string) {
 export function setResponseHeader(res: Response, key: string, value: string) {
   res.setHeader(key, value);
 }
+export function sendResonse(res: Response, body: string) {
+  return res.send(body);
+}
 
 // cache proxy function
 let proxyFn: ReturnType<typeof proxy> | undefined = undefined;
