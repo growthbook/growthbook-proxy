@@ -15,7 +15,7 @@ export interface Config {
   growthbook: {
     apiHost: string;
     clientKey: string;
-  }
+  };
   attributeKeys: {
     uuid?: string;
     browser?: string;
@@ -34,6 +34,7 @@ export interface Helpers {
   getRequestHeader?: (req: any, key: string) => string | undefined;
   setResponseHeader?: (res: any, key: string, value: string) => void;
   sendResonse?: (res: any, body: string) => void;
+  fetch?: (ctx: Context, url: string) => Promise<any>;
   proxyRequest?: (
     ctx: Context,
     req: any,

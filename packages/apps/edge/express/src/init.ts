@@ -7,6 +7,7 @@ import {
   getCookieAttributes,
   getRequestMethod,
   getRequestHeader,
+  fetchFn,
   proxyRequest,
   getRequestURL,
   setCookieAttributes,
@@ -55,6 +56,7 @@ export default async () => {
   context.helpers.getRequestMethod = getRequestMethod;
   context.helpers.getRequestHeader = getRequestHeader;
   context.helpers.setResponseHeader = setResponseHeader;
+  context.helpers.fetch = fetchFn;
   context.helpers.proxyRequest = proxyRequest;
   context.helpers.getCookieAttributes = getCookieAttributes;
   context.helpers.setCookieAttributes = setCookieAttributes;

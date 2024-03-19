@@ -22,6 +22,10 @@ export function sendResonse(res: Response, body: string) {
   return res.send(body);
 }
 
+export async function fetchFn(_: Context, url: string) {
+  return fetch(url);
+}
+
 // cache proxy function
 let proxyFn: ReturnType<typeof proxy> | undefined = undefined;
 export async function proxyRequest(
