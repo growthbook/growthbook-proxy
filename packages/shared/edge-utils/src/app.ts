@@ -1,16 +1,27 @@
-import { AutoExperiment, GrowthBook, isURLTargeted } from "@growthbook/growthbook";
+import {
+  AutoExperiment,
+  GrowthBook,
+  isURLTargeted,
+} from "@growthbook/growthbook";
+import { JSDOM } from "jsdom";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
-import { JSDOM } from "jsdom";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function edgeApp(context: Context, req: any, res: any, next?: any) {
+export async function edgeApp(
+  context: Context,
+  req: any,
+  res: any,
+  next?: any,
+) {
   const newUrl = getDefaultDestinationURL(context, req);
+  console.log({ newUrl });
+
+  // todo: temp filters
   if (context.helpers.getRequestMethod?.(req) !== "GET") {
     return context.helpers.proxyRequest?.(context, req, res, next);
   }
-  // todo: temp filter
-  if (newUrl.length > "http://127.0.0.1:3001/".length) {
+  if (newUrl.length > context.config.proxyTarget.length) {
     return context.helpers.proxyRequest?.(context, req, res, next);
   }
 
@@ -24,20 +35,28 @@ export async function edgeApp(context: Context, req: any, res: any, next?: any) 
     attributes,
   });
   await growthbook.loadFeatures();
-  let targetedExperiments = getTargetedExperiments(growthbook, newUrl);
-  const shouldFetch = targetedExperiments.length > 0;
+
+  const { visualExperiments, redirectExperiments } = getTargetedExperiments(
+    growthbook,
+    newUrl,
+  );
+  const shouldFetch = visualExperiments.length > 0;
 
   if (shouldFetch) {
-    // todo: abstract body fetcher to helper
-    const response = await fetch(newUrl);
+    let response: Response | undefined;
+    try {
+      response = (await context.helpers.fetch?.(context, newUrl)) as Response;
+    } catch (e) {
+      console.error(e);
+      return res.status(500).send("Error fetching page");
+    }
     let body = await response.text();
 
     // todo: switch DOM mutation mode (mutate, inject script) based on config?
-    let dom = new JSDOM(body);
+    const dom = new JSDOM(body);
     // @ts-ignore
     globalThis.window = dom.window;
     globalThis.document = dom.window.document;
-    // get mutationObserver from JSDOM
     globalThis.MutationObserver = dom.window.MutationObserver;
 
     await growthbook.setURL(newUrl);
@@ -56,25 +75,62 @@ export async function edgeApp(context: Context, req: any, res: any, next?: any) 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getDefaultDestinationURL(context: Context, req: any): string {
-  let newUrl = context.helpers.getRequestURL?.(req) || "";
-  try {
-    const newUrlObj = new URL(newUrl);
-    newUrlObj.host = context.config.proxyTarget;
-    newUrl = newUrlObj.href;
-  } catch(e) {
-    // ignore
+  const currentURL = context.helpers.getRequestURL?.(req) || "";
+  const proxyTarget = context.config.proxyTarget;
+
+  const currentParsedURL = new URL(currentURL);
+  const proxyParsedURL = new URL(proxyTarget);
+
+  const protocol = proxyParsedURL.protocol
+    ? proxyParsedURL.protocol
+    : currentParsedURL.protocol;
+  const hostname = proxyParsedURL.hostname
+    ? proxyParsedURL.hostname
+    : currentParsedURL.hostname;
+  const port = proxyParsedURL.port
+    ? proxyParsedURL.port
+    : protocol === "http:"
+    ? "80"
+    : "443";
+
+  let newURL = `${protocol}//${hostname}`;
+  if ((protocol === "http" && port !== "80") || port !== "443") {
+    newURL += `:${port}`;
   }
-  return newUrl;
+  newURL += `${currentParsedURL.pathname}`;
+  if (currentParsedURL.search) {
+    newURL += currentParsedURL.search;
+  }
+  if (currentParsedURL.hash) {
+    newURL += currentParsedURL.hash;
+  }
+
+  return newURL;
 }
 
+type TargetedAutoExperiments = {
+  visualExperiments: AutoExperiment[];
+  redirectExperiments: AutoExperiment[];
+};
 function getTargetedExperiments(
   growthbook: GrowthBook,
-  url: string
-): AutoExperiment[] {
+  url: string,
+): TargetedAutoExperiments {
   const experiments = growthbook.getExperiments();
-  return experiments.filter((e) => {
-    if (e.manual) return false;
-    if (!e.urlPatterns) return false;
-    return isURLTargeted(url, e.urlPatterns);
+  const ret: TargetedAutoExperiments = {
+    visualExperiments: [],
+    redirectExperiments: [],
+  };
+  experiments.forEach((e) => {
+    if (e.manual) return;
+    if (!e.urlPatterns) return;
+    if (isURLTargeted(url, e.urlPatterns)) {
+      if (e.variations?.[0]?.urlRedirects) {
+        ret.redirectExperiments.push(e);
+      } else {
+        ret.visualExperiments.push(e);
+      }
+    }
   });
+  return ret;
 }

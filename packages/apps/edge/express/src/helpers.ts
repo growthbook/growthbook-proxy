@@ -19,6 +19,10 @@ export function setResponseHeader(res: Response, key: string, value: string) {
   res.setHeader(key, value);
 }
 
+export async function fetchFn(_: Context, url: string) {
+  return fetch(url);
+}
+
 // cache proxy function
 let proxyFn: ReturnType<typeof proxy> | undefined = undefined;
 export async function proxyRequest(
