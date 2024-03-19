@@ -1,10 +1,19 @@
-import { AutoExperiment, GrowthBook, isURLTargeted } from "@growthbook/growthbook";
+import {
+  AutoExperiment,
+  GrowthBook,
+  isURLTargeted,
+} from "@growthbook/growthbook";
+import { JSDOM } from "jsdom";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
-import { JSDOM } from "jsdom";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function edgeApp(context: Context, req: any, res: any, next?: any) {
+export async function edgeApp(
+  context: Context,
+  req: Request,
+  res: Response,
+  next?: unknown,
+) {
   const newUrl = getDefaultDestinationURL(context, req);
   if (context.helpers.getRequestMethod?.(req) !== "GET") {
     return context.helpers.proxyRequest?.(context, req, res, next);
@@ -24,7 +33,7 @@ export async function edgeApp(context: Context, req: any, res: any, next?: any) 
     attributes,
   });
   await growthbook.loadFeatures();
-  let targetedExperiments = getTargetedExperiments(growthbook, newUrl);
+  const targetedExperiments = getTargetedExperiments(growthbook, newUrl);
   const shouldFetch = targetedExperiments.length > 0;
 
   if (shouldFetch) {
@@ -33,7 +42,7 @@ export async function edgeApp(context: Context, req: any, res: any, next?: any) 
     let body = await response.text();
 
     // todo: switch DOM mutation mode (mutate, inject script) based on config?
-    let dom = new JSDOM(body);
+    const dom = new JSDOM(body);
     // @ts-ignore
     globalThis.window = dom.window;
     globalThis.document = dom.window.document;
@@ -43,7 +52,7 @@ export async function edgeApp(context: Context, req: any, res: any, next?: any) 
     await growthbook.setURL(newUrl);
 
     body = dom.serialize();
-    return res.send(body);
+    return context.helpers.sendResonse?.(res, body);
   }
 
   // todo: handle other side effects
@@ -61,7 +70,7 @@ function getDefaultDestinationURL(context: Context, req: any): string {
     const newUrlObj = new URL(newUrl);
     newUrlObj.host = context.config.proxyTarget;
     newUrl = newUrlObj.href;
-  } catch(e) {
+  } catch (e) {
     // ignore
   }
   return newUrl;
@@ -69,7 +78,7 @@ function getDefaultDestinationURL(context: Context, req: any): string {
 
 function getTargetedExperiments(
   growthbook: GrowthBook,
-  url: string
+  url: string,
 ): AutoExperiment[] {
   const experiments = growthbook.getExperiments();
   return experiments.filter((e) => {

@@ -18,6 +18,10 @@ export function setResponseHeader(res: Response, key: string, value: string) {
 	res.headers.set(key, value);
 }
 
+export function sendResonse(res: Response, body: string){
+	return new Response(body);
+}
+
 export function getCookieAttributes(ctx: Context, req: Request): Attributes {
 	const cookieName = ctx.config.attributeCookieName || 'gb-user-attributes';
 	const cookies = parse(req.headers.get('Cookie') || '');

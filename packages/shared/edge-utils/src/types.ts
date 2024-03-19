@@ -33,6 +33,7 @@ export interface Helpers {
   getRequestMethod?: (req: any) => string;
   getRequestHeader?: (req: any, key: string) => string | undefined;
   setResponseHeader?: (res: any, key: string, value: string) => void;
+  sendResonse?: (res: any, body: string) => void;
   proxyRequest?: (
     ctx: Context,
     req: any,
