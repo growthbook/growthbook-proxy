@@ -11,7 +11,7 @@ export interface Config {
   environment?: string;
   crypto?: any;
   maxPayloadSize?: string;
-  attributeCookieName?: string;
+  uuidCookieName?: string;
   growthbook: {
     apiHost: string;
     clientKey: string;
@@ -33,7 +33,7 @@ export interface Helpers {
   getRequestMethod?: (req: any) => string;
   getRequestHeader?: (req: any, key: string) => string | undefined;
   setResponseHeader?: (res: any, key: string, value: string) => void;
-  sendResonse?: (res: any, body: string) => void;
+  sendResponse?: (res: any, body: string) => void;
   fetch?: (ctx: Context, url: string) => Promise<any>;
   proxyRequest?: (
     ctx: Context,
@@ -41,12 +41,6 @@ export interface Helpers {
     res?: any,
     next?: any,
   ) => Promise<any>;
-  // todo: piped/streamed fetch?
   // GB cookies
-  getCookieAttributes?: (ctx: Context, req: any) => Attributes;
-  setCookieAttributes?: (
-    ctx: Context,
-    res: any,
-    attributes: Attributes,
-  ) => void;
+  getUUIDCookie?: (ctx: Context, req: any) => string;
 }

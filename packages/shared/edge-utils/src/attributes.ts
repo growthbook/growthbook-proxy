@@ -1,22 +1,25 @@
 import { Attributes } from "@growthbook/growthbook";
 import { Context } from "./types";
 
-// Get the user's attributes by merging the cookie and any new information
+// Get the user's attributes by merging the UUID cookie with any auto-attributes
 export function getUserAttributes(
   ctx: Context,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   req: any,
 ): Attributes {
   // get any saved attributes from the cookie
-  const attributes = ctx.helpers?.getCookieAttributes?.(ctx, req) || {};
+  const uuid = getUUID(ctx, req);
+  const attributes = {
+    [ctx.config.attributeKeys.uuid || "id"]: uuid,
+  }
   // enhance the attributes with any new information
   const autoAttributes = getAutoAttributes(ctx, req);
   return { ...attributes, ...autoAttributes };
 }
 
 // Get or create a UUID for the user:
-// - Try to get the UUID from the cookie via helpers.getAttributes
-// - Or create a new one and store in the cookie via helpers.setAttributes
+// - Try to get the UUID from the cookie
+// - Or create a new one and store in the cookie
 export function getUUID(
   ctx: Context,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,13 +28,9 @@ export function getUUID(
   const { config, helpers } = ctx;
 
   const crypto = config?.crypto || globalThis?.crypto;
-  const getCookieAttributes = helpers?.getCookieAttributes;
-  const setCookieAttributes = helpers?.setCookieAttributes;
+  const getUUIDCookie = helpers?.getUUIDCookie;
 
-  const attributeKeys = config?.attributeKeys || {};
-  const uuidKey = attributeKeys?.uuid || "id";
-
-  if (!crypto || !getCookieAttributes || !setCookieAttributes) {
+  if (!crypto || !getUUIDCookie) {
     throw new Error("Missing required dependencies");
   }
 
@@ -47,10 +46,7 @@ export function getUUID(
   };
 
   // get the existing UUID from cookie if set, otherwise create one
-  const attributes = getCookieAttributes(ctx, req) || {};
-  if (attributes[uuidKey]) return attributes[uuidKey];
-
-  return genUUID();
+  return getUUIDCookie(ctx, req) || genUUID();
 }
 
 // Infer attributes from the request

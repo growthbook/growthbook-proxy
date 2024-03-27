@@ -15,9 +15,8 @@ export async function edgeApp(
   next?: any,
 ) {
   const newUrl = getDefaultDestinationURL(context, req);
-  console.log({ newUrl });
 
-  // todo: temp filters
+  // todo: temp filters. replace with routing logic
   if (context.helpers.getRequestMethod?.(req) !== "GET") {
     return context.helpers.proxyRequest?.(context, req, res, next);
   }
@@ -40,7 +39,13 @@ export async function edgeApp(
     growthbook,
     newUrl,
   );
-  const shouldFetch = visualExperiments.length > 0;
+
+  const shouldFetch = true; // todo: maybe false if no SDK injection needed?
+  let body = "";
+
+  const mayMutateDOM = visualExperiments.length > 0;
+  const shouldInjectSDK = true; // todo: parameterize?
+  const shouldInjectTrackingCalls = true // todo: parameterize?
 
   if (shouldFetch) {
     let response: Response | undefined;
@@ -50,9 +55,12 @@ export async function edgeApp(
       console.error(e);
       return res.status(500).send("Error fetching page");
     }
-    let body = await response.text();
+    body = await response.text();
+  }
 
-    // todo: switch DOM mutation mode (mutate, inject script) based on config?
+  // Visual experiments
+  if (mayMutateDOM) {
+    // todo: consider non-mutationObserver approach (no JSDOM)
     const dom = new JSDOM(body);
     // @ts-ignore
     globalThis.window = dom.window;
@@ -60,14 +68,14 @@ export async function edgeApp(
     globalThis.MutationObserver = dom.window.MutationObserver;
 
     await growthbook.setURL(newUrl);
-
     body = dom.serialize();
-    return context.helpers.sendResonse?.(res, body);
   }
 
   // todo: handle other side effects
 
-  context.helpers.setCookieAttributes?.(context, res, attributes);
+  if (shouldFetch) {
+    return context.helpers.sendResponse?.(res, body);
+  }
 
   // passthrough if no SDK side effects
   return context.helpers.proxyRequest?.(context, req, res, next);
@@ -125,6 +133,7 @@ function getTargetedExperiments(
     if (e.manual) return;
     if (!e.urlPatterns) return;
     if (isURLTargeted(url, e.urlPatterns)) {
+      // @ts-ignore
       if (e.variations?.[0]?.urlRedirects) {
         ret.redirectExperiments.push(e);
       } else {

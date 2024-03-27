@@ -4,14 +4,14 @@ import * as spdy from "spdy";
 import dotenv from "dotenv";
 import { Context, defaultContext } from "@growthbook/edge-utils";
 import {
-  getCookieAttributes,
   getRequestMethod,
   getRequestHeader,
+  sendResponse,
   fetchFn,
   proxyRequest,
   getRequestURL,
-  setCookieAttributes,
   setResponseHeader,
+  getUUIDCookie,
 } from "./helpers";
 dotenv.config({ path: "./.env.local" });
 
@@ -25,9 +25,9 @@ export default async () => {
   "MAX_PAYLOAD_SIZE" in process.env
     ? (context.config.maxPayloadSize = process.env.MAX_PAYLOAD_SIZE)
     : "2mb";
-  "ATTRIBUTE_COOKIE_NAME" in process.env
-    ? (context.config.attributeCookieName = process.env.ATTRIBUTE_COOKIE_NAME)
-    : "gb-user-attributes";
+  "UUID_COOKIE_NAME" in process.env
+    ? (context.config.uuidCookieName = process.env.UUID_COOKIE_NAME)
+    : "gbuuid";
   context.config.crypto = crypto;
 
   // config.growthbook
@@ -56,10 +56,10 @@ export default async () => {
   context.helpers.getRequestMethod = getRequestMethod;
   context.helpers.getRequestHeader = getRequestHeader;
   context.helpers.setResponseHeader = setResponseHeader;
+  context.helpers.sendResponse = sendResponse;
   context.helpers.fetch = fetchFn;
   context.helpers.proxyRequest = proxyRequest;
-  context.helpers.getCookieAttributes = getCookieAttributes;
-  context.helpers.setCookieAttributes = setCookieAttributes;
+  context.helpers.getUUIDCookie = getUUIDCookie;
 
   // Express configuration consts:
   const USE_HTTP2 = process.env.USE_HTTP2;

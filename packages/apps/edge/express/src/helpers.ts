@@ -18,7 +18,7 @@ export function getRequestHeader(req: Request, key: string) {
 export function setResponseHeader(res: Response, key: string, value: string) {
   res.setHeader(key, value);
 }
-export function sendResonse(res: Response, body: string) {
+export function sendResponse(res: Response, body: string) {
   return res.send(body);
 }
 
@@ -41,26 +41,8 @@ export async function proxyRequest(
   return proxyFn(req, res, next);
 }
 
-export function getCookieAttributes(ctx: Context, req: Request): Attributes {
-  const cookieName = ctx.config.attributeCookieName || "gb-user-attributes";
+export function getUUIDCookie(ctx: Context, req: Request): string {
+  const cookieName = ctx.config.uuidCookieName || "gbuuid";
   const cookie = req.cookies[cookieName];
-  if (!cookie) return {};
-  try {
-    return JSON.parse(cookie);
-  } catch (e) {
-    // ignore
-  }
-  return {};
-}
-
-export function setCookieAttributes(
-  ctx: Context,
-  res: Response,
-  attributes: Attributes,
-) {
-  const cookieName = ctx.config.attributeCookieName || "gb-user-attributes";
-  res.cookie(encodeURIComponent(cookieName), JSON.stringify(attributes), {
-    maxAge: 365 * 24 * 60 * 60 * 1000,
-    httpOnly: true,
-  });
+  return cookie || "";
 }
