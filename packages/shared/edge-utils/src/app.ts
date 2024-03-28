@@ -6,7 +6,7 @@ import {
 import { JSDOM } from "jsdom";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
-import { sdkWrapper } from "./sdkWrapper";
+import { sdkWrapper } from "./generated/sdkWrapper";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function edgeApp(
@@ -26,6 +26,7 @@ export async function edgeApp(
   }
 
   const attributes = getUserAttributes(context, req);
+  attributes["wtf"] = "yes";
   // todo: polyfill localStorage -> edge key/val for SDK cache?
   const growthbook = new GrowthBook({
     apiHost: context.config.growthbook.apiHost,
@@ -73,15 +74,18 @@ export async function edgeApp(
   }
 
   // todo: handle other side effects
-  console.log("pattern", context.config.scriptInjectionPattern)
 
+  // todo: write edge-computed attributes on top of auto-attributes
   if (shouldInjectSDK) {
-    const scriptTag = `\n\n
-<script>
-  console.log("Injecting GrowthBook SDK");
+    const scriptTag = `
+<script
+  data-api-host="${context.config.growthbook.apiHost}"
+  data-client-key="${context.config.growthbook.clientKey}"
+  data-attributes="${JSON.stringify(attributes)}"
+>
   ${sdkWrapper}
 </script>
-\n`;
+`;
     const pattern = context.config.scriptInjectionPattern || "</body>";
     body = body.replace(pattern, scriptTag + pattern);
   }
