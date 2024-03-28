@@ -1,0 +1,30 @@
+{
+  "name": "@growthbook/edge-utils",
+  "description": "Utilities for edge workers",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/growthbook/growthbook-proxy.git",
+    "directory": "packages/shared/edge-utils"
+  },
+  "author": "Bryce Fitzsimons",
+  "scripts": {
+    "build:clean": "rimraf -rf dist",
+    "build:typescript": "tsc",
+    "build": "yarn build:clean && yarn generate-sdk-wrapper && yarn build:typescript",
+    "generate-sdk-wrapper": "node scripts/generate-sdk-wrapper.js",
+    "type-check": "tsc --pretty --noEmit",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@growthbook/growthbook": "^0.34.0",
+    "jsdom": "^24.0.0"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.6",
+    "rimraf": "^5.0.5",
+    "typescript": "5.2.2"
+  }
+}
