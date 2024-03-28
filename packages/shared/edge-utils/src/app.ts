@@ -81,8 +81,12 @@ export async function edgeApp(
 <script
   data-api-host="${context.config.growthbook.apiHost}"
   data-client-key="${context.config.growthbook.clientKey}"
-  data-attributes="${JSON.stringify(attributes)}"
+  data-uuid="${attributes.uuid}"
 >
+  window.growthbook_queue = [
+    (gb) => gb.setAttributes(${JSON.stringify(attributes)})
+  ];
+  
   ${sdkWrapper}
 </script>
 `;
