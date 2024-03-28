@@ -9,9 +9,10 @@ export interface Context {
 export interface Config {
   proxyTarget: string;
   environment?: string;
-  crypto?: any;
   maxPayloadSize?: string;
   uuidCookieName?: string;
+  scriptInjectionPattern?: string;
+  crypto?: any;
   growthbook: {
     apiHost: string;
     clientKey: string;

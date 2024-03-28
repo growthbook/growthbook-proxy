@@ -13,7 +13,8 @@
   "scripts": {
     "build:clean": "rimraf -rf dist",
     "build:typescript": "tsc",
-    "build": "yarn build:clean && yarn build:typescript",
+    "build": "yarn build:clean && yarn generate-sdk-wrapper && yarn build:typescript",
+    "generate-sdk-wrapper": "node scripts/generate-sdk-wrapper.js",
     "type-check": "tsc --pretty --noEmit",
     "dev": "tsc --watch"
   },

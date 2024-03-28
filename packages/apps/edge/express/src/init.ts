@@ -28,6 +28,10 @@ export default async () => {
   "UUID_COOKIE_NAME" in process.env
     ? (context.config.uuidCookieName = process.env.UUID_COOKIE_NAME)
     : "gbuuid";
+  "SCRIPT_INJECTION_PATTERN" in process.env
+    ? (context.config.scriptInjectionPattern =
+        process.env.SCRIPT_INJECTION_PATTERN)
+    : "</body>";
   context.config.crypto = crypto;
 
   // config.growthbook

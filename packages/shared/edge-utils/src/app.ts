@@ -6,6 +6,7 @@ import {
 import { JSDOM } from "jsdom";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
+import { sdkWrapper } from "./sdkWrapper";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function edgeApp(
@@ -72,6 +73,18 @@ export async function edgeApp(
   }
 
   // todo: handle other side effects
+  console.log("pattern", context.config.scriptInjectionPattern)
+
+  if (shouldInjectSDK) {
+    const scriptTag = `\n\n
+<script>
+  console.log("Injecting GrowthBook SDK");
+  ${sdkWrapper}
+</script>
+\n`;
+    const pattern = context.config.scriptInjectionPattern || "</body>";
+    body = body.replace(pattern, scriptTag + pattern);
+  }
 
   if (shouldFetch) {
     return context.helpers.sendResponse?.(res, body);
