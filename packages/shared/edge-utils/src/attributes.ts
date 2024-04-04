@@ -11,7 +11,7 @@ export function getUserAttributes(
   const uuid = getUUID(ctx, req);
   const attributes = {
     [ctx.config.attributeKeys.uuid || "id"]: uuid,
-  }
+  };
   // enhance the attributes with any new information
   const autoAttributes = getAutoAttributes(ctx, req);
   return { ...attributes, ...autoAttributes };

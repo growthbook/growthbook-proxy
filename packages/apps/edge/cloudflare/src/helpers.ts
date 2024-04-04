@@ -18,7 +18,7 @@ export function setResponseHeader(res: Response, key: string, value: string) {
 	res.headers.set(key, value);
 }
 
-export function sendResonse(res: Response, body: string){
+export function sendResonse(res: Response, body: string) {
 	return new Response(body);
 }
 

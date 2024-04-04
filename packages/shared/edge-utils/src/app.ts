@@ -3,10 +3,10 @@ import {
   GrowthBook,
   isURLTargeted,
 } from "@growthbook/growthbook";
-import { JSDOM } from "jsdom";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
-import { sdkWrapper } from "./generated/sdkWrapper";
+import { injectScript } from "./inject";
+import { applyVisualExperiment } from "./visualExperiment";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function edgeApp(
@@ -47,7 +47,7 @@ export async function edgeApp(
 
   const mayMutateDOM = visualExperiments.length > 0;
   const shouldInjectSDK = true; // todo: parameterize?
-  const shouldInjectTrackingCalls = true // todo: parameterize?
+  const shouldInjectTrackingCalls = true; // todo: parameterize?
 
   if (shouldFetch) {
     let response: Response | undefined;
@@ -62,42 +62,27 @@ export async function edgeApp(
 
   // Visual experiments
   if (mayMutateDOM) {
-    // todo: consider non-mutationObserver approach (no JSDOM)
-    const dom = new JSDOM(body);
-    // @ts-ignore
-    globalThis.window = dom.window;
-    globalThis.document = dom.window.document;
-    globalThis.MutationObserver = dom.window.MutationObserver;
-
-    await growthbook.setURL(newUrl);
-    body = dom.serialize();
+    body = await applyVisualExperiment({
+      context,
+      body,
+      growthbook,
+      url: newUrl,
+    });
   }
-
-  // todo: handle other side effects
-
-  // todo: write edge-computed attributes on top of auto-attributes
   if (shouldInjectSDK) {
-    const scriptTag = `
-<script
-  data-api-host="${context.config.growthbook.apiHost}"
-  data-client-key="${context.config.growthbook.clientKey}"
-  data-uuid="${attributes.uuid}"
->
-  window.growthbook_queue = [
-    (gb) => gb.setAttributes(${JSON.stringify(attributes)})
-  ];
-  
-  ${sdkWrapper}
-</script>
-`;
-    const pattern = context.config.scriptInjectionPattern || "</body>";
-    body = body.replace(pattern, scriptTag + pattern);
+    body = injectScript({
+      context,
+      body,
+      attributes,
+      deferredTrackingCalls: shouldInjectTrackingCalls
+        ? growthbook.getDeferredTrackingCalls()
+        : undefined,
+    });
   }
 
   if (shouldFetch) {
     return context.helpers.sendResponse?.(res, body);
   }
-
   // passthrough if no SDK side effects
   return context.helpers.proxyRequest?.(context, req, res, next);
 }
