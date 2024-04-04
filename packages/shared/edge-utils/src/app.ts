@@ -36,6 +36,7 @@ export async function edgeApp(
     isBrowser: true,
     attributes,
   });
+  growthbook.debug = true;
   await growthbook.loadFeatures();
 
   const { visualExperiments, redirectExperiments } = getTargetedExperiments(
