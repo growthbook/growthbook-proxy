@@ -21,6 +21,11 @@ export function injectScript({
   data-client-key="${context.config.growthbook.clientKey}"
   data-uuid="${attributes.uuid}"
 >
+  window.growthbook_config = {
+    trackingCallback: (experiment, result) => {
+      console.log("Deferred tracking callback", { experiment, result });
+    }
+  };
   window.growthbook_queue = [
     (gb) => {
       gb.setAttributes(${JSON.stringify(attributes)});

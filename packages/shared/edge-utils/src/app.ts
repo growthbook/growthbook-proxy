@@ -15,6 +15,7 @@ export async function edgeApp(
   res: any,
   next?: any,
 ) {
+  const url = context.helpers.getRequestURL?.(req) || "";
   const newUrl = getDefaultDestinationURL(context, req);
 
   // todo: temp filters. replace with routing logic
@@ -31,7 +32,7 @@ export async function edgeApp(
   const growthbook = new GrowthBook({
     apiHost: context.config.growthbook.apiHost,
     clientKey: context.config.growthbook.clientKey,
-    url: newUrl,
+    url,
     isBrowser: true,
     attributes,
   });
@@ -39,7 +40,7 @@ export async function edgeApp(
 
   const { visualExperiments, redirectExperiments } = getTargetedExperiments(
     growthbook,
-    newUrl,
+    url,
   );
 
   const shouldFetch = true; // todo: maybe false if no SDK injection needed?
@@ -66,7 +67,7 @@ export async function edgeApp(
       context,
       body,
       growthbook,
-      url: newUrl,
+      url,
     });
   }
   if (shouldInjectSDK) {
