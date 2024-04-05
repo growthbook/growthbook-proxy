@@ -27,17 +27,19 @@ export async function edgeApp(
   }
 
   const attributes = getUserAttributes(context, req);
-  attributes["wtf"] = "yes";
   // todo: polyfill localStorage -> edge key/val for SDK cache?
   const growthbook = new GrowthBook({
     apiHost: context.config.growthbook.apiHost,
     clientKey: context.config.growthbook.clientKey,
+    decryptionKey: context.config.growthbook.decryptionKey,
     url,
+    storePayload: true, // todo: don't do this for remoteEval
     isBrowser: true,
     attributes,
   });
   growthbook.debug = true;
   await growthbook.loadFeatures();
+  const sdkPayload = growthbook.getPayload();
 
   const { visualExperiments, redirectExperiments } = getTargetedExperiments(
     growthbook,
@@ -75,6 +77,7 @@ export async function edgeApp(
     body = injectScript({
       context,
       body,
+      sdkPayload,
       attributes,
       deferredTrackingCalls: shouldInjectTrackingCalls
         ? growthbook.getDeferredTrackingCalls()
