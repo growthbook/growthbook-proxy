@@ -15,6 +15,8 @@ export function injectScript({
 }) {
   const uuidKey = context.config.attributeKeys.uuid || "id";
   const uuid = attributes[uuidKey];
+  const trackingCallback = context.config.growthbook.trackingCallback;
+
   const scriptTag = `
 <script
   data-api-host="${context.config.growthbook.apiHost}"
@@ -26,25 +28,18 @@ export function injectScript({
     persistUuidOnLoad: true, // todo: wire
     attributes: ${JSON.stringify(attributes)},
     attributeKeys: ${JSON.stringify(context.config.attributeKeys)},
-    trackingCallback: (experiment, result) => {
-      console.log("Deferred tracking callback", { experiment, result });
-    }
+${ trackingCallback ? `
+    trackingCallback: ${trackingCallback}
+`: "" }
   };
+${ deferredTrackingCalls?.length ? `
   window.growthbook_queue = [
     (gb) => {
-      // // todo: merge attributes with auto-attributes
-      // console.log("attributes before", gb.getAttributes());
-      //
-      // gb.setAttributes(${JSON.stringify(attributes)});
-      ${deferredTrackingCalls ? `
-        gb.setDeferredTrackingCalls(${JSON.stringify(deferredTrackingCalls)});
-        gb.fireDeferredTrackingCalls();
-      ` : ""}
-      
-      console.log("attributes after", gb.getAttributes());
+      gb.setDeferredTrackingCalls(${JSON.stringify(deferredTrackingCalls)});
+      gb.fireDeferredTrackingCalls();
     }
-  ];  
-  
+  ];
+` : "" }
   ${sdkWrapper}
 </script>
 `;

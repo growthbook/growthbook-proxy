@@ -37,6 +37,8 @@ export default async () => {
   // config.growthbook
   context.config.growthbook.apiHost = process.env.GROWTHBOOK_API_HOST ?? "";
   context.config.growthbook.clientKey = process.env.GROWTHBOOK_CLIENT_KEY ?? "";
+  "TRACKING_CALLBACK" in process.env &&
+    (context.config.growthbook.trackingCallback = process.env.TRACKING_CALLBACK);
 
   // config.attributeKeys
   "ATTRIBUTE_UUID" in process.env &&

@@ -16,6 +16,7 @@ export interface Config {
   growthbook: {
     apiHost: string;
     clientKey: string;
+    trackingCallback?: string; // (experiment, result) => void;
   };
   attributeKeys: {
     uuid?: string;
