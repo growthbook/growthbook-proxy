@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Attributes } from "@growthbook/growthbook";
 
 export interface Context {
   config: Config;

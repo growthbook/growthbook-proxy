@@ -1,12 +1,12 @@
 import {
-  AutoExperiment,
+  AutoExperiment, AutoExperimentVariation,
   GrowthBook,
-  isURLTargeted,
+  isURLTargeted
 } from "@growthbook/growthbook";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
 import { injectScript } from "./inject";
-import { applyVisualExperiment } from "./visualExperiment";
+import { applyDomMutations } from "./domMutations";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function edgeApp(
@@ -28,6 +28,9 @@ export async function edgeApp(
 
   const attributes = getUserAttributes(context, req);
   // todo: polyfill localStorage -> edge key/val for SDK cache?
+
+  let domChanges: AutoExperimentVariation[] = [];
+
   const growthbook = new GrowthBook({
     apiHost: context.config.growthbook.apiHost,
     clientKey: context.config.growthbook.clientKey,
@@ -36,23 +39,20 @@ export async function edgeApp(
     storePayload: true, // todo: don't do this for remoteEval
     isBrowser: true,
     attributes,
+    applyDomChangesCallback: (changes: AutoExperimentVariation) => {
+      domChanges.push(changes);
+      return () => {};
+    }
   });
   growthbook.debug = true;
   await growthbook.loadFeatures();
   const sdkPayload = growthbook.getPayload();
 
-  const { visualExperiments, redirectExperiments } = getTargetedExperiments(
-    growthbook,
-    url,
-  );
-
   const shouldFetch = true; // todo: maybe false if no SDK injection needed?
-  let body = "";
-
-  const mayMutateDOM = visualExperiments.length > 0;
   const shouldInjectSDK = true; // todo: parameterize?
   const shouldInjectTrackingCalls = true; // todo: parameterize?
 
+  let body = "";
   if (shouldFetch) {
     let response: Response | undefined;
     try {
@@ -64,15 +64,15 @@ export async function edgeApp(
     body = await response.text();
   }
 
-  // Visual experiments
-  if (mayMutateDOM) {
-    body = await applyVisualExperiment({
+  // todo: edge config gating?
+  if (domChanges.length) {
+    body = await applyDomMutations({
       context,
       body,
-      growthbook,
-      url,
+      domChanges,
     });
   }
+
   if (shouldInjectSDK) {
     body = injectScript({
       context,
