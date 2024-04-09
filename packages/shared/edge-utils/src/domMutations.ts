@@ -1,4 +1,4 @@
-import { AutoExperimentVariation, DOMMutation } from "@growthbook/growthbook";
+import { AutoExperimentVariation } from "@growthbook/growthbook";
 import { Context } from "./types";
 import { parse } from "node-html-parser";
 

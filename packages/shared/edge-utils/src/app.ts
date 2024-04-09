@@ -7,6 +7,7 @@ import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
 import { injectScript } from "./inject";
 import { applyDomMutations } from "./domMutations";
+import { getRoute } from "./routing";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function edgeApp(
@@ -18,11 +19,16 @@ export async function edgeApp(
   const url = context.helpers.getRequestURL?.(req) || "";
   const newUrl = getDefaultDestinationURL(context, req);
 
-  // todo: temp filters. replace with routing logic
+  // Non GET requests are proxied
   if (context.helpers.getRequestMethod?.(req) !== "GET") {
     return context.helpers.proxyRequest?.(context, req, res, next);
   }
-  if (newUrl.length > context.config.proxyTarget.length) {
+  // Check the url for routing rules (default is intercept)
+  const route = getRoute(context, url);
+  if (route.behavior === "error") {
+    return res.status(route.statusCode).send(route.body || "");
+  }
+  if (route.behavior === "proxy") {
     return context.helpers.proxyRequest?.(context, req, res, next);
   }
 
@@ -36,7 +42,7 @@ export async function edgeApp(
     clientKey: context.config.growthbook.clientKey,
     decryptionKey: context.config.growthbook.decryptionKey,
     url,
-    storePayload: true, // todo: don't do this for remoteEval
+    storePayload: true,
     isBrowser: true,
     attributes,
     applyDomChangesCallback: (changes: AutoExperimentVariation) => {

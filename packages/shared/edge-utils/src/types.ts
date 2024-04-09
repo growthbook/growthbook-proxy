@@ -27,6 +27,7 @@ export interface Config {
     host?: string;
     query?: string;
   };
+  routes?: Route[];
 }
 
 export interface Helpers {
@@ -46,3 +47,12 @@ export interface Helpers {
   // GB cookies
   getUUIDCookie?: (ctx: Context, req: any) => string;
 }
+
+export type Route = {
+  pattern: string;
+  type?: "regex" | "simple";
+  behavior?: "intercept" | "proxy" | "error";
+  includeFileExtensions?: boolean;
+  statusCode?: number;
+  body?: string;
+};
