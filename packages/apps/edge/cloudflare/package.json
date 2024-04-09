@@ -1,5 +1,5 @@
 {
-  "name": "cloudflare",
+  "name": "@growthbook/cloudflare",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -12,5 +12,8 @@
     "@types/cookie": "^0.6.0",
     "typescript": "^5.0.4",
     "wrangler": "^3.34.2"
+  },
+  "dependencies": {
+    "@growthbook/proxy-eval": "^1.0.2"
   }
 }

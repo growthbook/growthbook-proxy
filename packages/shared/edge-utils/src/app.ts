@@ -7,6 +7,7 @@ import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
 import { injectScript } from "./inject";
 import { applyDomMutations } from "./domMutations";
+import Redirect from "./Redirect";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function edgeApp(
@@ -30,7 +31,7 @@ export async function edgeApp(
   // todo: polyfill localStorage -> edge key/val for SDK cache?
 
   let domChanges: AutoExperimentVariation[] = [];
-
+  let finalUrl: string = newUrl;
   const growthbook = new GrowthBook({
     apiHost: context.config.growthbook.apiHost,
     clientKey: context.config.growthbook.clientKey,
@@ -42,8 +43,12 @@ export async function edgeApp(
     applyDomChangesCallback: (changes: AutoExperimentVariation) => {
       domChanges.push(changes);
       return () => {};
-    }
+    },
+    navigate: (url: string) => {
+      finalUrl = url;
+    },
   });
+
   growthbook.debug = true;
   await growthbook.loadFeatures();
   const sdkPayload = growthbook.getPayload();
@@ -56,14 +61,14 @@ export async function edgeApp(
   if (shouldFetch) {
     let response: Response | undefined;
     try {
-      response = (await context.helpers.fetch?.(context, newUrl)) as Response;
+      response = (await context.helpers.fetch?.(context, finalUrl)) as Response;
     } catch (e) {
       console.error(e);
       return res.status(500).send("Error fetching page");
     }
     body = await response.text();
   }
-
+  finalUrl = await Redirect(growthbook, newUrl);
   // todo: edge config gating?
   if (domChanges.length) {
     body = await applyDomMutations({
