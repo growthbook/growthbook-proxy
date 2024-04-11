@@ -5,8 +5,8 @@ compatibility_date = "2024-03-14"
 # Variable bindings. These are arbitrary, plaintext strings (similar to environment variables)
 # Note: Use secrets to store sensitive data.
 # Docs: https://developers.cloudflare.com/workers/platform/environment-variables
-# [vars]
-# MY_VARIABLE = "production_value"
+ [vars]
+ PROXY_TARGET = "http://localhost.com"
 
 # Bind a KV Namespace. Use KV as persistent storage for small key-value pairs.
 # Docs: https://developers.cloudflare.com/workers/runtime-apis/kv

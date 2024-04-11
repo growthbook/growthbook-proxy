@@ -1,13 +1,13 @@
 import { Context, defaultContext } from '@growthbook/edge-utils';
-import { getCookieAttributes, getRequestHeader, getRequestMethod, getRequestURL, setCookieAttributes, setResponseHeader } from './helpers';
+import { getCookieAttributes, getRequestHeader, getRequestMethod, getRequestURL, proxyRequest, sendResponse, setCookieAttributes, setResponseHeader } from './helpers';
 
-export default async (env) => {
+export default (env: Env) => {
 	// Build context from default + env
 	const context: Context = defaultContext;
 
 	// config
-	context.proxyTarget = env.PROXY_TARGET ?? '/';
-	context.environment = env.NODE_ENV ?? 'production';
+	context.config.proxyTarget = env.PROXY_TARGET ?? 'http://localhost';
+	context.config.environment = env.NODE_ENV ?? 'production';
 
 	'MAX_PAYLOAD_SIZE' in env ? (context.config.maxPayloadSize = env.MAX_PAYLOAD_SIZE) : '2mb';
 	'ATTRIBUTE_COOKIE_NAME' in env ? (context.config.attributeCookieName = env.ATTRIBUTE_COOKIE_NAME) : 'gb-user-attributes';
@@ -29,9 +29,9 @@ export default async (env) => {
 	context.helpers.getRequestMethod = getRequestMethod;
 	context.helpers.getRequestHeader = getRequestHeader;
 	context.helpers.setResponseHeader = setResponseHeader;
-	// need to add something for context.helpers.proxyRequest = proxyRequest;
-	context.helpers.getCookieAttributes = getCookieAttributes;
-	context.helpers.setCookieAttributes = setCookieAttributes;
+	context.helpers.proxyRequest = proxyRequest;
+	//send response
+	context.helpers.sendResponse = sendResponse;
 	function getPort() {
 		if (env.PORT) {
 			const port = parseInt(env.PORT);
@@ -42,4 +42,5 @@ export default async (env) => {
 		return 3301;
 	}
 	context.proxy_port = getPort();
+	return context;
 };

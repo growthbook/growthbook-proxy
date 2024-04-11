@@ -1,9 +1,9 @@
-import { Context } from '@growthbook/edge-utils';
+import { Context, Context, Context, Context } from '@growthbook/edge-utils';
 import { Attributes } from '@growthbook/growthbook';
 import { parse } from 'cookie';
 
-export function getRequestURL(url: URL) {
-	return url.protocol + '://' + url.host + url.pathname;
+export function getRequestURL(req: Request) {
+	return req.url;
 }
 
 export function getRequestMethod(req: Request) {
@@ -11,15 +11,15 @@ export function getRequestMethod(req: Request) {
 }
 
 export function getRequestHeader(req: Request, key: string) {
-	return req.headers.get(key);
+	return req.headers.get(key) || undefined;
 }
 
 export function setResponseHeader(res: Response, key: string, value: string) {
 	res.headers.set(key, value);
 }
 
-export function sendResonse(res: Response, body: string) {
-	return new Response(body);
+export function sendResponse(res: Response, body: string, status: number = 200) {
+	return new Response(body, { ...res, status });
 }
 
 export function getCookieAttributes(ctx: Context, req: Request): Attributes {
@@ -43,4 +43,12 @@ export function setCookieAttributes(ctx: Context, res: Response, attributes: Att
      maxAge=${365 * 24 * 60 * 60 * 1000};
       httpOnly: true;`,
 	);
+}
+
+export function proxyRequest(ctx: Context, req: Request, res: Response) {
+	return fetch(ctx.config.proxyTarget + req.url, {
+		method: req.method,
+		headers: req.headers,
+		body: req.body,
+	});
 }
