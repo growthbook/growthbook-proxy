@@ -44,6 +44,9 @@ export function setCookieAttributes(ctx: Context, res: Response, attributes: Att
       httpOnly: true;`,
 	);
 }
+export function fetchFn(_: Context, url: string) {
+	return fetch(url);
+}
 
 export function proxyRequest(ctx: Context, req: Request, res: Response) {
 	return fetch(ctx.config.proxyTarget + req.url, {

@@ -1,5 +1,5 @@
 import { Context, defaultContext } from '@growthbook/edge-utils';
-import { getCookieAttributes, getRequestHeader, getRequestMethod, getRequestURL, proxyRequest, sendResponse, setCookieAttributes, setResponseHeader } from './helpers';
+import { fetchFn, getCookieAttributes, getRequestHeader, getRequestMethod, getRequestURL, proxyRequest, sendResponse, setCookieAttributes, setResponseHeader } from './helpers';
 
 export default (env: Env) => {
 	// Build context from default + env
@@ -30,6 +30,8 @@ export default (env: Env) => {
 	context.helpers.getRequestHeader = getRequestHeader;
 	context.helpers.setResponseHeader = setResponseHeader;
 	context.helpers.proxyRequest = proxyRequest;
+	context.helpers.fetch = fetchFn;
+	
 	//send response
 	context.helpers.sendResponse = sendResponse;
 	function getPort() {
