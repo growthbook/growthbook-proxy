@@ -1,4 +1,4 @@
-import { AutoExperimentVariation, DOMMutation } from "@growthbook/growthbook";
+import { AutoExperimentVariation } from "@growthbook/growthbook";
 import { Context } from "./types";
 import { parse } from "node-html-parser";
 
@@ -13,30 +13,18 @@ export async function applyDomMutations({
 }) {
   const root = parse(body);
   const headEl = root.querySelector('head');
-  const bodyEl = root.querySelector('body');
 
-  domChanges.forEach(({ domMutations, js, css }) => {
-    if (js) {
-      const el = bodyEl || root;
-      el.appendChild(parse(`<script>${js}</script>`));
-    }
-
+  domChanges.forEach(({ domMutations, css, js }) => {
     if (css) {
       const el = headEl || root;
       el.appendChild(parse(`<style>${css}</style>`));
     }
+    if (js) {
+      const el = headEl || root;
+      el.appendChild(parse(`<script>${js}</script>`));
+    }
 
     domMutations?.forEach((mutation) => {
-/*      export type DOMMutation = {
-        selector: string;
-        action: string;  //'append' | 'set' | 'remove'
-        attribute: string;
-        value?: string;
-        parentSelector?: string;
-        insertBeforeSelector?: string;
-      };
-*/
-
       const { attribute: attr, action, selector, value, parentSelector, insertBeforeSelector } = mutation;
 
       if (attr === 'html') {
@@ -81,9 +69,7 @@ export async function applyDomMutations({
     });
   });
 
-  // convert to string
   body = root.toString();
-
   return body;
 
 
@@ -117,7 +103,6 @@ export async function applyDomMutations({
           .forEach(c => classnames.add(c));
       });
     }
-    // todo: not sure if correct
     const el = root.querySelector(selector);
     if (el) {
       const val = cb(el.getAttribute(attr) || "");
@@ -143,5 +128,4 @@ export async function applyDomMutations({
       }
     }
   }
-
 }

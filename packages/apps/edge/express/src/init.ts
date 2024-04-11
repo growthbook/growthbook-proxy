@@ -58,6 +58,12 @@ export default async () => {
     (context.config.attributeKeys.host = process.env.ATTRIBUTE_HOST);
   "ATTRIBUTE_QUERY" in process.env &&
     (context.config.attributeKeys.query = process.env.ATTRIBUTE_QUERY);
+  try {
+    context.config.routes = JSON.parse(process.env.ROUTES || "[]");
+  } catch (e) {
+    console.error("Error parsing ROUTES", e);
+    context.config.routes = [];
+  }
 
   // config.helpers
   context.helpers.getRequestURL = getRequestURL;
