@@ -19,7 +19,6 @@
     "dev": "node scripts/generate-sdk-wrapper.js && tsc --watch"
   },
   "dependencies": {
-    "@growthbook/growthbook": "^0.34.0",
     "node-html-parser": "^6.1.13",
     "jsdom": "^24.0.0"
   },

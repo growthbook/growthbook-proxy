@@ -1,13 +1,14 @@
 import {
-  AutoExperiment, AutoExperimentVariation,
+  AutoExperiment,
+  AutoExperimentVariation,
   GrowthBook,
-  isURLTargeted
+  isURLTargeted,
 } from "@growthbook/growthbook";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
 import { injectScript } from "./inject";
 import { applyDomMutations } from "./domMutations";
-import Redirect from "./Redirect";
+import Redirect from "./redirect";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function edgeApp(
@@ -16,6 +17,7 @@ export async function edgeApp(
   res: any,
   next?: any,
 ) {
+
   const url = context.helpers.getRequestURL?.(req) || "";
   const newUrl = getDefaultDestinationURL(context, req);
 
@@ -44,9 +46,6 @@ export async function edgeApp(
       domChanges.push(changes);
       return () => {};
     },
-    navigate: (url: string) => {
-      finalUrl = url;
-    },
   });
 
   growthbook.debug = true;
@@ -58,17 +57,21 @@ export async function edgeApp(
   const shouldInjectTrackingCalls = true; // todo: parameterize?
 
   let body = "";
+  const resetDomMutations = () => {
+    domChanges = [];
+  };
+  finalUrl = await Redirect(growthbook, newUrl, resetDomMutations);
+
   if (shouldFetch) {
     let response: Response | undefined;
     try {
       response = (await context.helpers.fetch?.(context, finalUrl)) as Response;
     } catch (e) {
       console.error(e);
-      return res.status(500).send("Error fetching page");
+      return context.helpers.sendResponse?.(res, "Error fetching page", 500);
     }
     body = await response.text();
   }
-  finalUrl = await Redirect(growthbook, newUrl);
   // todo: edge config gating?
   if (domChanges.length) {
     body = await applyDomMutations({
@@ -101,8 +104,8 @@ export async function edgeApp(
 function getDefaultDestinationURL(context: Context, req: any): string {
   const currentURL = context.helpers.getRequestURL?.(req) || "";
   const proxyTarget = context.config.proxyTarget;
-
   const currentParsedURL = new URL(currentURL);
+  console.log("proxyTarget", proxyTarget );
   const proxyParsedURL = new URL(proxyTarget);
 
   const protocol = proxyParsedURL.protocol
