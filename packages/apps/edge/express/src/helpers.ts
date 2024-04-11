@@ -18,8 +18,12 @@ export function getRequestHeader(req: Request, key: string) {
 export function setResponseHeader(res: Response, key: string, value: string) {
   res.setHeader(key, value);
 }
-export function sendResponse(res: Response, body: string) {
-  return res.send(body);
+export function sendResponse(
+  res: Response,
+  body: string,
+  status: number = 200,
+) {
+  return res.status(status).send(body);
 }
 
 export async function fetchFn(_: Context, url: string) {
