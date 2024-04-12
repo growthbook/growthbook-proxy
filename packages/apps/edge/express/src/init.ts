@@ -38,9 +38,11 @@ export default async () => {
   context.config.growthbook.apiHost = process.env.GROWTHBOOK_API_HOST ?? "";
   context.config.growthbook.clientKey = process.env.GROWTHBOOK_CLIENT_KEY ?? "";
   "GROWTHBOOK_DECRYPTION_KEY" in process.env &&
-    (context.config.growthbook.decryptionKey = process.env.GROWTHBOOK_DECRYPTION_KEY);
+    (context.config.growthbook.decryptionKey =
+      process.env.GROWTHBOOK_DECRYPTION_KEY);
   "GROWTHBOOK_TRACKING_CALLBACK" in process.env &&
-  (context.config.growthbook.trackingCallback = process.env.GROWTHBOOK_TRACKING_CALLBACK);
+    (context.config.growthbook.trackingCallback =
+      process.env.GROWTHBOOK_TRACKING_CALLBACK);
 
   // config.attributeKeys
   "ATTRIBUTE_UUID" in process.env &&
