@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 import { Context } from "@growthbook/edge-utils";
-import { Attributes } from "@growthbook/growthbook";
 import proxy from "express-http-proxy";
 
 export function getRequestURL(req: Request) {

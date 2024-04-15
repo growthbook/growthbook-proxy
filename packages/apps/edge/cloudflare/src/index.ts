@@ -1,4 +1,4 @@
-import { edgeApp } from "@growthbook/edge-utils";
+import { edgeApp } from '@growthbook/edge-utils';
 import init from './init';
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {

@@ -15,7 +15,7 @@ export function getRoute(context: Context, url: string): Route {
       include: true,
       type: route.type ?? "simple",
       pattern: route.pattern,
-    }
+    };
     const targeted = isURLTargeted(url, [target]);
 
     if (targeted) {
@@ -40,5 +40,5 @@ export function getRoute(context: Context, url: string): Route {
     pattern: "*",
     type: "simple",
     behavior: "intercept",
-  }
+  };
 }

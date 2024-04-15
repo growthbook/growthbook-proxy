@@ -54,11 +54,10 @@ export function proxyRequest(ctx: Context, req: Request, res: Response) {
 		headers: req.headers,
 		body: req.body,
 	});
-
 }
 
 export function getUUIDCookie(ctx: Context, req: Request): string {
-	const cookieName = ctx.config.uuidCookieName || "gbuuid";
+	const cookieName = ctx.config.uuidCookieName || 'gbuuid';
 	const cookie = req.headers.get(cookieName);
-	return cookie || "";
+	return cookie || '';
 }

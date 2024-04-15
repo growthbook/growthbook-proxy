@@ -32,6 +32,9 @@ export default async () => {
     ? (context.config.scriptInjectionPattern =
         process.env.SCRIPT_INJECTION_PATTERN)
     : "</body>";
+  "MAX_REDIRECTS" in process.env
+    ? parseInt(process.env.MAX_REDIRECTS || "5")
+    : 5;
   context.config.crypto = crypto;
 
   // config.growthbook

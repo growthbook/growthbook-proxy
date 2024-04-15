@@ -8,7 +8,7 @@ import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
 import { injectScript } from "./inject";
 import { applyDomMutations } from "./domMutations";
-import Redirect from "./redirect";
+import redirect from "./redirect";
 import { getRoute } from "./routing";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,18 +18,21 @@ export async function edgeApp(
   res: any,
   next?: any,
 ) {
-
   const url = context.helpers.getRequestURL?.(req) || "";
-  const newUrl = getDefaultDestinationURL(context, req);
+  let destinationURL = getDefaultDestinationURL(context, req);
 
   // Non GET requests are proxied
   if (context.helpers.getRequestMethod?.(req) !== "GET") {
     return context.helpers.proxyRequest?.(context, req, res, next);
   }
-  // Check the url for routing rules (default is intercept)
+  // Check the url for routing rules (default behavior is intercept)
   const route = getRoute(context, url);
   if (route.behavior === "error") {
-    return res.status(route.statusCode).send(route.body || "");
+    return context.helpers.sendResponse?.(
+      res,
+      route.body || "",
+      route.statusCode,
+    );
   }
   if (route.behavior === "proxy") {
     return context.helpers.proxyRequest?.(context, req, res, next);
@@ -39,7 +42,8 @@ export async function edgeApp(
   // todo: polyfill localStorage -> edge key/val for SDK cache?
 
   let domChanges: AutoExperimentVariation[] = [];
-  let finalUrl: string = newUrl;
+  const resetDomChanges = () => (domChanges = []);
+
   const growthbook = new GrowthBook({
     apiHost: context.config.growthbook.apiHost,
     clientKey: context.config.growthbook.clientKey,
@@ -63,15 +67,20 @@ export async function edgeApp(
   const shouldInjectTrackingCalls = true; // todo: parameterize?
 
   let body = "";
-  const resetDomMutations = () => {
-    domChanges = [];
-  };
-  finalUrl = await Redirect(growthbook, newUrl, resetDomMutations);
+  destinationURL = await redirect(
+    context,
+    growthbook,
+    destinationURL,
+    resetDomChanges,
+  );
 
   if (shouldFetch) {
     let response: Response | undefined;
     try {
-      response = (await context.helpers.fetch?.(context, finalUrl)) as Response;
+      response = (await context.helpers.fetch?.(
+        context,
+        destinationURL,
+      )) as Response;
     } catch (e) {
       console.error(e);
       return context.helpers.sendResponse?.(res, "Error fetching page", 500);
@@ -111,7 +120,7 @@ function getDefaultDestinationURL(context: Context, req: any): string {
   const currentURL = context.helpers.getRequestURL?.(req) || "";
   const proxyTarget = context.config.proxyTarget;
   const currentParsedURL = new URL(currentURL);
-  console.log("proxyTarget", proxyTarget );
+  console.log("proxyTarget", proxyTarget);
   const proxyParsedURL = new URL(proxyTarget);
 
   const protocol = proxyParsedURL.protocol

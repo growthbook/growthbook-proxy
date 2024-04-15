@@ -11,6 +11,7 @@ export interface Config {
   maxPayloadSize?: string;
   uuidCookieName?: string;
   scriptInjectionPattern?: string;
+  maxRedirects?: number;
   crypto?: any;
   growthbook: {
     apiHost: string;
@@ -36,7 +37,7 @@ export interface Helpers {
   getRequestMethod?: (req: any) => string;
   getRequestHeader?: (req: any, key: string) => string | undefined;
   setResponseHeader?: (res: any, key: string, value: string) => void;
-  sendResponse?: (res: any, body: string, status?: number) => void | Response;
+  sendResponse?: (res: any, body: string, status?: number) => any;
   fetch?: (ctx: Context, url: string) => Promise<any>;
   proxyRequest?: (
     ctx: Context,

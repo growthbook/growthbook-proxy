@@ -1,4 +1,8 @@
-import { Attributes, StoredPayload, TrackingData } from "@growthbook/growthbook";
+import {
+  Attributes,
+  StoredPayload,
+  TrackingData,
+} from "@growthbook/growthbook";
 import { sdkWrapper } from "./generated/sdkWrapper";
 import { Context } from "./types";
 
@@ -25,7 +29,10 @@ export function injectScript({
 <script
   data-api-host="${context.config.growthbook.apiHost}"
   data-client-key="${context.config.growthbook.clientKey}"${
-    context.config.growthbook.decryptionKey ? `\n  data-decryption-key="${context.config.growthbook.decryptionKey}"` : "" }
+    context.config.growthbook.decryptionKey
+      ? `\n  data-decryption-key="${context.config.growthbook.decryptionKey}"`
+      : ""
+  }
 >
   window.growthbook_config = {
     uuidCookieName: ${JSON.stringify(uuidCookieName)},
@@ -34,18 +41,23 @@ export function injectScript({
     persistUuidOnLoad: true, // todo: wire
     attributes: ${JSON.stringify(attributes)},
     attributeKeys: ${JSON.stringify(context.config.attributeKeys)},${
-    trackingCallback ? `\n    trackingCallback: ${trackingCallback},` : ""}${
-    sdkPayload ? `\n    payload: ${JSON.stringify(sdkPayload)},` : ""}${
-    sdkPayload ? `\n    loadStoredPayload: true,` : ""}
+      trackingCallback ? `\n    trackingCallback: ${trackingCallback},` : ""
+    }${sdkPayload ? `\n    payload: ${JSON.stringify(sdkPayload)},` : ""}${
+      sdkPayload ? `\n    loadStoredPayload: true,` : ""
+    }
   };
-${ deferredTrackingCalls?.length ? `
+${
+  deferredTrackingCalls?.length
+    ? `
   window.growthbook_queue = [
     (gb) => {
       gb.setDeferredTrackingCalls(${JSON.stringify(deferredTrackingCalls)});
       gb.fireDeferredTrackingCalls();
     }
   ];
-` : "" }
+`
+    : ""
+}
   ${sdkWrapper}
 </script>
 `;

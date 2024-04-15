@@ -45,6 +45,6 @@ export default (env: Env) => {
 
 	//send response
 	context.helpers.sendResponse = sendResponse;
-	
+
 	return context;
 };
