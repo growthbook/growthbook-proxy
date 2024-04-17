@@ -1,8 +1,6 @@
 import {
-  AutoExperiment,
   AutoExperimentVariation,
   GrowthBook,
-  isURLTargeted,
 } from "@growthbook/growthbook";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
@@ -10,6 +8,7 @@ import { injectScript } from "./inject";
 import { applyDomMutations } from "./domMutations";
 import redirect from "./redirect";
 import { getRoute } from "./routing";
+import { scrubPayload } from "./scrubPayload";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function edgeApp(
@@ -41,6 +40,7 @@ export async function edgeApp(
   const attributes = getUserAttributes(context, req);
   // todo: polyfill localStorage -> edge key/val for SDK cache?
 
+  let trackedExperiments: string[] = []; // todo: differentiate scrubbed/skipped experiments?
   let domChanges: AutoExperimentVariation[] = [];
   const resetDomChanges = () => (domChanges = []);
 
@@ -60,19 +60,19 @@ export async function edgeApp(
 
   growthbook.debug = true;
   await growthbook.loadFeatures();
-  const sdkPayload = growthbook.getPayload();
+  let sdkPayload = growthbook.getPayload();
 
   const shouldFetch = true; // todo: maybe false if no SDK injection needed?
   const shouldInjectSDK = true; // todo: parameterize?
   const shouldInjectTrackingCalls = true; // todo: parameterize?
 
   let body = "";
-  destinationURL = await redirect(
+  destinationURL = await redirect({
     context,
     growthbook,
-    destinationURL,
+    previousUrl: destinationURL,
     resetDomChanges,
-  );
+  });
 
   if (shouldFetch) {
     let response: Response | undefined;
@@ -96,7 +96,15 @@ export async function edgeApp(
     });
   }
 
+  trackedExperiments = growthbook.getTrackedExperiments();
+
   if (shouldInjectSDK) {
+    sdkPayload = scrubPayload({
+      context,
+      sdkPayload,
+      trackedExperiments
+    });
+
     body = injectScript({
       context,
       body,
@@ -148,32 +156,4 @@ function getDefaultDestinationURL(context: Context, req: any): string {
   }
 
   return newURL;
-}
-
-type TargetedAutoExperiments = {
-  visualExperiments: AutoExperiment[];
-  redirectExperiments: AutoExperiment[];
-};
-function getTargetedExperiments(
-  growthbook: GrowthBook,
-  url: string,
-): TargetedAutoExperiments {
-  const experiments = growthbook.getExperiments();
-  const ret: TargetedAutoExperiments = {
-    visualExperiments: [],
-    redirectExperiments: [],
-  };
-  experiments.forEach((e) => {
-    if (e.manual) return;
-    if (!e.urlPatterns) return;
-    if (isURLTargeted(url, e.urlPatterns)) {
-      // @ts-ignore
-      if (e.variations?.[0]?.urlRedirects) {
-        ret.redirectExperiments.push(e);
-      } else {
-        ret.visualExperiments.push(e);
-      }
-    }
-  });
-  return ret;
 }

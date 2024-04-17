@@ -7,18 +7,32 @@ export interface Context {
 
 export interface Config {
   proxyTarget: string;
-  environment?: string;
+  environment: string;
   maxPayloadSize?: string;
-  uuidCookieName?: string;
-  scriptInjectionPattern?: string;
-  maxRedirects?: number;
+  routes?: Route[];
+
+  // Render Visual Editor tests everywhere (default), edge only, browser only, or skip
+  runVisualEditorExperiments: ExperimentRunEnvironment;
+
+  // Run URL Redirect tests edge only (default), browser only, everywhere, or skip
+  runUrlRedirectExperiments: ExperimentRunEnvironment;
+  // If the URL Redirect test targets a new host/domain, override the above options
+  runCrossDomainUrlRedirectExperiments: ExperimentRunEnvironment;
+  // Stop redirect recursion
+  maxRedirects: number;
+
+  scriptInjectionPattern: string;
+
   crypto?: any;
+
   growthbook: {
     apiHost: string;
     clientKey: string;
     decryptionKey?: string;
     trackingCallback?: string; // (experiment, result) => void;
   };
+
+  uuidCookieName?: string;
   attributeKeys: {
     uuid?: string;
     browser?: string;
@@ -28,8 +42,9 @@ export interface Config {
     host?: string;
     query?: string;
   };
-  routes?: Route[];
 }
+
+export type ExperimentRunEnvironment = "everywhere" | "edge" | "browser" | "skip";
 
 export interface Helpers {
   // routing

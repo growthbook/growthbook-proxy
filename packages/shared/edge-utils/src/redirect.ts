@@ -1,12 +1,17 @@
 import { GrowthBook } from "@growthbook/growthbook";
 import { Context } from "./types";
 
-export default async function redirect(
+export default async function redirect({
+  context,
+  growthbook,
+  previousUrl,
+  resetDomChanges,
+}: {
   context: Context,
   growthbook: GrowthBook,
   previousUrl: string,
-  resetDomMutations: () => void,
-) {
+  resetDomChanges: () => void,
+}): Promise<string> {
   const maxRedirects = context.config.maxRedirects || 5;
   let redirectCount = 0;
 
@@ -18,7 +23,7 @@ export default async function redirect(
     newUrl = previousUrl;
     if (redirectCount >= maxRedirects) return previousUrl;
 
-    resetDomMutations();
+    resetDomChanges();
     await growthbook.setURL(newUrl);
     previousUrl = newUrl;
     newUrl = growthbook.getRedirectUrl();

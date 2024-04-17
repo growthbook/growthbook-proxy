@@ -20,21 +20,25 @@ export default async () => {
   const context: Context = defaultContext;
 
   // config
-  context.config.proxyTarget = process.env.PROXY_TARGET ?? "/";
-  context.config.environment = process.env.NODE_ENV ?? "production";
-  "MAX_PAYLOAD_SIZE" in process.env
-    ? (context.config.maxPayloadSize = process.env.MAX_PAYLOAD_SIZE)
-    : "2mb";
-  "UUID_COOKIE_NAME" in process.env
-    ? (context.config.uuidCookieName = process.env.UUID_COOKIE_NAME)
-    : "gbuuid";
-  "SCRIPT_INJECTION_PATTERN" in process.env
-    ? (context.config.scriptInjectionPattern =
-        process.env.SCRIPT_INJECTION_PATTERN)
-    : "</body>";
-  "MAX_REDIRECTS" in process.env
-    ? parseInt(process.env.MAX_REDIRECTS || "5")
-    : 5;
+  context.config.proxyTarget = process.env.PROXY_TARGET ?? defaultContext.config.proxyTarget;
+  context.config.environment = process.env.NODE_ENV ?? defaultContext.config.environment;
+  context.config.maxPayloadSize = process.env.MAX_PAYLOAD_SIZE ?? defaultContext.config.maxPayloadSize;
+
+  try {
+    context.config.routes = JSON.parse(process.env.ROUTES || "[]");
+  } catch (e) {
+    console.error("Error parsing ROUTES", e);
+    context.config.routes = [];
+  }
+
+  context.config.runVisualEditorExperiments = process.env.RUN_VISUAL_EDITOR_EXPERIMENTS ?? defaultContext.config.runVisualEditorExperiments;
+
+  context.config.runUrlRedirectExperiments = process.env.RUN_URL_REDIRECT_EXPERIMENTS ?? defaultContext.config.runUrlRedirectExperiments;
+  context.config.runCrossDomainUrlRedirectExperiments = process.env.RUN_CROSS_DOMAIN_URL_REDIRECT_EXPERIMENTS ?? defaultContext.config.runCrossDomainUrlRedirectExperiments;
+  context.config.maxRedirects = parseInt(process.env.MAX_REDIRECTS || defaultContext.config.maxRedirects);
+
+  context.config.scriptInjectionPattern = process.env.SCRIPT_INJECTION_PATTERN || defaultContext.config.scriptInjectionPattern;
+
   context.config.crypto = crypto;
 
   // config.growthbook
@@ -47,6 +51,7 @@ export default async () => {
     (context.config.growthbook.trackingCallback =
       process.env.GROWTHBOOK_TRACKING_CALLBACK);
 
+  context.config.uuidCookieName = process.env.UUID_COOKIE_NAME || "gbuuid";
   // config.attributeKeys
   "ATTRIBUTE_UUID" in process.env &&
     (context.config.attributeKeys.uuid = process.env.ATTRIBUTE_UUID);
@@ -63,12 +68,6 @@ export default async () => {
     (context.config.attributeKeys.host = process.env.ATTRIBUTE_HOST);
   "ATTRIBUTE_QUERY" in process.env &&
     (context.config.attributeKeys.query = process.env.ATTRIBUTE_QUERY);
-  try {
-    context.config.routes = JSON.parse(process.env.ROUTES || "[]");
-  } catch (e) {
-    console.error("Error parsing ROUTES", e);
-    context.config.routes = [];
-  }
 
   // config.helpers
   context.helpers.getRequestURL = getRequestURL;
