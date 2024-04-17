@@ -40,7 +40,7 @@ export async function edgeApp(
   const attributes = getUserAttributes(context, req);
   // todo: polyfill localStorage -> edge key/val for SDK cache?
 
-  let trackedExperiments: string[] = []; // todo: differentiate scrubbed/skipped experiments?
+  // experiments?
   let domChanges: AutoExperimentVariation[] = [];
   const resetDomChanges = () => (domChanges = []);
 
@@ -96,7 +96,8 @@ export async function edgeApp(
     });
   }
 
-  trackedExperiments = growthbook.getTrackedExperiments();
+  let trackedExperiments: { keys: string[], hashes: string[] } = growthbook.getTrackedExperiments();
+  console.log({trackedExperiments})
 
   if (shouldInjectSDK) {
     sdkPayload = scrubPayload({

@@ -13,7 +13,7 @@ export function scrubPayload({
 }: {
   context: Context;
   sdkPayload?: StoredPayload;
-  trackedExperiments: string[];
+  trackedExperiments: { keys: string[], hashes: string[] };
 }) {
   if (!sdkPayload) return sdkPayload;
 

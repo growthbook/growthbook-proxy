@@ -13,6 +13,7 @@ import {
   setResponseHeader,
   getUUIDCookie,
 } from "./helpers";
+import { ExperimentRunEnvironment } from "@growthbook/edge-utils/dist/types";
 dotenv.config({ path: "./.env.local" });
 
 export default async () => {
@@ -31,11 +32,11 @@ export default async () => {
     context.config.routes = [];
   }
 
-  context.config.runVisualEditorExperiments = process.env.RUN_VISUAL_EDITOR_EXPERIMENTS ?? defaultContext.config.runVisualEditorExperiments;
+  context.config.runVisualEditorExperiments = (process.env.RUN_VISUAL_EDITOR_EXPERIMENTS ?? defaultContext.config.runVisualEditorExperiments) as ExperimentRunEnvironment;
 
-  context.config.runUrlRedirectExperiments = process.env.RUN_URL_REDIRECT_EXPERIMENTS ?? defaultContext.config.runUrlRedirectExperiments;
-  context.config.runCrossDomainUrlRedirectExperiments = process.env.RUN_CROSS_DOMAIN_URL_REDIRECT_EXPERIMENTS ?? defaultContext.config.runCrossDomainUrlRedirectExperiments;
-  context.config.maxRedirects = parseInt(process.env.MAX_REDIRECTS || defaultContext.config.maxRedirects);
+  context.config.runUrlRedirectExperiments = (process.env.RUN_URL_REDIRECT_EXPERIMENTS ?? defaultContext.config.runUrlRedirectExperiments) as ExperimentRunEnvironment;
+  context.config.runCrossDomainUrlRedirectExperiments = (process.env.RUN_CROSS_DOMAIN_URL_REDIRECT_EXPERIMENTS ?? defaultContext.config.runCrossDomainUrlRedirectExperiments) as ExperimentRunEnvironment;
+  context.config.maxRedirects = parseInt(process.env.MAX_REDIRECTS || ""+defaultContext.config.maxRedirects);
 
   context.config.scriptInjectionPattern = process.env.SCRIPT_INJECTION_PATTERN || defaultContext.config.scriptInjectionPattern;
 
