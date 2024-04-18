@@ -16,6 +16,7 @@ export interface Config {
 
   runUrlRedirectExperiments: ExperimentRunEnvironment; // default: everywhere
   runCrossOriginUrlRedirectExperiments: ExperimentRunEnvironment; // default: browser
+  injectRedirectUrlScript: boolean;
   maxRedirects: number;
 
   scriptInjectionPattern: string;

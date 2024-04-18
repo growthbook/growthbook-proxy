@@ -9,6 +9,7 @@ export const defaultContext: Context = {
     disableJsInjection: false,
     runUrlRedirectExperiments: "everywhere",
     runCrossOriginUrlRedirectExperiments: "browser",
+    injectRedirectUrlScript: true,
     maxRedirects: 5,
     scriptInjectionPattern: "</body>",
     growthbook: {

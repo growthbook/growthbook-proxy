@@ -75,6 +75,8 @@ export async function edgeApp(
   const shouldInjectTrackingCalls = true; // todo: parameterize?
 
   let body = "";
+
+  const oldUrl = url;
   url = await redirect({
     context,
     growthbook,
@@ -120,6 +122,8 @@ export async function edgeApp(
         : undefined,
       experiments,
       trackedExperimentHashes,
+      url,
+      oldUrl,
     });
   }
 

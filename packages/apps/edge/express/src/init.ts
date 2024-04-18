@@ -37,6 +37,7 @@ export default async () => {
 
   context.config.runUrlRedirectExperiments = (process.env.RUN_URL_REDIRECT_EXPERIMENTS ?? defaultContext.config.runUrlRedirectExperiments) as ExperimentRunEnvironment;
   context.config.runCrossOriginUrlRedirectExperiments = (process.env.RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS ?? defaultContext.config.runCrossOriginUrlRedirectExperiments) as ExperimentRunEnvironment;
+  context.config.injectRedirectUrlScript = ["true", "1"].includes(process.env.INJECT_REDIRECT_URL_SCRIPT ?? ""+defaultContext.config.injectRedirectUrlScript);
   context.config.maxRedirects = parseInt(process.env.MAX_REDIRECTS || ""+defaultContext.config.maxRedirects);
 
   context.config.scriptInjectionPattern = process.env.SCRIPT_INJECTION_PATTERN || defaultContext.config.scriptInjectionPattern;

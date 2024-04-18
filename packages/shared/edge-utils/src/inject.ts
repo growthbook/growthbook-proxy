@@ -15,6 +15,8 @@ export function injectScript({
   deferredTrackingCalls,
   experiments,
   trackedExperimentHashes,
+  url,
+  oldUrl,
 }: {
   context: Context;
   body: string;
@@ -23,6 +25,8 @@ export function injectScript({
   deferredTrackingCalls?: TrackingData[];
   experiments: AutoExperiment[];
   trackedExperimentHashes: string[];
+  url: string;
+  oldUrl: string;
 }) {
   // todo: determine if we should allow streaming
 
@@ -32,6 +36,7 @@ export function injectScript({
   const attributeKeys = context.config.attributeKeys;
   const trackingCallback = context.config.growthbook.trackingCallback;
   const blockedExperimentHashes = getBlockedExperiments(context, experiments, trackedExperimentHashes);
+  const injectRedirectUrlScript = context.config.injectRedirectUrlScript;
 
   const gbContext: Omit<GbContext, "trackingCallback"> & {
     uuidCookieName?: string;
@@ -44,7 +49,7 @@ export function injectScript({
     uuidCookieName,
     uuidKey,
     uuid,
-    persistUuidOnLoad: true, // todo?: wire
+    persistUuidOnLoad: true,
     attributes,
     attributeKeys,
     trackingCallback: "__TRACKING_CALLBACK__",
@@ -80,6 +85,7 @@ ${
     : ""
 }
   ${sdkWrapper}
+  ${url !== oldUrl && injectRedirectUrlScript ? `window.history.replaceState(undefined, undefined, ${JSON.stringify(url)})` : ""}
 </script>
 `;
   scriptTag = scriptTag.replace(`"__TRACKING_CALLBACK__"`, trackingCallback || "undefined");
