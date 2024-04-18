@@ -1,10 +1,11 @@
 import {
+  Context as GbContext,
   Attributes,
   StoredPayload,
   TrackingData,
 } from "@growthbook/growthbook";
 import { sdkWrapper } from "./generated/sdkWrapper";
-import { Context } from "./types";
+import { Config, Context } from "./types";
 
 export function injectScript({
   context,
@@ -23,9 +24,33 @@ export function injectScript({
   const uuidCookieName = context.config.uuidCookieName || "gbuuid";
   const uuidKey = context.config.attributeKeys.uuid || "id";
   const uuid = attributes[uuidKey];
+  const attributeKeys = context.config.attributeKeys;
   const trackingCallback = context.config.growthbook.trackingCallback;
 
-  const scriptTag = `
+  const gbContext: Omit<GbContext, "trackingCallback"> & {
+    uuidCookieName?: string;
+    uuidKey?: string;
+    uuid?: string;
+    attributeKeys?: Record<string, string>;
+    persistUuidOnLoad?: boolean;
+    trackingCallback: string;
+  } = {
+    uuidCookieName,
+    uuidKey,
+    uuid,
+    persistUuidOnLoad: true, // todo?: wire
+    attributes,
+    attributeKeys,
+    trackingCallback: "__TRACKING_CALLBACK__",
+    payload: sdkPayload,
+    loadStoredPayload: !!sdkPayload,
+    disableVisualExperiments: ["skip", "edge"].includes(context.config.runVisualEditorExperiments),
+    disableJsInjection: context.config.disableJsInjection,
+    disableUrlRedirectExperiments: ["skip", "edge"].includes(context.config.runUrlRedirectExperiments),
+    disableCrossOriginUrlRedirectExperiments: ["skip", "edge"].includes(context.config.runCrossOriginUrlRedirectExperiments),
+  };
+
+  let scriptTag = `
 <script
   data-api-host="${context.config.growthbook.apiHost}"
   data-client-key="${context.config.growthbook.clientKey}"${
@@ -34,18 +59,7 @@ export function injectScript({
       : ""
   }
 >
-  window.growthbook_config = {
-    uuidCookieName: ${JSON.stringify(uuidCookieName)},
-    uuidKey: ${JSON.stringify(uuidKey)},
-    uuid: ${JSON.stringify(uuid)},
-    persistUuidOnLoad: true, // todo: wire
-    attributes: ${JSON.stringify(attributes)},
-    attributeKeys: ${JSON.stringify(context.config.attributeKeys)},${
-      trackingCallback ? `\n    trackingCallback: ${trackingCallback},` : ""
-    }${sdkPayload ? `\n    payload: ${JSON.stringify(sdkPayload)},` : ""}${
-      sdkPayload ? `\n    loadStoredPayload: true,` : ""
-    }
-  };
+  window.growthbook_config = ${JSON.stringify(gbContext)};
 ${
   deferredTrackingCalls?.length
     ? `
@@ -61,8 +75,16 @@ ${
   ${sdkWrapper}
 </script>
 `;
+  scriptTag = scriptTag.replace(`"__TRACKING_CALLBACK__"`, trackingCallback || "undefined");
+
   const pattern = context.config.scriptInjectionPattern || "</body>";
-  body = body.replace(pattern, scriptTag + pattern);
+
+  const index = body.indexOf(pattern);
+  if (index >= 0) {
+    body = body.slice(0, index) + scriptTag + body.slice(index+1);
+  } else {
+    body += scriptTag;
+  }
 
   return body;
 }

@@ -11,14 +11,11 @@ export interface Config {
   maxPayloadSize?: string;
   routes?: Route[];
 
-  // Render Visual Editor tests everywhere (default), edge only, browser only, or skip
-  runVisualEditorExperiments: ExperimentRunEnvironment;
+  runVisualEditorExperiments: ExperimentRunEnvironment; // default: everywhere
+  disableJsInjection: boolean;
 
-  // Run URL Redirect tests edge only (default), browser only, everywhere, or skip
-  runUrlRedirectExperiments: ExperimentRunEnvironment;
-  // If the URL Redirect test targets a new host/domain, override the above options
-  runCrossDomainUrlRedirectExperiments: ExperimentRunEnvironment;
-  // Stop redirect recursion
+  runUrlRedirectExperiments: ExperimentRunEnvironment; // default: edge
+  runCrossOriginUrlRedirectExperiments: ExperimentRunEnvironment; // default: everywhere
   maxRedirects: number;
 
   scriptInjectionPattern: string;

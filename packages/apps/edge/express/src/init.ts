@@ -33,9 +33,10 @@ export default async () => {
   }
 
   context.config.runVisualEditorExperiments = (process.env.RUN_VISUAL_EDITOR_EXPERIMENTS ?? defaultContext.config.runVisualEditorExperiments) as ExperimentRunEnvironment;
+  context.config.disableJsInjection = ["true", "1"].includes(process.env.DISABLE_JS_INJECTION ?? ""+defaultContext.config.disableJsInjection);
 
   context.config.runUrlRedirectExperiments = (process.env.RUN_URL_REDIRECT_EXPERIMENTS ?? defaultContext.config.runUrlRedirectExperiments) as ExperimentRunEnvironment;
-  context.config.runCrossDomainUrlRedirectExperiments = (process.env.RUN_CROSS_DOMAIN_URL_REDIRECT_EXPERIMENTS ?? defaultContext.config.runCrossDomainUrlRedirectExperiments) as ExperimentRunEnvironment;
+  context.config.runCrossOriginUrlRedirectExperiments = (process.env.RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS ?? defaultContext.config.runCrossOriginUrlRedirectExperiments) as ExperimentRunEnvironment;
   context.config.maxRedirects = parseInt(process.env.MAX_REDIRECTS || ""+defaultContext.config.maxRedirects);
 
   context.config.scriptInjectionPattern = process.env.SCRIPT_INJECTION_PATTERN || defaultContext.config.scriptInjectionPattern;

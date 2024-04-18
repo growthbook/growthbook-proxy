@@ -8,7 +8,6 @@ import { injectScript } from "./inject";
 import { applyDomMutations } from "./domMutations";
 import redirect from "./redirect";
 import { getRoute } from "./routing";
-import { scrubPayload } from "./scrubPayload";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function edgeApp(
@@ -54,6 +53,11 @@ export async function edgeApp(
       domChanges.push(changes);
       return () => {};
     },
+    url,
+    disableVisualExperiments: ["skip", "browser"].includes(context.config.runVisualEditorExperiments),
+    disableJsInjection: context.config.disableJsInjection,
+    disableUrlRedirectExperiments: ["skip", "browser"].includes(context.config.runUrlRedirectExperiments),
+    disableCrossOriginUrlRedirectExperiments: ["skip", "browser"].includes(context.config.runCrossOriginUrlRedirectExperiments),
   });
 
   growthbook.debug = true;
@@ -109,12 +113,6 @@ export async function edgeApp(
   console.log({trackedExperimentHashes})
 
   if (shouldInjectSDK) {
-    sdkPayload = scrubPayload({
-      context,
-      sdkPayload,
-      trackedExperimentHashes
-    });
-
     body = injectScript({
       context,
       body,

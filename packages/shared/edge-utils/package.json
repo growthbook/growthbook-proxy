@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@types/jsdom": "^21.1.6",
+    "@types/node": "^20.8.2",
     "rimraf": "^5.0.5",
     "typescript": "5.2.2"
   }

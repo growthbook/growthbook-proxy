@@ -6,8 +6,9 @@ export const defaultContext: Context = {
     environment: "production",
     maxPayloadSize: "2mb",
     runVisualEditorExperiments: "everywhere",
+    disableJsInjection: false,
     runUrlRedirectExperiments: "edge",
-    runCrossDomainUrlRedirectExperiments: "skip",
+    runCrossOriginUrlRedirectExperiments: "skip",
     maxRedirects: 5,
     scriptInjectionPattern: "</body>",
     growthbook: {
