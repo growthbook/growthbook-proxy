@@ -9,11 +9,11 @@ import { Context } from "./types";
 export function scrubPayload({
   context,
   sdkPayload,
-  trackedExperiments
+  trackedExperimentHashes
 }: {
   context: Context;
   sdkPayload?: StoredPayload;
-  trackedExperiments: { keys: string[], hashes: string[] };
+  trackedExperimentHashes: string[];
 }) {
   if (!sdkPayload) return sdkPayload;
 

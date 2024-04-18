@@ -48,9 +48,7 @@ export async function edgeApp(
     apiHost: context.config.growthbook.apiHost,
     clientKey: context.config.growthbook.clientKey,
     decryptionKey: context.config.growthbook.decryptionKey,
-    url,
     storePayload: true,
-    isBrowser: true,
     attributes,
     applyDomChangesCallback: (changes: AutoExperimentVariation) => {
       domChanges.push(changes);
@@ -61,6 +59,17 @@ export async function edgeApp(
   growthbook.debug = true;
   await growthbook.loadFeatures();
   let sdkPayload = growthbook.getPayload();
+
+  // block edge experiements
+  // todo: use these instead
+  // disableVisualExperiments?: boolean;
+  // disableJsInjection?: boolean;
+  // disableUrlRedirectExperiments?: boolean;
+  // disableCrossOriginRedirectExperiments?: boolean;
+  // disableExperimentsOnLoad?: boolean;
+  growthbook.setBlockedExperimentHashes(["9a3ac5b46bb84e4996b1f64c93da90bfb3521b4c338ec32ef95b70b887f8ff1d"]);
+
+  growthbook.setURL(url);
 
   const shouldFetch = true; // todo: maybe false if no SDK injection needed?
   const shouldInjectSDK = true; // todo: parameterize?
@@ -96,14 +105,14 @@ export async function edgeApp(
     });
   }
 
-  let trackedExperiments: { keys: string[], hashes: string[] } = growthbook.getTrackedExperiments();
-  console.log({trackedExperiments})
+  let trackedExperimentHashes = growthbook.getTrackedExperimentHashes();
+  console.log({trackedExperimentHashes})
 
   if (shouldInjectSDK) {
     sdkPayload = scrubPayload({
       context,
       sdkPayload,
-      trackedExperiments
+      trackedExperimentHashes
     });
 
     body = injectScript({
