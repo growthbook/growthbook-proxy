@@ -16,8 +16,7 @@ export async function edgeApp(
   res: any,
   next?: any,
 ) {
-  const url = context.helpers.getRequestURL?.(req) || "";
-  let destinationURL = getDefaultDestinationURL(context, req);
+  let url = context.helpers.getRequestURL?.(req) || "";
 
   // Non GET requests are proxied
   if (context.helpers.getRequestMethod?.(req) !== "GET") {
@@ -60,39 +59,37 @@ export async function edgeApp(
     disableCrossOriginUrlRedirectExperiments: ["skip", "browser"].includes(context.config.runCrossOriginUrlRedirectExperiments),
   });
 
+  // todo: remove
   growthbook.debug = true;
+
   await growthbook.loadFeatures();
   let sdkPayload = growthbook.getPayload();
+  const experiments = growthbook.getExperiments();
 
-  // block edge experiements
-  // todo: use these instead
-  // disableVisualExperiments?: boolean;
-  // disableJsInjection?: boolean;
-  // disableUrlRedirectExperiments?: boolean;
-  // disableCrossOriginRedirectExperiments?: boolean;
-  // disableExperimentsOnLoad?: boolean;
-  growthbook.setBlockedExperimentHashes(["9a3ac5b46bb84e4996b1f64c93da90bfb3521b4c338ec32ef95b70b887f8ff1d"]);
-
-  growthbook.setURL(url);
+  // todo: not needed
+  // growthbook.setBlockedExperimentHashes(["9a3ac5b46bb84e4996b1f64c93da90bfb3521b4c338ec32ef95b70b887f8ff1d"]);
+  // growthbook.setURL(url);
 
   const shouldFetch = true; // todo: maybe false if no SDK injection needed?
   const shouldInjectSDK = true; // todo: parameterize?
   const shouldInjectTrackingCalls = true; // todo: parameterize?
 
   let body = "";
-  destinationURL = await redirect({
+  url = await redirect({
     context,
     growthbook,
-    previousUrl: destinationURL,
+    previousUrl: url,
     resetDomChanges,
   });
+
+  let originUrl = getDefaultOriginUrl(context, url, req);
 
   if (shouldFetch) {
     let response: Response | undefined;
     try {
       response = (await context.helpers.fetch?.(
         context,
-        destinationURL,
+        originUrl,
       )) as Response;
     } catch (e) {
       console.error(e);
@@ -121,6 +118,8 @@ export async function edgeApp(
       deferredTrackingCalls: shouldInjectTrackingCalls
         ? growthbook.getDeferredTrackingCalls()
         : undefined,
+      experiments,
+      trackedExperimentHashes,
     });
   }
 
@@ -132,8 +131,7 @@ export async function edgeApp(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getDefaultDestinationURL(context: Context, req: any): string {
-  const currentURL = context.helpers.getRequestURL?.(req) || "";
+function getDefaultOriginUrl(context: Context, currentURL: string, req: any): string {
   const proxyTarget = context.config.proxyTarget;
   const currentParsedURL = new URL(currentURL);
   console.log("proxyTarget", proxyTarget);

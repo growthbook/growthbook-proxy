@@ -7,8 +7,8 @@ export const defaultContext: Context = {
     maxPayloadSize: "2mb",
     runVisualEditorExperiments: "everywhere",
     disableJsInjection: false,
-    runUrlRedirectExperiments: "edge",
-    runCrossOriginUrlRedirectExperiments: "skip",
+    runUrlRedirectExperiments: "everywhere",
+    runCrossOriginUrlRedirectExperiments: "browser",
     maxRedirects: 5,
     scriptInjectionPattern: "</body>",
     growthbook: {

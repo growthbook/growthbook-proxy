@@ -2,7 +2,7 @@ import {
   Context as GbContext,
   Attributes,
   StoredPayload,
-  TrackingData,
+  TrackingData, AutoExperiment
 } from "@growthbook/growthbook";
 import { sdkWrapper } from "./generated/sdkWrapper";
 import { Config, Context } from "./types";
@@ -13,19 +13,25 @@ export function injectScript({
   sdkPayload,
   attributes,
   deferredTrackingCalls,
+  experiments,
+  trackedExperimentHashes,
 }: {
   context: Context;
   body: string;
   sdkPayload?: StoredPayload;
   attributes: Attributes;
   deferredTrackingCalls?: TrackingData[];
+  experiments: AutoExperiment[];
+  trackedExperimentHashes: string[];
 }) {
-  // todo: handle remote eval (skip payload injection, pass flag)
+  // todo: determine if we should allow streaming
+
   const uuidCookieName = context.config.uuidCookieName || "gbuuid";
   const uuidKey = context.config.attributeKeys.uuid || "id";
   const uuid = attributes[uuidKey];
   const attributeKeys = context.config.attributeKeys;
   const trackingCallback = context.config.growthbook.trackingCallback;
+  const blockedExperimentHashes = getBlockedExperiments(context, experiments, trackedExperimentHashes);
 
   const gbContext: Omit<GbContext, "trackingCallback"> & {
     uuidCookieName?: string;
@@ -48,6 +54,7 @@ export function injectScript({
     disableJsInjection: context.config.disableJsInjection,
     disableUrlRedirectExperiments: ["skip", "edge"].includes(context.config.runUrlRedirectExperiments),
     disableCrossOriginUrlRedirectExperiments: ["skip", "edge"].includes(context.config.runCrossOriginUrlRedirectExperiments),
+    blockedExperimentHashes,
   };
 
   let scriptTag = `
@@ -87,4 +94,19 @@ ${
   }
 
   return body;
+}
+
+
+function getBlockedExperiments(context: Context, experiments: AutoExperiment[], trackedExperimentHashes: string[]): string[] | undefined {
+  // only redirect experiements that run in both environments need additional blacklisting
+  const runUrlRedirectExperimentsEverywhere = context.config.runUrlRedirectExperiments === "everywhere";
+  if (!runUrlRedirectExperimentsEverywhere) return undefined;
+
+  const blockedExperimentHashes = trackedExperimentHashes.filter((hash) => {
+    // only block hybrid redirect experiments if they've already been run on edge
+    const exp = experiments.find((exp) => exp.changeType === "redirect" && exp.expHash === hash);
+    return !!(exp?.expHash && trackedExperimentHashes.includes(exp.expHash));
+  });
+
+  return blockedExperimentHashes.length ? blockedExperimentHashes : undefined;
 }

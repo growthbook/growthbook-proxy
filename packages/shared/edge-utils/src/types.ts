@@ -14,8 +14,8 @@ export interface Config {
   runVisualEditorExperiments: ExperimentRunEnvironment; // default: everywhere
   disableJsInjection: boolean;
 
-  runUrlRedirectExperiments: ExperimentRunEnvironment; // default: edge
-  runCrossOriginUrlRedirectExperiments: ExperimentRunEnvironment; // default: everywhere
+  runUrlRedirectExperiments: ExperimentRunEnvironment; // default: everywhere
+  runCrossOriginUrlRedirectExperiments: ExperimentRunEnvironment; // default: browser
   maxRedirects: number;
 
   scriptInjectionPattern: string;

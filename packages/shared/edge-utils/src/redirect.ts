@@ -12,7 +12,13 @@ export default async function redirect({
   previousUrl: string,
   resetDomChanges: () => void,
 }): Promise<string> {
+  const disableUrlRedirectExperiments = ["skip", "browser"].includes(context.config.runUrlRedirectExperiments);
   const maxRedirects = context.config.maxRedirects || 5;
+
+  if (disableUrlRedirectExperiments) {
+    return previousUrl;
+  }
+
   let redirectCount = 0;
 
   let newUrl = growthbook.getRedirectUrl();
