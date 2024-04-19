@@ -1,7 +1,4 @@
-import {
-  AutoExperimentVariation,
-  GrowthBook,
-} from "@growthbook/growthbook";
+import { AutoExperimentVariation, GrowthBook } from "@growthbook/growthbook";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
 import { injectScript } from "./inject";
@@ -9,11 +6,13 @@ import { applyDomMutations } from "./domMutations";
 import redirect from "./redirect";
 import { getRoute } from "./routing";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function edgeApp(
   context: Context,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   req: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   res: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   next?: any,
 ) {
   let url = context.helpers.getRequestURL?.(req) || "";
@@ -41,6 +40,9 @@ export async function edgeApp(
   // experiments?
   let domChanges: AutoExperimentVariation[] = [];
   const resetDomChanges = () => (domChanges = []);
+  let preRedirectTrackedExperimentHashes: string[] = [];
+  const setPreRedirectTrackedExperimentHashes = (experiments: string[]) =>
+    (preRedirectTrackedExperimentHashes = experiments);
 
   const growthbook = new GrowthBook({
     apiHost: context.config.growthbook.apiHost,
@@ -53,17 +55,23 @@ export async function edgeApp(
       return () => {};
     },
     url,
-    disableVisualExperiments: ["skip", "browser"].includes(context.config.runVisualEditorExperiments),
+    disableVisualExperiments: ["skip", "browser"].includes(
+      context.config.runVisualEditorExperiments,
+    ),
     disableJsInjection: context.config.disableJsInjection,
-    disableUrlRedirectExperiments: ["skip", "browser"].includes(context.config.runUrlRedirectExperiments),
-    disableCrossOriginUrlRedirectExperiments: ["skip", "browser"].includes(context.config.runCrossOriginUrlRedirectExperiments),
+    disableUrlRedirectExperiments: ["skip", "browser"].includes(
+      context.config.runUrlRedirectExperiments,
+    ),
+    disableCrossOriginUrlRedirectExperiments: ["skip", "browser"].includes(
+      context.config.runCrossOriginUrlRedirectExperiments,
+    ),
   });
 
   // todo: remove
   growthbook.debug = true;
 
   await growthbook.loadFeatures();
-  let sdkPayload = growthbook.getPayload();
+  const sdkPayload = growthbook.getPayload();
   const experiments = growthbook.getExperiments();
 
   // todo: not needed
@@ -77,14 +85,16 @@ export async function edgeApp(
   let body = "";
 
   const oldUrl = url;
+  // todo: scrub tracking callbacks from visual experiments if a redirect has happened
   url = await redirect({
     context,
     growthbook,
     previousUrl: url,
     resetDomChanges,
+    setPreRedirectTrackedExperimentHashes,
   });
 
-  let originUrl = getDefaultOriginUrl(context, url, req);
+  const originUrl = getDefaultOriginUrl(context, url);
 
   if (shouldFetch) {
     let response: Response | undefined;
@@ -108,8 +118,11 @@ export async function edgeApp(
     });
   }
 
-  let trackedExperimentHashes = growthbook.getTrackedExperimentHashes();
-  console.log({trackedExperimentHashes})
+  const trackedExperimentHashes = growthbook.getTrackedExperimentHashes();
+  console.log({
+    trackedExperimentHashes,
+    preRedirectTrackedExperimentHashes,
+  });
 
   if (shouldInjectSDK) {
     body = injectScript({
@@ -122,6 +135,7 @@ export async function edgeApp(
         : undefined,
       experiments,
       trackedExperimentHashes,
+      preRedirectTrackedExperimentHashes,
       url,
       oldUrl,
     });
@@ -135,10 +149,9 @@ export async function edgeApp(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getDefaultOriginUrl(context: Context, currentURL: string, req: any): string {
+function getDefaultOriginUrl(context: Context, currentURL: string): string {
   const proxyTarget = context.config.proxyTarget;
   const currentParsedURL = new URL(currentURL);
-  console.log("proxyTarget", proxyTarget);
   const proxyParsedURL = new URL(proxyTarget);
 
   const protocol = proxyParsedURL.protocol

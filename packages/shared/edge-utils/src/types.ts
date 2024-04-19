@@ -42,7 +42,11 @@ export interface Config {
   };
 }
 
-export type ExperimentRunEnvironment = "everywhere" | "edge" | "browser" | "skip";
+export type ExperimentRunEnvironment =
+  | "everywhere"
+  | "edge"
+  | "browser"
+  | "skip";
 
 export interface Helpers {
   // routing

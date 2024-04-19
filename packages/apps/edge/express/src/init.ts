@@ -3,6 +3,7 @@ import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
 import { Context, defaultContext } from "@growthbook/edge-utils";
+import { ExperimentRunEnvironment } from "@growthbook/edge-utils/dist/types";
 import {
   getRequestMethod,
   getRequestHeader,
@@ -13,7 +14,6 @@ import {
   setResponseHeader,
   getUUIDCookie,
 } from "./helpers";
-import { ExperimentRunEnvironment } from "@growthbook/edge-utils/dist/types";
 dotenv.config({ path: "./.env.local" });
 
 export default async () => {
@@ -21,9 +21,12 @@ export default async () => {
   const context: Context = defaultContext;
 
   // config
-  context.config.proxyTarget = process.env.PROXY_TARGET ?? defaultContext.config.proxyTarget;
-  context.config.environment = process.env.NODE_ENV ?? defaultContext.config.environment;
-  context.config.maxPayloadSize = process.env.MAX_PAYLOAD_SIZE ?? defaultContext.config.maxPayloadSize;
+  context.config.proxyTarget =
+    process.env.PROXY_TARGET ?? defaultContext.config.proxyTarget;
+  context.config.environment =
+    process.env.NODE_ENV ?? defaultContext.config.environment;
+  context.config.maxPayloadSize =
+    process.env.MAX_PAYLOAD_SIZE ?? defaultContext.config.maxPayloadSize;
 
   try {
     context.config.routes = JSON.parse(process.env.ROUTES || "[]");
@@ -32,15 +35,34 @@ export default async () => {
     context.config.routes = [];
   }
 
-  context.config.runVisualEditorExperiments = (process.env.RUN_VISUAL_EDITOR_EXPERIMENTS ?? defaultContext.config.runVisualEditorExperiments) as ExperimentRunEnvironment;
-  context.config.disableJsInjection = ["true", "1"].includes(process.env.DISABLE_JS_INJECTION ?? ""+defaultContext.config.disableJsInjection);
+  context.config.runVisualEditorExperiments = (process.env
+    .RUN_VISUAL_EDITOR_EXPERIMENTS ??
+    defaultContext.config
+      .runVisualEditorExperiments) as ExperimentRunEnvironment;
+  context.config.disableJsInjection = ["true", "1"].includes(
+    process.env.DISABLE_JS_INJECTION ??
+      "" + defaultContext.config.disableJsInjection,
+  );
 
-  context.config.runUrlRedirectExperiments = (process.env.RUN_URL_REDIRECT_EXPERIMENTS ?? defaultContext.config.runUrlRedirectExperiments) as ExperimentRunEnvironment;
-  context.config.runCrossOriginUrlRedirectExperiments = (process.env.RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS ?? defaultContext.config.runCrossOriginUrlRedirectExperiments) as ExperimentRunEnvironment;
-  context.config.injectRedirectUrlScript = ["true", "1"].includes(process.env.INJECT_REDIRECT_URL_SCRIPT ?? ""+defaultContext.config.injectRedirectUrlScript);
-  context.config.maxRedirects = parseInt(process.env.MAX_REDIRECTS || ""+defaultContext.config.maxRedirects);
+  context.config.runUrlRedirectExperiments = (process.env
+    .RUN_URL_REDIRECT_EXPERIMENTS ??
+    defaultContext.config
+      .runUrlRedirectExperiments) as ExperimentRunEnvironment;
+  context.config.runCrossOriginUrlRedirectExperiments = (process.env
+    .RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS ??
+    defaultContext.config
+      .runCrossOriginUrlRedirectExperiments) as ExperimentRunEnvironment;
+  context.config.injectRedirectUrlScript = ["true", "1"].includes(
+    process.env.INJECT_REDIRECT_URL_SCRIPT ??
+      "" + defaultContext.config.injectRedirectUrlScript,
+  );
+  context.config.maxRedirects = parseInt(
+    process.env.MAX_REDIRECTS || "" + defaultContext.config.maxRedirects,
+  );
 
-  context.config.scriptInjectionPattern = process.env.SCRIPT_INJECTION_PATTERN || defaultContext.config.scriptInjectionPattern;
+  context.config.scriptInjectionPattern =
+    process.env.SCRIPT_INJECTION_PATTERN ||
+    defaultContext.config.scriptInjectionPattern;
 
   context.config.crypto = crypto;
 
