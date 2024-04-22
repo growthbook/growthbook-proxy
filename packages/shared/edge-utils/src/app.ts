@@ -81,7 +81,6 @@ export async function edgeApp(
   let body = "";
 
   const oldUrl = url;
-  // todo: scrub tracking callbacks from visual experiments if a redirect has happened
   url = await redirect({
     context,
     growthbook,
@@ -121,7 +120,6 @@ export async function edgeApp(
   let deferredTrackingCalls: TrackingData[] | undefined = shouldInjectTrackingCalls
       ? growthbook.getDeferredTrackingCalls()
       : undefined;
-  // todo: scrub trackingCalls for pre-redirect visual experiments
 
   if (shouldInjectSDK) {
     body = injectScript({
