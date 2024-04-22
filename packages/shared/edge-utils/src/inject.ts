@@ -10,6 +10,7 @@ import { Config, Context } from "./types";
 
 export function injectScript({
   context,
+  res,
   body,
   sdkPayload,
   attributes,
@@ -21,6 +22,8 @@ export function injectScript({
   oldUrl,
 }: {
   context: Context;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  res: any;
   body: string;
   sdkPayload?: StoredPayload;
   attributes: Attributes;
@@ -31,6 +34,22 @@ export function injectScript({
   url: string;
   oldUrl: string;
 }) {
+  // get nonce from CSP
+  let csp = context.config.contentSecurityPolicy;
+  let nonce : string | undefined = undefined;
+  if (csp) {
+    if ((csp.indexOf("__NONCE__") || -1) >= 0 && context.config?.crypto?.getRandomValues) {
+      // Generate nonce
+      nonce = btoa(context.config.crypto.getRandomValues(new Uint32Array(2)));
+      csp = csp?.replace(/__NONCE__/g, nonce);
+    } else if (context.config?.nonce) {
+      // Use passed-in nonce
+      nonce = context.config.nonce;
+    }
+    context.helpers?.setResponseHeader?.(res, "Content-Security-Policy", csp);
+  }
+  // todo: support reading csp from meta tag?
+
   // todo: determine if we should allow streaming
 
   const uuidCookieName = context.config.uuidCookieName || "gbuuid";
@@ -73,6 +92,7 @@ export function injectScript({
     disableCrossOriginUrlRedirectExperiments: ["skip", "edge"].includes(
       context.config.runCrossOriginUrlRedirectExperiments,
     ),
+    jsInjectionNonce: nonce,
     blockedExperimentHashes,
   };
 
@@ -83,6 +103,10 @@ export function injectScript({
     context.config.growthbook.decryptionKey
       ? `\n  data-decryption-key="${context.config.growthbook.decryptionKey}"`
       : ""
+  }${
+    nonce
+    ? `\n  nonce="${nonce}"`
+    : ""
   }
 >
   window.growthbook_config = ${JSON.stringify(gbContext)};

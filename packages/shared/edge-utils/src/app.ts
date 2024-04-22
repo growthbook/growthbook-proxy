@@ -74,10 +74,6 @@ export async function edgeApp(
   const sdkPayload = growthbook.getPayload();
   const experiments = growthbook.getExperiments();
 
-  // todo: not needed
-  // growthbook.setBlockedExperimentHashes(["9a3ac5b46bb84e4996b1f64c93da90bfb3521b4c338ec32ef95b70b887f8ff1d"]);
-  // growthbook.setURL(url);
-
   const shouldFetch = true; // todo: maybe false if no SDK injection needed?
   const shouldInjectSDK = true; // todo: parameterize?
   const shouldInjectTrackingCalls = true; // todo: parameterize?
@@ -96,18 +92,21 @@ export async function edgeApp(
 
   const originUrl = getDefaultOriginUrl(context, url);
 
+  let fetchedResponse: Response | undefined = undefined;
   if (shouldFetch) {
-    let response: Response | undefined;
     try {
-      response = (await context.helpers.fetch?.(
+      fetchedResponse = (await context.helpers.fetch?.(
         context,
         originUrl,
       )) as Response;
+      if (!fetchedResponse.ok) {
+        throw new Error("Fetch: non-2xx status returned");
+      }
     } catch (e) {
       console.error(e);
       return context.helpers.sendResponse?.(res, "Error fetching page", 500);
     }
-    body = await response.text();
+    body = await fetchedResponse.text();
   }
   // todo: edge config gating?
   if (domChanges.length) {
@@ -127,6 +126,7 @@ export async function edgeApp(
   if (shouldInjectSDK) {
     body = injectScript({
       context,
+      res,
       body,
       sdkPayload,
       attributes,
