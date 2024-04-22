@@ -115,7 +115,9 @@ ${
     ? `
   window.growthbook_queue = [
     (gb) => {
-      gb.setDeferredTrackingCalls(${JSON.stringify(deferredTrackingCalls)});
+      gb.setDeferredTrackingCalls(${JSON.stringify(
+        scrubInvalidTrackingCalls(deferredTrackingCalls, preRedirectTrackedExperimentHashes)
+      )});
       gb.fireDeferredTrackingCalls();
     }
   ];
@@ -196,4 +198,18 @@ function getBlockedExperiments({
   }
 
   return blockedExperimentHashes.length ? blockedExperimentHashes : undefined;
+}
+
+function scrubInvalidTrackingCalls(
+  deferredTrackingCalls: TrackingData[],
+  preRedirectTrackedExperimentHashes: string[]
+): TrackingData[] {
+  return deferredTrackingCalls.filter((data) => {
+    const exp = data.experiment;
+    // remove tracking for any visual experiments that ran during the redirect loop
+    if (exp.changeType === "visual" && preRedirectTrackedExperimentHashes.includes(exp.expHash)) {
+      return false;
+    }
+    return true;
+  })
 }

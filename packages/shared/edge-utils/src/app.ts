@@ -1,4 +1,4 @@
-import { AutoExperimentVariation, GrowthBook } from "@growthbook/growthbook";
+import { AutoExperimentVariation, GrowthBook, TrackingData } from "@growthbook/growthbook";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
 import { injectScript } from "./inject";
@@ -118,10 +118,10 @@ export async function edgeApp(
   }
 
   const trackedExperimentHashes = growthbook.getTrackedExperimentHashes();
-  console.log({
-    trackedExperimentHashes,
-    preRedirectTrackedExperimentHashes,
-  });
+  let deferredTrackingCalls: TrackingData[] | undefined = shouldInjectTrackingCalls
+      ? growthbook.getDeferredTrackingCalls()
+      : undefined;
+  // todo: scrub trackingCalls for pre-redirect visual experiments
 
   if (shouldInjectSDK) {
     body = injectScript({
@@ -130,9 +130,7 @@ export async function edgeApp(
       body,
       sdkPayload,
       attributes,
-      deferredTrackingCalls: shouldInjectTrackingCalls
-        ? growthbook.getDeferredTrackingCalls()
-        : undefined,
+      deferredTrackingCalls,
       experiments,
       trackedExperimentHashes,
       preRedirectTrackedExperimentHashes,
