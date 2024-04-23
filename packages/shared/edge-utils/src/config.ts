@@ -12,6 +12,7 @@ export const defaultContext: Context = {
     injectRedirectUrlScript: true,
     maxRedirects: 5,
     scriptInjectionPattern: "</body>",
+    enableStreaming: false,
     growthbook: {
       apiHost: "",
       clientKey: "",

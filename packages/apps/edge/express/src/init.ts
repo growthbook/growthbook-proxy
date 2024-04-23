@@ -64,6 +64,10 @@ export default async () => {
     process.env.SCRIPT_INJECTION_PATTERN ||
     defaultContext.config.scriptInjectionPattern;
 
+  context.config.enableStreaming = ["true", "1"].includes(
+    process.env.ENABLE_STREAMING ??
+      "" + defaultContext.config.enableStreaming);
+
   context.config.contentSecurityPolicy =
     process.env.CONTENT_SECURITY_POLICY || "";
   // warning: for testing only; nonce should be unique per request

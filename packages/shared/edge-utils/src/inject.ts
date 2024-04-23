@@ -46,6 +46,7 @@ export function injectScript({
     preRedirectTrackedExperimentHashes,
   });
   const injectRedirectUrlScript = context.config.injectRedirectUrlScript;
+  const enableStreaming = context.config.enableStreaming;
 
   const gbContext: Omit<GbContext, "trackingCallback"> & {
     uuidCookieName?: string;
@@ -76,6 +77,7 @@ export function injectScript({
     ),
     jsInjectionNonce: nonce,
     blockedExperimentHashes,
+    backgroundSync: enableStreaming,
   };
 
   let scriptTag = `
