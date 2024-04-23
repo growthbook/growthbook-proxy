@@ -1,54 +1,36 @@
 import {
   Context as GbContext,
   Attributes,
-  StoredPayload,
   TrackingData,
   AutoExperiment,
+  GrowthBook,
 } from "@growthbook/growthbook";
 import { sdkWrapper } from "./generated/sdkWrapper";
-import { Config, Context } from "./types";
+import { Context } from "./types";
 
 export function injectScript({
   context,
-  res,
   body,
-  sdkPayload,
+  nonce,
+  growthbook,
   attributes,
-  deferredTrackingCalls,
-  experiments,
-  trackedExperimentHashes,
   preRedirectTrackedExperimentHashes,
   url,
   oldUrl,
 }: {
   context: Context;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  res: any;
   body: string;
-  sdkPayload?: StoredPayload;
+  nonce?: string;
+  growthbook: GrowthBook;
   attributes: Attributes;
-  deferredTrackingCalls?: TrackingData[];
-  experiments: AutoExperiment[];
-  trackedExperimentHashes: string[];
   preRedirectTrackedExperimentHashes: string[];
   url: string;
   oldUrl: string;
 }) {
-  // get nonce from CSP
-  let csp = context.config.contentSecurityPolicy;
-  let nonce : string | undefined = undefined;
-  if (csp) {
-    if ((csp.indexOf("__NONCE__") || -1) >= 0 && context.config?.crypto?.getRandomValues) {
-      // Generate nonce
-      nonce = btoa(context.config.crypto.getRandomValues(new Uint32Array(2)));
-      csp = csp?.replace(/__NONCE__/g, nonce);
-    } else if (context.config?.nonce) {
-      // Use passed-in nonce
-      nonce = context.config.nonce;
-    }
-    context.helpers?.setResponseHeader?.(res, "Content-Security-Policy", csp);
-  }
-  // todo: support reading csp from meta tag?
+  const sdkPayload = growthbook.getPayload();
+  const experiments = growthbook.getExperiments();
+  const deferredTrackingCalls = growthbook.getDeferredTrackingCalls();
+  const trackedExperimentHashes = growthbook.getTrackedExperimentHashes();
 
   // todo: determine if we should allow streaming
 
@@ -103,11 +85,7 @@ export function injectScript({
     context.config.growthbook.decryptionKey
       ? `\n  data-decryption-key="${context.config.growthbook.decryptionKey}"`
       : ""
-  }${
-    nonce
-    ? `\n  nonce="${nonce}"`
-    : ""
-  }
+  }${nonce ? `\n  nonce="${nonce}"` : ""}
 >
   window.growthbook_config = ${JSON.stringify(gbContext)};
 ${
@@ -116,7 +94,10 @@ ${
   window.growthbook_queue = [
     (gb) => {
       gb.setDeferredTrackingCalls(${JSON.stringify(
-        scrubInvalidTrackingCalls(deferredTrackingCalls, preRedirectTrackedExperimentHashes)
+        scrubInvalidTrackingCalls(
+          deferredTrackingCalls,
+          preRedirectTrackedExperimentHashes,
+        ),
       )});
       gb.fireDeferredTrackingCalls();
     }
@@ -202,14 +183,18 @@ function getBlockedExperiments({
 
 function scrubInvalidTrackingCalls(
   deferredTrackingCalls: TrackingData[],
-  preRedirectTrackedExperimentHashes: string[]
+  preRedirectTrackedExperimentHashes: string[],
 ): TrackingData[] {
   return deferredTrackingCalls.filter((data) => {
     const exp = data.experiment;
     // remove tracking for any visual experiments that ran during the redirect loop
-    if (exp.changeType === "visual" && preRedirectTrackedExperimentHashes.includes(exp.expHash)) {
+    if (
+      exp.changeType === "visual" &&
+      exp?.expHash &&
+      preRedirectTrackedExperimentHashes.includes(exp.expHash)
+    ) {
       return false;
     }
     return true;
-  })
+  });
 }

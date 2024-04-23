@@ -1,4 +1,4 @@
-import { AutoExperimentVariation, GrowthBook, TrackingData } from "@growthbook/growthbook";
+import { AutoExperimentVariation, GrowthBook } from "@growthbook/growthbook";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
 import { injectScript } from "./inject";
@@ -37,9 +37,9 @@ export async function edgeApp(
   const attributes = getUserAttributes(context, req);
   // todo: polyfill localStorage -> edge key/val for SDK cache?
 
-  // experiments?
   let domChanges: AutoExperimentVariation[] = [];
   const resetDomChanges = () => (domChanges = []);
+
   let preRedirectTrackedExperimentHashes: string[] = [];
   const setPreRedirectTrackedExperimentHashes = (experiments: string[]) =>
     (preRedirectTrackedExperimentHashes = experiments);
@@ -71,12 +71,6 @@ export async function edgeApp(
   growthbook.debug = true;
 
   await growthbook.loadFeatures();
-  const sdkPayload = growthbook.getPayload();
-  const experiments = growthbook.getExperiments();
-
-  const shouldFetch = true; // todo: maybe false if no SDK injection needed?
-  const shouldInjectSDK = true; // todo: parameterize?
-  const shouldInjectTrackingCalls = true; // todo: parameterize?
 
   let body = "";
 
@@ -89,63 +83,50 @@ export async function edgeApp(
     setPreRedirectTrackedExperimentHashes,
   });
 
-  const originUrl = getDefaultOriginUrl(context, url);
+  const originUrl = getOriginUrl(context, url);
 
   let fetchedResponse: Response | undefined = undefined;
-  if (shouldFetch) {
-    try {
-      fetchedResponse = (await context.helpers.fetch?.(
-        context,
-        originUrl,
-      )) as Response;
-      if (!fetchedResponse.ok) {
-        throw new Error("Fetch: non-2xx status returned");
-      }
-    } catch (e) {
-      console.error(e);
-      return context.helpers.sendResponse?.(res, "Error fetching page", 500);
+  try {
+    fetchedResponse = (await context.helpers.fetch?.(
+      context,
+      originUrl,
+    )) as Response;
+    if (!fetchedResponse.ok) {
+      throw new Error("Fetch: non-2xx status returned");
     }
-    body = await fetchedResponse.text();
+  } catch (e) {
+    console.error(e);
+    return context.helpers.sendResponse?.(res, "Error fetching page", 500);
   }
-  // todo: edge config gating?
-  if (domChanges.length) {
-    body = await applyDomMutations({
-      context,
-      body,
-      domChanges,
-    });
+  body = await fetchedResponse.text();
+
+  const { csp, nonce } = getCspInfo(context);
+  if (csp) {
+    context.helpers?.setResponseHeader?.(res, "Content-Security-Policy", csp);
   }
 
-  const trackedExperimentHashes = growthbook.getTrackedExperimentHashes();
-  let deferredTrackingCalls: TrackingData[] | undefined = shouldInjectTrackingCalls
-      ? growthbook.getDeferredTrackingCalls()
-      : undefined;
+  body = await applyDomMutations({
+    body,
+    nonce,
+    domChanges,
+  });
 
-  if (shouldInjectSDK) {
-    body = injectScript({
-      context,
-      res,
-      body,
-      sdkPayload,
-      attributes,
-      deferredTrackingCalls,
-      experiments,
-      trackedExperimentHashes,
-      preRedirectTrackedExperimentHashes,
-      url,
-      oldUrl,
-    });
-  }
+  body = injectScript({
+    context,
+    body,
+    nonce,
+    growthbook,
+    attributes,
+    preRedirectTrackedExperimentHashes,
+    url,
+    oldUrl,
+  });
 
-  if (shouldFetch) {
-    return context.helpers.sendResponse?.(res, body);
-  }
-  // passthrough if no SDK side effects
-  return context.helpers.proxyRequest?.(context, req, res, next);
+  return context.helpers.sendResponse?.(res, body);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getDefaultOriginUrl(context: Context, currentURL: string): string {
+function getOriginUrl(context: Context, currentURL: string): string {
   const proxyTarget = context.config.proxyTarget;
   const currentParsedURL = new URL(currentURL);
   const proxyParsedURL = new URL(proxyTarget);
@@ -175,4 +156,29 @@ function getDefaultOriginUrl(context: Context, currentURL: string): string {
   }
 
   return newURL;
+}
+
+function getCspInfo(context: Context): {
+  csp: string | undefined;
+  nonce: string | undefined;
+} {
+  // get nonce from CSP
+  let csp = context.config.contentSecurityPolicy;
+  let nonce: string | undefined = undefined;
+  if (csp) {
+    if (
+      (csp.indexOf("__NONCE__") || -1) >= 0 &&
+      context.config?.crypto?.getRandomValues
+    ) {
+      // Generate nonce
+      nonce = btoa(context.config.crypto.getRandomValues(new Uint32Array(2)));
+      csp = csp?.replace(/__NONCE__/g, nonce);
+    } else if (context.config?.nonce) {
+      // Use passed-in nonce
+      nonce = context.config.nonce;
+    }
+  }
+  // todo: support reading csp from meta tag?
+
+  return { csp, nonce };
 }

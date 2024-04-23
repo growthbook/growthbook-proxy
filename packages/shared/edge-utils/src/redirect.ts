@@ -17,12 +17,9 @@ export default async function redirect({
   const disableUrlRedirectExperiments = ["skip", "browser"].includes(
     context.config.runUrlRedirectExperiments,
   );
+  if (disableUrlRedirectExperiments) return previousUrl;
+
   const maxRedirects = context.config.maxRedirects || 5;
-
-  if (disableUrlRedirectExperiments) {
-    return previousUrl;
-  }
-
   let redirectCount = 0;
 
   let newUrl = growthbook.getRedirectUrl();
@@ -33,11 +30,14 @@ export default async function redirect({
     newUrl = previousUrl;
     if (redirectCount >= maxRedirects) return previousUrl;
 
+    // clear visual experiment effects since we're no longer on the same page
     resetDomChanges();
+    // keep track of experiments that triggered prior to final redirect
     setPreRedirectTrackedExperimentHashes(
       growthbook.getTrackedExperimentHashes(),
     );
 
+    // change the URL to trigger the experiment
     await growthbook.setURL(newUrl);
     previousUrl = newUrl;
     newUrl = growthbook.getRedirectUrl();

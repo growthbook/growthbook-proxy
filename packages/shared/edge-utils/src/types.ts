@@ -22,7 +22,7 @@ export interface Config {
   scriptInjectionPattern: string;
 
   contentSecurityPolicy?: string; // __NONCE__ will be replaced with a generated nonce string
-  nonce?: string // can be used instead of __NONCE__ if known
+  nonce?: string; // can be used instead of __NONCE__ if known
   crypto?: any;
 
   growthbook: {

@@ -64,7 +64,8 @@ export default async () => {
     process.env.SCRIPT_INJECTION_PATTERN ||
     defaultContext.config.scriptInjectionPattern;
 
-  context.config.contentSecurityPolicy = process.env.CONTENT_SECURITY_POLICY || "";
+  context.config.contentSecurityPolicy =
+    process.env.CONTENT_SECURITY_POLICY || "";
   // warning: for testing only; nonce should be unique per request
   context.config.nonce = process.env.NONCE || undefined;
 

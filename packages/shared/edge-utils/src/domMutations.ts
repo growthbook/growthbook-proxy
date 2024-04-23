@@ -1,30 +1,39 @@
-import { AutoExperimentVariation } from "@growthbook/growthbook";
+import { AutoExperimentVariation, DOMMutation } from "@growthbook/growthbook";
 import { parse } from "node-html-parser";
-import { Context } from "./types";
 
 export async function applyDomMutations({
-  context,
   body,
+  nonce,
   domChanges,
 }: {
-  context: Context;
   body: string;
+  nonce?: string;
   domChanges: AutoExperimentVariation[];
 }) {
+  if (!domChanges.length) return body;
+
   const root = parse(body);
   const headEl = root.querySelector("head");
 
   domChanges.forEach(({ domMutations, css, js }) => {
     if (css) {
-      const el = headEl || root;
-      el.appendChild(parse(`<style>${css}</style>`));
+      const parentEl = headEl || root;
+      const el = parse(`<style>${css}</style>`);
+      parentEl.appendChild(el);
     }
     if (js) {
-      const el = headEl || root;
-      el.appendChild(parse(`<script>${js}</script>`));
+      const parentEl = headEl || root;
+      const el = parse(
+        `<script>${js}</script>`,
+      ) as unknown as HTMLScriptElement;
+      if (nonce) {
+        el.nonce = nonce;
+      }
+      // @ts-ignore
+      parentEl.appendChild(el);
     }
 
-    domMutations?.forEach((mutation) => {
+    domMutations?.forEach((mutation: DOMMutation) => {
       const {
         attribute: attr,
         action,
