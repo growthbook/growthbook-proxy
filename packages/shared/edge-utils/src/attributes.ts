@@ -7,6 +7,10 @@ export function getUserAttributes(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   req: any,
 ): Attributes {
+  const providedAttributes = ctx.config.growthbook.attributes || {};
+  if (ctx.config.skipAutoAttributes) {
+    return providedAttributes;
+  }
   // get any saved attributes from the cookie
   const uuid = getUUID(ctx, req);
   const attributes = {
@@ -14,7 +18,7 @@ export function getUserAttributes(
   };
   // enhance the attributes with any new information
   const autoAttributes = getAutoAttributes(ctx, req);
-  return { ...attributes, ...autoAttributes };
+  return { ...attributes, ...autoAttributes, ...providedAttributes };
 }
 
 // Get or create a UUID for the user:

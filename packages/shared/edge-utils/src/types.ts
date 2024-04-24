@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { LocalStorageCompat } from "@growthbook/growthbook";
+import { Attributes, LocalStorageCompat, TrackingCallback } from "@growthbook/growthbook";
 
 export interface Context {
   config: Config;
@@ -22,6 +22,7 @@ export interface Config {
   maxRedirects: number;
 
   scriptInjectionPattern: string;
+  disableInjections: boolean;
 
   enableStreaming: boolean;
   enableStickyBuckets: boolean;
@@ -37,6 +38,8 @@ export interface Config {
     clientKey: string;
     decryptionKey?: string;
     trackingCallback?: string; // (experiment, result) => void;
+    edgeTrackingCallback?: TrackingCallback;
+    attributes?: Attributes;
   };
 
   uuidCookieName?: string;
@@ -49,6 +52,7 @@ export interface Config {
     host?: string;
     query?: string;
   };
+  skipAutoAttributes: boolean;
 }
 
 export type ExperimentRunEnvironment =

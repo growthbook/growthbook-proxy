@@ -31,6 +31,8 @@ export function injectScript({
   url: string;
   oldUrl: string;
 }) {
+  if (context.config.disableInjections) return body;
+
   const sdkPayload = growthbook.getPayload();
   const experiments = growthbook.getExperiments();
   const deferredTrackingCalls = growthbook.getDeferredTrackingCalls();

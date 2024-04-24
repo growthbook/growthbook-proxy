@@ -76,6 +76,9 @@ export async function edgeApp(
       context.config.runCrossOriginUrlRedirectExperiments,
     ),
     stickyBucketService,
+    trackingCallback: context.config.disableInjections
+      ? context.config.growthbook.edgeTrackingCallback
+      : undefined,
   });
 
   // todo: remove

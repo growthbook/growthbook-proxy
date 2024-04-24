@@ -12,6 +12,7 @@ export const defaultContext: Context = {
     injectRedirectUrlScript: true,
     maxRedirects: 5,
     scriptInjectionPattern: "</body>",
+    disableInjections: false,
     enableStreaming: false,
     enableStickyBuckets: false,
     growthbook: {
@@ -27,6 +28,7 @@ export const defaultContext: Context = {
       host: "host",
       query: "query",
     },
+    skipAutoAttributes: false,
   },
   helpers: {},
 };

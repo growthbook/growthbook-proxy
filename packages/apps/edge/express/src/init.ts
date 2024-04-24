@@ -63,6 +63,9 @@ export default async () => {
   context.config.scriptInjectionPattern =
     process.env.SCRIPT_INJECTION_PATTERN ||
     defaultContext.config.scriptInjectionPattern;
+  context.config.disableInjections = ["true", "1"].includes(
+    process.env.DISABLE_INJECTIONS ??
+    "" + defaultContext.config.disableInjections);
 
   context.config.enableStreaming = ["true", "1"].includes(
     process.env.ENABLE_STREAMING ??
@@ -105,6 +108,10 @@ export default async () => {
     (context.config.attributeKeys.host = process.env.ATTRIBUTE_HOST);
   "ATTRIBUTE_QUERY" in process.env &&
     (context.config.attributeKeys.query = process.env.ATTRIBUTE_QUERY);
+
+  context.config.skipAutoAttributes = ["true", "1"].includes(
+    process.env.SKIP_AUTO_ATTRIBUTES ??
+    "" + defaultContext.config.skipAutoAttributes);
 
   // config.helpers
   context.helpers.getRequestURL = getRequestURL;
