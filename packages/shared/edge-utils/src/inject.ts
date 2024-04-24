@@ -53,8 +53,8 @@ export function injectScript({
   });
   const injectRedirectUrlScript = context.config.injectRedirectUrlScript;
   const enableStreaming = context.config.enableStreaming;
-  const enableStickyBuckets = context.config.enableStickyBuckets;
-  const stickyAssignments = enableStickyBuckets
+  const enableStickyBucketing = context.config.enableStickyBucketing;
+  const stickyAssignments = enableStickyBucketing
     ? stickyBucketService instanceof EdgeStickyBucketService
       ? stickyBucketService?.exportAssignmentDocs()
       : undefined
@@ -66,7 +66,7 @@ export function injectScript({
     uuid?: string;
     attributeKeys?: Record<string, string>;
     persistUuidOnLoad?: boolean;
-    enableStickyBuckets?: boolean;
+    useStickyBucketService?: "cookie" | "localStorage";
     trackingCallback: string; // replaced by macro
   } = {
     uuidCookieName,
@@ -91,7 +91,7 @@ export function injectScript({
     jsInjectionNonce: nonce,
     blockedExperimentHashes,
     backgroundSync: enableStreaming,
-    enableStickyBuckets: enableStickyBuckets,
+    useStickyBucketService: enableStickyBucketing ? "cookie" : undefined,
     stickyBucketAssignmentDocs: stickyAssignments,
   };
 

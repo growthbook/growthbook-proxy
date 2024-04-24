@@ -14,7 +14,7 @@ export const defaultContext: Context = {
     scriptInjectionPattern: "</body>",
     disableInjections: false,
     enableStreaming: false,
-    enableStickyBuckets: false,
+    enableStickyBucketing: false,
     growthbook: {
       apiHost: "",
       clientKey: "",

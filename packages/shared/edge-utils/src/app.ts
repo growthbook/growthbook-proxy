@@ -59,7 +59,7 @@ export async function edgeApp(
     | EdgeStickyBucketService
     | StickyBucketService
     | undefined = undefined;
-  if (context.config.enableStickyBuckets) {
+  if (context.config.enableStickyBucketing) {
     stickyBucketService =
       context.config.growthbook.edgeStickyBucketService ??
       new EdgeStickyBucketService({ req });
