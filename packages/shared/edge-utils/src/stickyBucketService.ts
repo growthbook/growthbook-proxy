@@ -1,4 +1,7 @@
-import { StickyAssignmentsDocument, StickyBucketService } from "@growthbook/growthbook";
+import {
+  StickyAssignmentsDocument,
+  StickyBucketService,
+} from "@growthbook/growthbook";
 
 interface RequestCompat {
   cookies: Record<string, string>;

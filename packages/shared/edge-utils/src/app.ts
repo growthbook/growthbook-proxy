@@ -1,4 +1,9 @@
-import { AutoExperimentVariation, GrowthBook, setPolyfills } from "@growthbook/growthbook";
+import {
+  AutoExperimentVariation,
+  GrowthBook,
+  setPolyfills,
+  StickyBucketService,
+} from "@growthbook/growthbook";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
 import { getCspInfo, injectScript } from "./inject";
@@ -35,7 +40,7 @@ export async function edgeApp(
     return context.helpers.proxyRequest?.(context, req, res, next);
   }
 
-  const attributes = getUserAttributes(context, req);
+  const attributes = getUserAttributes(context, req, res);
 
   let domChanges: AutoExperimentVariation[] = [];
   const resetDomChanges = () => (domChanges = []);
@@ -50,9 +55,14 @@ export async function edgeApp(
   if (context.config.crypto) {
     setPolyfills({ SubtleCrypto: context.config.crypto });
   }
-  let stickyBucketService : EdgeStickyBucketService | undefined = undefined;
+  let stickyBucketService:
+    | EdgeStickyBucketService
+    | StickyBucketService
+    | undefined = undefined;
   if (context.config.enableStickyBuckets) {
-    stickyBucketService = new EdgeStickyBucketService({ req });
+    stickyBucketService =
+      context.config.growthbook.edgeStickyBucketService ??
+      new EdgeStickyBucketService({ req });
   }
   const growthbook = new GrowthBook({
     apiHost: context.config.growthbook.apiHost,

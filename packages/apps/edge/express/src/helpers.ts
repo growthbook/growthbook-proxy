@@ -45,3 +45,11 @@ export function getUUIDCookie(ctx: Context, req: Request): string {
   const cookie = req.cookies[cookieName];
   return cookie || "";
 }
+
+export function setUUIDCookie(ctx: Context, res: Response, uuid: string) {
+  const cookieName = ctx.config.uuidCookieName || "gbuuid";
+  const COOKIE_DAYS = 400; // 400 days is the max cookie duration for chrome
+  res.cookie(cookieName, uuid, {
+    maxAge: 24 * 60 * 60 * 1000 * COOKIE_DAYS,
+  });
+}

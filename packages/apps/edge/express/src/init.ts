@@ -65,14 +65,16 @@ export default async () => {
     defaultContext.config.scriptInjectionPattern;
   context.config.disableInjections = ["true", "1"].includes(
     process.env.DISABLE_INJECTIONS ??
-    "" + defaultContext.config.disableInjections);
+      "" + defaultContext.config.disableInjections,
+  );
 
   context.config.enableStreaming = ["true", "1"].includes(
-    process.env.ENABLE_STREAMING ??
-      "" + defaultContext.config.enableStreaming);
+    process.env.ENABLE_STREAMING ?? "" + defaultContext.config.enableStreaming,
+  );
   context.config.enableStickyBuckets = ["true", "1"].includes(
     process.env.ENABLE_STICKY_BUCKETS ??
-    "" + defaultContext.config.enableStickyBuckets);
+      "" + defaultContext.config.enableStickyBuckets,
+  );
 
   context.config.contentSecurityPolicy =
     process.env.CONTENT_SECURITY_POLICY || "";
@@ -91,7 +93,11 @@ export default async () => {
     (context.config.growthbook.trackingCallback =
       process.env.GROWTHBOOK_TRACKING_CALLBACK);
 
+  context.config.persistUuid = ["true", "1"].includes(
+    process.env.PERSIST_UUID ?? "" + defaultContext.config.persistUuid,
+  );
   context.config.uuidCookieName = process.env.UUID_COOKIE_NAME || "gbuuid";
+
   // config.attributeKeys
   "ATTRIBUTE_UUID" in process.env &&
     (context.config.attributeKeys.uuid = process.env.ATTRIBUTE_UUID);
@@ -111,7 +117,8 @@ export default async () => {
 
   context.config.skipAutoAttributes = ["true", "1"].includes(
     process.env.SKIP_AUTO_ATTRIBUTES ??
-    "" + defaultContext.config.skipAutoAttributes);
+      "" + defaultContext.config.skipAutoAttributes,
+  );
 
   // config.helpers
   context.helpers.getRequestURL = getRequestURL;

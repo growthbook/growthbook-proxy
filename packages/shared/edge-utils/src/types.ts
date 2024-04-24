@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Attributes, LocalStorageCompat, TrackingCallback } from "@growthbook/growthbook";
+import {
+  Attributes,
+  LocalStorageCompat,
+  StickyBucketService,
+  TrackingCallback,
+} from "@growthbook/growthbook";
 
 export interface Context {
   config: Config;
@@ -40,8 +45,10 @@ export interface Config {
     trackingCallback?: string; // (experiment, result) => void;
     edgeTrackingCallback?: TrackingCallback;
     attributes?: Attributes;
+    edgeStickyBucketService?: StickyBucketService;
   };
 
+  persistUuid: boolean;
   uuidCookieName?: string;
   attributeKeys: {
     uuid?: string;
@@ -77,6 +84,7 @@ export interface Helpers {
   ) => Promise<any>;
   // GB cookies
   getUUIDCookie?: (ctx: Context, req: any) => string;
+  setUUIDCookie?: (ctx: Context, res: any, uuid: string) => void;
 }
 
 export type Route = {

@@ -19,6 +19,7 @@ export const defaultContext: Context = {
       apiHost: "",
       clientKey: "",
     },
+    persistUuid: false,
     attributeKeys: {
       uuid: "id",
       browser: "browser",

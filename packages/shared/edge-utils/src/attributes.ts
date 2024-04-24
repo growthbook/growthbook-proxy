@@ -6,15 +6,22 @@ export function getUserAttributes(
   ctx: Context,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   req: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  res: any,
 ): Attributes {
-  const providedAttributes = ctx.config.growthbook.attributes || {};
-  if (ctx.config.skipAutoAttributes) {
+  const { config, helpers } = ctx;
+
+  const providedAttributes = config.growthbook.attributes || {};
+  if (config.skipAutoAttributes) {
     return providedAttributes;
   }
   // get any saved attributes from the cookie
   const uuid = getUUID(ctx, req);
+  if (config.persistUuid) {
+    helpers?.setUUIDCookie?.(ctx, res, uuid);
+  }
   const attributes = {
-    [ctx.config.attributeKeys.uuid || "id"]: uuid,
+    [config.attributeKeys.uuid || "id"]: uuid,
   };
   // enhance the attributes with any new information
   const autoAttributes = getAutoAttributes(ctx, req);

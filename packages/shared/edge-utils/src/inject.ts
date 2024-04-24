@@ -4,7 +4,7 @@ import {
   TrackingData,
   AutoExperiment,
   GrowthBook,
-  StickyAssignmentsDocument
+  StickyBucketService,
 } from "@growthbook/growthbook";
 import { sdkWrapper } from "./generated/sdkWrapper";
 import { Context } from "./types";
@@ -25,7 +25,7 @@ export function injectScript({
   body: string;
   nonce?: string;
   growthbook: GrowthBook;
-  stickyBucketService?: EdgeStickyBucketService;
+  stickyBucketService?: EdgeStickyBucketService | StickyBucketService;
   attributes: Attributes;
   preRedirectTrackedExperimentHashes: string[];
   url: string;
@@ -53,7 +53,12 @@ export function injectScript({
   });
   const injectRedirectUrlScript = context.config.injectRedirectUrlScript;
   const enableStreaming = context.config.enableStreaming;
-  const stickyAssignments = stickyBucketService?.exportAssignmentDocs();
+  const enableStickyBuckets = context.config.enableStickyBuckets;
+  const stickyAssignments = enableStickyBuckets
+    ? stickyBucketService instanceof EdgeStickyBucketService
+      ? stickyBucketService?.exportAssignmentDocs()
+      : undefined
+    : undefined;
 
   const gbContext: Omit<GbContext, "trackingCallback"> & {
     uuidCookieName?: string;
@@ -86,7 +91,7 @@ export function injectScript({
     jsInjectionNonce: nonce,
     blockedExperimentHashes,
     backgroundSync: enableStreaming,
-    enableStickyBuckets: !!stickyAssignments,
+    enableStickyBuckets: enableStickyBuckets,
     stickyBucketAssignmentDocs: stickyAssignments,
   };
 
@@ -127,11 +132,10 @@ ${
   }
 </script>
 `;
-  scriptTag = scriptTag
-    .replace(
-      `"__TRACKING_CALLBACK__"`,
-      trackingCallback || "undefined",
-    );
+  scriptTag = scriptTag.replace(
+    `"__TRACKING_CALLBACK__"`,
+    trackingCallback || "undefined",
+  );
 
   const pattern = context.config.scriptInjectionPattern || "</body>";
 
