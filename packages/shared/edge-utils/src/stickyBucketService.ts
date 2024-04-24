@@ -47,7 +47,7 @@ export class EdgeStickyBucketService extends StickyBucketService {
     this.docs[key] = doc;
   }
 
-  exportAssignmentsMap(): Record<string, StickyAssignmentsDocument> {
+  exportAssignmentDocs(): Record<string, StickyAssignmentsDocument> {
     return this.docs;
   }
 }

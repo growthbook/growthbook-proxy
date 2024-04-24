@@ -51,7 +51,7 @@ export function injectScript({
   });
   const injectRedirectUrlScript = context.config.injectRedirectUrlScript;
   const enableStreaming = context.config.enableStreaming;
-  const stickyAssignments = stickyBucketService?.exportAssignmentsMap();
+  const stickyAssignments = stickyBucketService?.exportAssignmentDocs();
 
   const gbContext: Omit<GbContext, "trackingCallback"> & {
     uuidCookieName?: string;
