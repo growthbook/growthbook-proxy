@@ -68,6 +68,7 @@ export async function edgeApp(
     apiHost: context.config.growthbook.apiHost,
     clientKey: context.config.growthbook.clientKey,
     decryptionKey: context.config.growthbook.decryptionKey,
+    payload: context.config.growthbook.payload,
     storePayload: true,
     attributes,
     applyDomChangesCallback: (changes: AutoExperimentVariation) => {
@@ -90,9 +91,6 @@ export async function edgeApp(
       ? context.config.growthbook.edgeTrackingCallback
       : undefined,
   });
-
-  // todo: remove
-  growthbook.debug = true;
 
   await growthbook.loadFeatures();
 

@@ -92,6 +92,14 @@ export default async () => {
   "GROWTHBOOK_TRACKING_CALLBACK" in process.env &&
     (context.config.growthbook.trackingCallback =
       process.env.GROWTHBOOK_TRACKING_CALLBACK);
+  try {
+    "GROWTHBOOK_PAYLOAD" in process.env &&
+      (context.config.growthbook.payload = JSON.parse(
+        process.env.GROWTHBOOK_PAYLOAD || "",
+      ));
+  } catch (e) {
+    console.error("Error parsing GROWTHBOOK_PAYLOAD", e);
+  }
 
   context.config.persistUuid = ["true", "1"].includes(
     process.env.PERSIST_UUID ?? "" + defaultContext.config.persistUuid,

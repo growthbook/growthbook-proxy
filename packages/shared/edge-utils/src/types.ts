@@ -4,6 +4,7 @@ import {
   Attributes,
   LocalStorageCompat,
   StickyBucketService,
+  StoredPayload,
   TrackingCallback,
 } from "@growthbook/growthbook";
 
@@ -46,6 +47,7 @@ export interface Config {
     edgeTrackingCallback?: TrackingCallback;
     attributes?: Attributes;
     edgeStickyBucketService?: StickyBucketService;
+    payload?: StoredPayload;
   };
 
   persistUuid: boolean;
