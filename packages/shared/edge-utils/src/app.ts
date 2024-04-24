@@ -1,7 +1,7 @@
-import { AutoExperimentVariation, GrowthBook } from "@growthbook/growthbook";
+import { AutoExperimentVariation, GrowthBook, setPolyfills } from "@growthbook/growthbook";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
-import { injectScript } from "./inject";
+import { getCspInfo, injectScript } from "./inject";
 import { applyDomMutations } from "./domMutations";
 import redirect from "./redirect";
 import { getRoute } from "./routing";
@@ -35,7 +35,6 @@ export async function edgeApp(
   }
 
   const attributes = getUserAttributes(context, req);
-  // todo: polyfill localStorage -> edge key/val for SDK cache?
 
   let domChanges: AutoExperimentVariation[] = [];
   const resetDomChanges = () => (domChanges = []);
@@ -44,6 +43,12 @@ export async function edgeApp(
   const setPreRedirectTrackedExperimentHashes = (experiments: string[]) =>
     (preRedirectTrackedExperimentHashes = experiments);
 
+  if (context.config.localStorage) {
+    setPolyfills({ localStorage: context.config.localStorage });
+  }
+  if (context.config.crypto) {
+    setPolyfills({ SubtleCrypto: context.config.crypto });
+  }
   const growthbook = new GrowthBook({
     apiHost: context.config.growthbook.apiHost,
     clientKey: context.config.growthbook.clientKey,
@@ -156,29 +161,4 @@ function getOriginUrl(context: Context, currentURL: string): string {
   }
 
   return newURL;
-}
-
-function getCspInfo(context: Context): {
-  csp: string | undefined;
-  nonce: string | undefined;
-} {
-  // get nonce from CSP
-  let csp = context.config.contentSecurityPolicy;
-  let nonce: string | undefined = undefined;
-  if (csp) {
-    if (
-      (csp.indexOf("__NONCE__") || -1) >= 0 &&
-      context.config?.crypto?.getRandomValues
-    ) {
-      // Generate nonce
-      nonce = btoa(context.config.crypto.getRandomValues(new Uint32Array(2)));
-      csp = csp?.replace(/__NONCE__/g, nonce);
-    } else if (context.config?.nonce) {
-      // Use passed-in nonce
-      nonce = context.config.nonce;
-    }
-  }
-  // todo: support reading csp from meta tag?
-
-  return { csp, nonce };
 }

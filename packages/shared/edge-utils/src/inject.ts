@@ -134,6 +134,31 @@ ${
   return body;
 }
 
+export function getCspInfo(context: Context): {
+  csp?: string;
+  nonce?: string;
+} {
+  // get nonce from CSP
+  let csp = context.config.contentSecurityPolicy;
+  let nonce: string | undefined = undefined;
+  if (csp) {
+    if (
+      (csp.indexOf("__NONCE__") || -1) >= 0 &&
+      context.config?.crypto?.getRandomValues
+    ) {
+      // Generate nonce
+      nonce = btoa(context.config.crypto.getRandomValues(new Uint32Array(2)));
+      csp = csp?.replace(/__NONCE__/g, nonce);
+    } else if (context.config?.nonce) {
+      // Use passed-in nonce
+      nonce = context.config.nonce;
+    }
+  }
+  // todo: support reading csp from meta tag?
+
+  return { csp, nonce };
+}
+
 function getBlockedExperiments({
   context,
   experiments,

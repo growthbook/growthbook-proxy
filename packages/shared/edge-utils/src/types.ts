@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { LocalStorageCompat } from "@growthbook/growthbook";
+
 export interface Context {
   config: Config;
   helpers: Helpers;
@@ -25,7 +27,9 @@ export interface Config {
 
   contentSecurityPolicy?: string; // __NONCE__ will be replaced with a generated nonce string
   nonce?: string; // can be used instead of __NONCE__ if known
+
   crypto?: any;
+  localStorage?: LocalStorageCompat;
 
   growthbook: {
     apiHost: string;
