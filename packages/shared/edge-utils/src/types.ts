@@ -16,7 +16,7 @@ export interface Config {
   runVisualEditorExperiments: ExperimentRunEnvironment; // default: everywhere
   disableJsInjection: boolean;
 
-  runUrlRedirectExperiments: ExperimentRunEnvironment; // default: everywhere
+  runUrlRedirectExperiments: ExperimentRunEnvironment; // default: browser
   runCrossOriginUrlRedirectExperiments: ExperimentRunEnvironment; // default: browser
   injectRedirectUrlScript: boolean;
   maxRedirects: number;
@@ -24,6 +24,7 @@ export interface Config {
   scriptInjectionPattern: string;
 
   enableStreaming: boolean;
+  enableStickyBuckets: boolean;
 
   contentSecurityPolicy?: string; // __NONCE__ will be replaced with a generated nonce string
   nonce?: string; // can be used instead of __NONCE__ if known

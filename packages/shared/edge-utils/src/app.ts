@@ -5,6 +5,7 @@ import { getCspInfo, injectScript } from "./inject";
 import { applyDomMutations } from "./domMutations";
 import redirect from "./redirect";
 import { getRoute } from "./routing";
+import { EdgeStickyBucketService } from "./stickyBucketService";
 
 export async function edgeApp(
   context: Context,
@@ -49,6 +50,10 @@ export async function edgeApp(
   if (context.config.crypto) {
     setPolyfills({ SubtleCrypto: context.config.crypto });
   }
+  let stickyBucketService : EdgeStickyBucketService | undefined = undefined;
+  if (context.config.enableStickyBuckets) {
+    stickyBucketService = new EdgeStickyBucketService({ req });
+  }
   const growthbook = new GrowthBook({
     apiHost: context.config.growthbook.apiHost,
     clientKey: context.config.growthbook.clientKey,
@@ -70,6 +75,7 @@ export async function edgeApp(
     disableCrossOriginUrlRedirectExperiments: ["skip", "browser"].includes(
       context.config.runCrossOriginUrlRedirectExperiments,
     ),
+    stickyBucketService,
   });
 
   // todo: remove
@@ -121,6 +127,7 @@ export async function edgeApp(
     body,
     nonce,
     growthbook,
+    stickyBucketService,
     attributes,
     preRedirectTrackedExperimentHashes,
     url,

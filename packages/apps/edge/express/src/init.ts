@@ -67,6 +67,9 @@ export default async () => {
   context.config.enableStreaming = ["true", "1"].includes(
     process.env.ENABLE_STREAMING ??
       "" + defaultContext.config.enableStreaming);
+  context.config.enableStickyBuckets = ["true", "1"].includes(
+    process.env.ENABLE_STICKY_BUCKETS ??
+    "" + defaultContext.config.enableStickyBuckets);
 
   context.config.contentSecurityPolicy =
     process.env.CONTENT_SECURITY_POLICY || "";
