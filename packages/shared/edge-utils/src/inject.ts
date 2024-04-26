@@ -17,7 +17,7 @@ export function injectScript({
   growthbook,
   stickyBucketService,
   attributes,
-  preRedirectTrackedExperimentHashes,
+  preRedirectTrackedExperimentIds,
   url,
   oldUrl,
 }: {
@@ -27,7 +27,7 @@ export function injectScript({
   growthbook: GrowthBook;
   stickyBucketService?: EdgeStickyBucketService | StickyBucketService;
   attributes: Attributes;
-  preRedirectTrackedExperimentHashes: string[];
+  preRedirectTrackedExperimentIds: string[];
   url: string;
   oldUrl: string;
 }) {
@@ -36,20 +36,18 @@ export function injectScript({
   const sdkPayload = growthbook.getPayload();
   const experiments = growthbook.getExperiments();
   const deferredTrackingCalls = growthbook.getDeferredTrackingCalls();
-  const trackedExperimentHashes = growthbook.getTrackedExperimentHashes();
-
-  // todo: determine if we should allow streaming
+  const ranExperimentIds = growthbook.getRanExperimentIds();
 
   const uuidCookieName = context.config.uuidCookieName || "gbuuid";
   const uuidKey = context.config.attributeKeys.uuid || "id";
   const uuid = attributes[uuidKey];
   const attributeKeys = context.config.attributeKeys;
   const trackingCallback = context.config.growthbook.trackingCallback;
-  const blockedExperimentHashes = getBlockedExperiments({
+  const blockedExperimentIds = getBlockedExperiments({
     context,
     experiments,
-    trackedExperimentHashes,
-    preRedirectTrackedExperimentHashes,
+    ranExperimentIds,
+    preRedirectTrackedExperimentIds,
   });
   const injectRedirectUrlScript = context.config.injectRedirectUrlScript;
   const enableStreaming = context.config.enableStreaming;
@@ -77,7 +75,6 @@ export function injectScript({
     attributeKeys,
     trackingCallback: "__TRACKING_CALLBACK__",
     payload: sdkPayload,
-    loadStoredPayload: !!sdkPayload,
     disableVisualExperiments: ["skip", "edge"].includes(
       context.config.runVisualEditorExperiments,
     ),
@@ -89,7 +86,7 @@ export function injectScript({
       context.config.runCrossOriginUrlRedirectExperiments,
     ),
     jsInjectionNonce: nonce,
-    blockedExperimentHashes,
+    blockedExperimentIds,
     backgroundSync: enableStreaming,
     useStickyBucketService: enableStickyBucketing ? "cookie" : undefined,
     stickyBucketAssignmentDocs: stickyAssignments,
@@ -113,7 +110,7 @@ ${
       gb.setDeferredTrackingCalls(${JSON.stringify(
         scrubInvalidTrackingCalls(
           deferredTrackingCalls,
-          preRedirectTrackedExperimentHashes,
+          preRedirectTrackedExperimentIds,
         ),
       )});
       gb.fireDeferredTrackingCalls();
@@ -177,63 +174,59 @@ export function getCspInfo(context: Context): {
 function getBlockedExperiments({
   context,
   experiments,
-  trackedExperimentHashes,
-  preRedirectTrackedExperimentHashes,
+  ranExperimentIds,
+  preRedirectTrackedExperimentIds,
 }: {
   context: Context;
   experiments: AutoExperiment[];
-  trackedExperimentHashes: string[];
-  preRedirectTrackedExperimentHashes: string[];
+  ranExperimentIds: string[];
+  preRedirectTrackedExperimentIds: string[];
 }): string[] | undefined {
   const runUrlRedirectExperimentsEverywhere =
     context.config.runUrlRedirectExperiments === "everywhere";
   const runVisualEditorExperimentsEverywhere =
     context.config.runVisualEditorExperiments === "everywhere";
 
-  const blockedExperimentHashes: string[] = [];
+  const blockedExperimentIds: string[] = [];
 
   if (runUrlRedirectExperimentsEverywhere) {
-    blockedExperimentHashes.concat(
-      ...trackedExperimentHashes.filter((hash) => {
+    blockedExperimentIds.concat(
+      ...ranExperimentIds.filter((uid) => {
         // only block hybrid redirect experiments if they've already been run on edge
         const exp = experiments.find(
-          (exp) => exp.changeType === "redirect" && exp.expHash === hash,
+          (exp) => exp.changeType === "redirect" && exp.uid === uid,
         );
-        return !!(
-          exp?.expHash && trackedExperimentHashes.includes(exp.expHash)
-        );
+        return !!(exp?.uid && ranExperimentIds.includes(exp.uid));
       }),
     );
   }
 
   if (runVisualEditorExperimentsEverywhere) {
-    blockedExperimentHashes.concat(
-      ...preRedirectTrackedExperimentHashes.filter((hash) => {
+    blockedExperimentIds.concat(
+      ...preRedirectTrackedExperimentIds.filter((uid) => {
         // only block hybrid visual experiments if they've already been run on edge as part of the pre-redirect loop
         const exp = experiments.find(
-          (exp) => exp.changeType === "visual" && exp.expHash === hash,
+          (exp) => exp.changeType === "visual" && exp.uid === uid,
         );
-        return !!(
-          exp?.expHash && trackedExperimentHashes.includes(exp.expHash)
-        );
+        return !!(exp?.uid && ranExperimentIds.includes(exp.uid));
       }),
     );
   }
 
-  return blockedExperimentHashes.length ? blockedExperimentHashes : undefined;
+  return blockedExperimentIds.length ? blockedExperimentIds : undefined;
 }
 
 function scrubInvalidTrackingCalls(
   deferredTrackingCalls: TrackingData[],
-  preRedirectTrackedExperimentHashes: string[],
+  preRedirectTrackedExperimentIds: string[],
 ): TrackingData[] {
   return deferredTrackingCalls.filter((data) => {
-    const exp = data.experiment;
+    const exp = data.experiment as AutoExperiment;
     // remove tracking for any visual experiments that ran during the redirect loop
     if (
       exp.changeType === "visual" &&
-      exp?.expHash &&
-      preRedirectTrackedExperimentHashes.includes(exp.expHash)
+      exp?.uid &&
+      preRedirectTrackedExperimentIds.includes(exp.uid)
     ) {
       return false;
     }

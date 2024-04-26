@@ -2,8 +2,11 @@ import * as crypto from "crypto";
 import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
-import { Context, defaultContext } from "@growthbook/edge-utils";
-import { ExperimentRunEnvironment } from "@growthbook/edge-utils/dist/types";
+import {
+  Context,
+  defaultContext,
+  ExperimentRunEnvironment,
+} from "@growthbook/edge-utils";
 import {
   getRequestMethod,
   getRequestHeader,

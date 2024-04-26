@@ -1,4 +1,10 @@
-export { Context, Config, Helpers } from "./types";
+export {
+  Context,
+  Config,
+  Helpers,
+  ExperimentRunEnvironment,
+  Route,
+} from "./types";
 export { defaultContext } from "./config";
 
 export { edgeApp } from "./app";
