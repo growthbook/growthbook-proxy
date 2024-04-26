@@ -17,7 +17,7 @@ export function injectScript({
   growthbook,
   stickyBucketService,
   attributes,
-  preRedirectTrackedExperimentIds,
+  preRedirectTrackedExperimentChangeIds,
   url,
   oldUrl,
 }: {
@@ -27,7 +27,7 @@ export function injectScript({
   growthbook: GrowthBook;
   stickyBucketService?: EdgeStickyBucketService | StickyBucketService;
   attributes: Attributes;
-  preRedirectTrackedExperimentIds: string[];
+  preRedirectTrackedExperimentChangeIds: string[];
   url: string;
   oldUrl: string;
 }) {
@@ -36,18 +36,18 @@ export function injectScript({
   const sdkPayload = growthbook.getPayload();
   const experiments = growthbook.getExperiments();
   const deferredTrackingCalls = growthbook.getDeferredTrackingCalls();
-  const ranExperimentIds = growthbook.getRanExperimentIds();
+  const ranExperimentChangeIds = growthbook.getRanExperimentChangeIds();
 
   const uuidCookieName = context.config.uuidCookieName || "gbuuid";
   const uuidKey = context.config.attributeKeys.uuid || "id";
   const uuid = attributes[uuidKey];
   const attributeKeys = context.config.attributeKeys;
   const trackingCallback = context.config.growthbook.trackingCallback;
-  const blockedExperimentIds = getBlockedExperiments({
+  const blockedExperimentChangeIds = getBlockedExperiments({
     context,
     experiments,
-    ranExperimentIds,
-    preRedirectTrackedExperimentIds,
+    ranExperimentChangeIds,
+    preRedirectTrackedExperimentChangeIds,
   });
   const injectRedirectUrlScript = context.config.injectRedirectUrlScript;
   const enableStreaming = context.config.enableStreaming;
@@ -86,7 +86,7 @@ export function injectScript({
       context.config.runCrossOriginUrlRedirectExperiments,
     ),
     jsInjectionNonce: nonce,
-    blockedExperimentIds,
+    blockedExperimentChangeIds,
     backgroundSync: enableStreaming,
     useStickyBucketService: enableStickyBucketing ? "cookie" : undefined,
     stickyBucketAssignmentDocs: stickyAssignments,
@@ -110,7 +110,7 @@ ${
       gb.setDeferredTrackingCalls(${JSON.stringify(
         scrubInvalidTrackingCalls(
           deferredTrackingCalls,
-          preRedirectTrackedExperimentIds,
+          preRedirectTrackedExperimentChangeIds,
         ),
       )});
       gb.fireDeferredTrackingCalls();
@@ -174,59 +174,65 @@ export function getCspInfo(context: Context): {
 function getBlockedExperiments({
   context,
   experiments,
-  ranExperimentIds,
-  preRedirectTrackedExperimentIds,
+  ranExperimentChangeIds,
+  preRedirectTrackedExperimentChangeIds,
 }: {
   context: Context;
   experiments: AutoExperiment[];
-  ranExperimentIds: string[];
-  preRedirectTrackedExperimentIds: string[];
+  ranExperimentChangeIds: string[];
+  preRedirectTrackedExperimentChangeIds: string[];
 }): string[] | undefined {
   const runUrlRedirectExperimentsEverywhere =
     context.config.runUrlRedirectExperiments === "everywhere";
   const runVisualEditorExperimentsEverywhere =
     context.config.runVisualEditorExperiments === "everywhere";
 
-  const blockedExperimentIds: string[] = [];
+  const blockedExperimentChangeIds: string[] = [];
 
   if (runUrlRedirectExperimentsEverywhere) {
-    blockedExperimentIds.concat(
-      ...ranExperimentIds.filter((uid) => {
+    blockedExperimentChangeIds.concat(
+      ...ranExperimentChangeIds.filter((changeId) => {
         // only block hybrid redirect experiments if they've already been run on edge
         const exp = experiments.find(
-          (exp) => exp.changeType === "redirect" && exp.uid === uid,
+          (exp) => exp.changeType === "redirect" && exp.changeId === changeId,
         );
-        return !!(exp?.uid && ranExperimentIds.includes(exp.uid));
+        return !!(
+          exp?.changeId && ranExperimentChangeIds.includes(exp.changeId)
+        );
       }),
     );
   }
 
   if (runVisualEditorExperimentsEverywhere) {
-    blockedExperimentIds.concat(
-      ...preRedirectTrackedExperimentIds.filter((uid) => {
+    blockedExperimentChangeIds.concat(
+      ...preRedirectTrackedExperimentChangeIds.filter((changeId) => {
         // only block hybrid visual experiments if they've already been run on edge as part of the pre-redirect loop
         const exp = experiments.find(
-          (exp) => exp.changeType === "visual" && exp.uid === uid,
+          (exp) => exp.changeType === "visual" && exp.changeId === changeId,
         );
-        return !!(exp?.uid && ranExperimentIds.includes(exp.uid));
+        return !!(
+          exp.changeId && ranExperimentChangeIds.includes(exp.changeId)
+        );
       }),
     );
   }
 
-  return blockedExperimentIds.length ? blockedExperimentIds : undefined;
+  return blockedExperimentChangeIds.length
+    ? blockedExperimentChangeIds
+    : undefined;
 }
 
 function scrubInvalidTrackingCalls(
   deferredTrackingCalls: TrackingData[],
-  preRedirectTrackedExperimentIds: string[],
+  preRedirectTrackedExperimentChangeIds: string[],
 ): TrackingData[] {
   return deferredTrackingCalls.filter((data) => {
     const exp = data.experiment as AutoExperiment;
     // remove tracking for any visual experiments that ran during the redirect loop
     if (
       exp.changeType === "visual" &&
-      exp?.uid &&
-      preRedirectTrackedExperimentIds.includes(exp.uid)
+      exp.changeId &&
+      preRedirectTrackedExperimentChangeIds.includes(exp.changeId)
     ) {
       return false;
     }

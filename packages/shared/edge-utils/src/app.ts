@@ -45,9 +45,9 @@ export async function edgeApp(
   let domChanges: AutoExperimentVariation[] = [];
   const resetDomChanges = () => (domChanges = []);
 
-  let preRedirectTrackedExperimentIds: string[] = [];
-  const setPreRedirectTrackedExperimentIds = (uids: string[]) =>
-    (preRedirectTrackedExperimentIds = uids);
+  let preRedirectTrackedExperimentChangeIds: string[] = [];
+  const setPreRedirectTrackedExperimentChangeIds = (changeIds: string[]) =>
+    (preRedirectTrackedExperimentChangeIds = changeIds);
 
   if (context.config.localStorage) {
     setPolyfills({ localStorage: context.config.localStorage });
@@ -103,7 +103,7 @@ export async function edgeApp(
     growthbook,
     previousUrl: url,
     resetDomChanges,
-    setPreRedirectTrackedExperimentIds,
+    setPreRedirectTrackedExperimentChangeIds,
   });
 
   const originUrl = getOriginUrl(context, url);
@@ -141,7 +141,7 @@ export async function edgeApp(
     growthbook,
     stickyBucketService,
     attributes,
-    preRedirectTrackedExperimentIds,
+    preRedirectTrackedExperimentChangeIds,
     url,
     oldUrl,
   });
