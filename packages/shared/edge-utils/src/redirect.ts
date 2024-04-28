@@ -6,13 +6,13 @@ export default async function redirect({
   growthbook,
   previousUrl,
   resetDomChanges,
-  setPreRedirectTrackedExperimentChangeIds,
+  setPreRedirectChangeIds,
 }: {
   context: Context;
   growthbook: GrowthBook;
   previousUrl: string;
   resetDomChanges: () => void;
-  setPreRedirectTrackedExperimentChangeIds: (changeIds: string[]) => void;
+  setPreRedirectChangeIds: (changeIds: string[]) => void;
 }): Promise<string> {
   const disableUrlRedirectExperiments = ["skip", "browser"].includes(
     context.config.runUrlRedirectExperiments,
@@ -33,8 +33,8 @@ export default async function redirect({
     // clear visual experiment effects since we're no longer on the same page
     resetDomChanges();
     // keep track of experiments that triggered prior to final redirect
-    setPreRedirectTrackedExperimentChangeIds(
-      growthbook.getRanExperimentChangeIds(),
+    setPreRedirectChangeIds(
+      growthbook.getCompletedChangeIds(),
     );
 
     // change the URL to trigger the experiment
