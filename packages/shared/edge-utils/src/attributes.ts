@@ -2,10 +2,10 @@ import { Attributes } from "@growthbook/growthbook";
 import { Context } from "./types";
 
 // Get the user's attributes by merging the UUID cookie with any auto-attributes
-export function getUserAttributes(
-  ctx: Context,
-  req: Request,
-  res: Response,
+export function getUserAttributes<Req, Res>(
+  ctx: Context<Req, Res>,
+  req: Req,
+  res: Res,
   url: string,
 ): Attributes {
   const { config, helpers } = ctx;
@@ -30,9 +30,9 @@ export function getUserAttributes(
 // Get or create a UUID for the user:
 // - Try to get the UUID from the cookie
 // - Or create a new one and store in the cookie
-export function getUUID(
-  ctx: Context,
-  req: Request,
+export function getUUID<Req, Res>(
+  ctx: Context<Req, Res>,
+  req: Req,
 ) {
   const { config, helpers } = ctx;
 
@@ -60,9 +60,9 @@ export function getUUID(
 // Infer attributes from the request
 // - UUID will come from the cookie or be generated
 // - Other attributes come from the request headers and URL
-export function getAutoAttributes(
-  ctx: Context,
-  req: Request,
+export function getAutoAttributes<Req, Res>(
+  ctx: Context<Req, Res>,
+  req: Req,
   url: string,
 ): Attributes {
   const { config, helpers } = ctx;

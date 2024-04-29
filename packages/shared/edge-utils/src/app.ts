@@ -14,9 +14,9 @@ import { EdgeStickyBucketService } from "./stickyBucketService";
 import { Request, Response } from "express";
 
 export async function edgeApp<Req, Res>(
-  context: Context<Req, Res>,
-  req: Req,
-  res: Res,
+  context: Context<unknown, unknown>,
+  req: Request,
+  res: Response,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   next?: any,
 ) {

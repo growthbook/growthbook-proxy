@@ -8,9 +8,9 @@ import {
   TrackingCallback,
 } from "@growthbook/growthbook";
 
-export interface Context<Request = unknown, Response = unknown>{
+export interface Context<Req = unknown, Res = unknown>{
   config: Config;
-  helpers: Helpers<Request, Response>;
+  helpers: Helpers<Req, Res>;
 }
 
 export interface Config {
@@ -62,22 +62,22 @@ export type ExperimentRunEnvironment =
   | "browser"
   | "skip";
 
-export interface Helpers<Request, Response> {
+export interface Helpers<Req, Res> {
   // routing
-  getRequestURL?: (req: Request) => string;
-  getRequestMethod?: (req: Request) => string;
-  getRequestHeader?: (req: Request, key: string) => string | undefined;
-  setResponseHeader?: (res: Response, key: string, value: string) => void;
-  sendResponse?: (res: Response, body: string, status?: number) => unknown;
-  fetch?: (ctx: Context, url: string) => Promise<Response>;
+  getRequestURL?: (req: Req) => string;
+  getRequestMethod?: (req: Req) => string;
+  getRequestHeader?: (req: Req, key: string) => string | undefined;
+  setResponseHeader?: (res: Res, key: string, value: string) => void;
+  sendResponse?: (res: Res, body: string, status?: number) => unknown;
+  fetch?: (ctx: Context, url: string) => Promise<Res>;
   proxyRequest?: (
     ctx: Context,
-    req: Request,
-    res?: Response,
+    req: Req,
+    res?: Res,
     next?: any,
-  ) => Promise<Response | void>;
-  getCookie?: (req: Request, key: string) => string;
-  setCookie?: (res: Response, key: string, value: string) => void;
+  ) => Promise<Res | void>;
+  getCookie?: (req: Req, key: string) => string;
+  setCookie?: (res: Res, key: string, value: string) => void;
 }
 
 export type Route = {

@@ -3,6 +3,7 @@ import {
   StickyBucketService,
 } from "@growthbook/growthbook";
 import { Context } from "./types";
+import { Request } from "express";
 
 export class EdgeStickyBucketService extends StickyBucketService {
   private context: Context;
