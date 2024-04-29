@@ -2,6 +2,7 @@ import {
   StickyAssignmentsDocument,
   StickyBucketService,
 } from "@growthbook/growthbook";
+import { Context } from "./types";
 
 interface RequestCompat {
   cookies: Record<string, string>;
@@ -9,18 +10,22 @@ interface RequestCompat {
 }
 
 export class EdgeStickyBucketService extends StickyBucketService {
+  private context: Context;
   private prefix: string;
   private req: RequestCompat;
   private docs: Record<string, StickyAssignmentsDocument>;
 
   constructor({
+    context,
     prefix = "gbStickyBuckets__",
     req,
   }: {
+    context: Context;
     prefix?: string;
     req: RequestCompat;
   }) {
     super();
+    this.context = context;
     this.prefix = prefix;
     this.req = req;
     this.docs = {};
@@ -31,7 +36,8 @@ export class EdgeStickyBucketService extends StickyBucketService {
     let doc: StickyAssignmentsDocument | null = null;
     if (!this.req) return doc;
     try {
-      const raw = this.req.cookies[this.prefix + key] || "{}";
+      // const raw = this.req.cookies[this.prefix + key] || "{}";
+      const raw = this.context.helpers?.getCookie?.(this.req, this.prefix + key) || "{}";
       const data = JSON.parse(raw);
       if (data.attributeName && data.attributeValue && data.assignments) {
         doc = data;

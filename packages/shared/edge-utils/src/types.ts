@@ -51,7 +51,7 @@ export interface Config {
   };
 
   persistUuid: boolean;
-  uuidCookieName?: string;
+  uuidCookieName: string;
   attributeKeys: {
     uuid?: string;
     browser?: string;
@@ -84,9 +84,8 @@ export interface Helpers {
     res?: any,
     next?: any,
   ) => Promise<any>;
-  // GB cookies
-  getUUIDCookie?: (ctx: Context, req: any) => string;
-  setUUIDCookie?: (ctx: Context, res: any, uuid: string) => void;
+  getCookie?: (req: any, key: string) => string;
+  setCookie?: (res: any, key: string, value: string) => void;
 }
 
 export type Route = {

@@ -20,6 +20,7 @@ export const defaultContext: Context = {
       clientKey: "",
     },
     persistUuid: false,
+    uuidCookieName: "gbuuid",
     attributeKeys: {
       uuid: "id",
       browser: "browser",

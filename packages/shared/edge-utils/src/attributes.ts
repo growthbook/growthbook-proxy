@@ -18,7 +18,10 @@ export function getUserAttributes(
   // get any saved attributes from the cookie
   const uuid = getUUID(ctx, req);
   if (config.persistUuid) {
-    helpers?.setUUIDCookie?.(ctx, res, uuid);
+    if (!helpers?.setCookie) {
+      throw new Error("Missing required dependencies");
+    }
+    helpers.setCookie(res, config.uuidCookieName, uuid);
   }
   const attributes = {
     [config.attributeKeys.uuid || "id"]: uuid,
@@ -39,9 +42,8 @@ export function getUUID(
   const { config, helpers } = ctx;
 
   const crypto = config?.crypto || globalThis?.crypto;
-  const getUUIDCookie = helpers?.getUUIDCookie;
 
-  if (!crypto || !getUUIDCookie) {
+  if (!crypto || !helpers?.getCookie) {
     throw new Error("Missing required dependencies");
   }
 
@@ -57,7 +59,7 @@ export function getUUID(
   };
 
   // get the existing UUID from cookie if set, otherwise create one
-  return getUUIDCookie(ctx, req) || genUUID();
+  return helpers.getCookie(req, config.uuidCookieName) || genUUID();
 }
 
 // Infer attributes from the request

@@ -62,7 +62,7 @@ export async function edgeApp(
   if (context.config.enableStickyBucketing) {
     stickyBucketService =
       context.config.growthbook.edgeStickyBucketService ??
-      new EdgeStickyBucketService({ req });
+      new EdgeStickyBucketService({ context, req });
   }
   const growthbook = new GrowthBook({
     apiHost: context.config.growthbook.apiHost,
@@ -90,6 +90,7 @@ export async function edgeApp(
       : undefined,
   });
 
+  // todo: remove
   growthbook.debug = true;
 
   await growthbook.init({

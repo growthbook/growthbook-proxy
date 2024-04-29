@@ -15,7 +15,8 @@ import {
   proxyRequest,
   getRequestURL,
   setResponseHeader,
-  getUUIDCookie,
+  getCookie,
+  setCookie
 } from "./helpers";
 dotenv.config({ path: "./.env.local" });
 
@@ -107,7 +108,7 @@ export default async () => {
   context.config.persistUuid = ["true", "1"].includes(
     process.env.PERSIST_UUID ?? "" + defaultContext.config.persistUuid,
   );
-  context.config.uuidCookieName = process.env.UUID_COOKIE_NAME || "gbuuid";
+  context.config.uuidCookieName = process.env.UUID_COOKIE_NAME || defaultContext.config.uuidCookieName;
 
   // config.attributeKeys
   "ATTRIBUTE_UUID" in process.env &&
@@ -139,7 +140,8 @@ export default async () => {
   context.helpers.sendResponse = sendResponse;
   context.helpers.fetch = fetchFn;
   context.helpers.proxyRequest = proxyRequest;
-  context.helpers.getUUIDCookie = getUUIDCookie;
+  context.helpers.getCookie = getCookie;
+  context.helpers.setCookie = setCookie;
 
   // Express configuration consts:
   const USE_HTTP2 = process.env.USE_HTTP2;
