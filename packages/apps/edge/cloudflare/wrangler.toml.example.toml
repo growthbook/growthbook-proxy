@@ -1,0 +1,16 @@
+name = "cloudflare"
+main = "src/index.ts"
+compatibility_date = "2024-03-14"
+
+# Variable bindings. These are arbitrary, plaintext strings (similar to environment variables)
+# Note: Use secrets to store sensitive data.
+# Docs: https://developers.cloudflare.com/workers/platform/environment-variables
+
+[env.dev]
+vars = { NODE_ENV = "dev", PROXY_TARGET = "https://dev.example.com", MAX_PAYLOAD_SIZE = "2mb", UUID_COOKIE_NAME = "gbuuid", SCRIPT_INJECTION_PATTERN = "</body>"}
+
+[env.staging]
+vars = { NODE_ENV = "staging", PROXY_TARGET = "https://staging.example.com", MAX_PAYLOAD_SIZE = "2mb", UUID_COOKIE_NAME = "gbuuid", SCRIPT_INJECTION_PATTERN = "</body>"}
+
+[env.production]
+vars = { NODE_ENV = "production", PROXY_TARGET = "https://example.com", MAX_PAYLOAD_SIZE = "2mb", UUID_COOKIE_NAME = "gbuuid", SCRIPT_INJECTION_PATTERN = "</body>"}
