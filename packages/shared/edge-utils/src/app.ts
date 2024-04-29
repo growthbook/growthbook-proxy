@@ -11,12 +11,11 @@ import { applyDomMutations } from "./domMutations";
 import redirect from "./redirect";
 import { getRoute } from "./routing";
 import { EdgeStickyBucketService } from "./stickyBucketService";
-import { Request, Response } from "express";
 
 export async function edgeApp<Req, Res>(
-  context: Context<unknown, unknown>,
-  req: Request,
-  res: Response,
+  context: Context<Req, Res>,
+  req: Req,
+  res: Res,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   next?: any,
 ) {
@@ -27,7 +26,7 @@ export async function edgeApp<Req, Res>(
     return context.helpers.proxyRequest?.(context, req, res, next);
   }
   // Check the url for routing rules (default behavior is intercept)
-  const route = getRoute(context, url);
+  const route = getRoute(context as Context<unknown, unknown>, url);
   if (route.behavior === "error") {
     return context.helpers.sendResponse?.(
       res,
@@ -55,13 +54,13 @@ export async function edgeApp<Req, Res>(
     setPolyfills({ SubtleCrypto: context.config.crypto });
   }
   let stickyBucketService:
-    | EdgeStickyBucketService
+    | EdgeStickyBucketService<Req, Res>
     | StickyBucketService
     | undefined = undefined;
   if (context.config.enableStickyBucketing) {
     stickyBucketService =
       context.config.growthbook.edgeStickyBucketService ??
-      new EdgeStickyBucketService({ context, req });
+      new EdgeStickyBucketService<Req, Res>({ context, req });
   }
   const growthbook = new GrowthBook({
     apiHost: context.config.growthbook.apiHost,
@@ -100,7 +99,7 @@ export async function edgeApp<Req, Res>(
 
   const oldUrl = url;
   url = await redirect({
-    context,
+    context: context as Context<unknown, unknown>,
     req,
     res,
     growthbook,
@@ -109,15 +108,15 @@ export async function edgeApp<Req, Res>(
     setPreRedirectChangeIds: setPreRedirectChangeIds,
   });
 
-  const originUrl = getOriginUrl(context, url);
+  const originUrl = getOriginUrl(context as Context<unknown, unknown>, url);
 
-  let fetchedResponse: Response | undefined = undefined;
+  let fetchedResponse: (Res & { ok: boolean; text: any }) | undefined = undefined;
   try {
     fetchedResponse = (await context.helpers.fetch?.(
-      context,
+      context as Context<Req, Res>,
       originUrl,
-    )) as Response;
-    if (!fetchedResponse.ok) {
+    )) as (Res & { ok: boolean; text: any });
+    if (!fetchedResponse?.ok) {
       throw new Error("Fetch: non-2xx status returned");
     }
   } catch (e) {
@@ -126,7 +125,7 @@ export async function edgeApp<Req, Res>(
   }
   body = await fetchedResponse.text();
 
-  const { csp, nonce } = getCspInfo(context);
+  const { csp, nonce } = getCspInfo(context as Context<unknown, unknown>);
   if (csp) {
     context.helpers?.setResponseHeader?.(res, "Content-Security-Policy", csp);
   }
@@ -138,7 +137,7 @@ export async function edgeApp<Req, Res>(
   });
 
   body = injectScript({
-    context,
+    context: context as Context<unknown, unknown>,
     body,
     nonce,
     growthbook,

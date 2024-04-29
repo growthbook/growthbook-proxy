@@ -6,7 +6,7 @@ import type { Request, Response } from "express";
 import {
   Context,
   defaultContext,
-  ExperimentRunEnvironment,
+  ExperimentRunEnvironment, Helpers
 } from "@growthbook/edge-utils";
 import {
   getRequestMethod,
@@ -23,7 +23,7 @@ dotenv.config({ path: "./.env.local" });
 
 export default async () => {
   // Build context from default + env
-  const context: Context<Request, Response> = defaultContext;
+  const context = defaultContext as Context<Request, Response>;
 
   // config
   context.config.proxyTarget =
@@ -124,7 +124,7 @@ export default async () => {
   context.helpers.setResponseHeader = setResponseHeader;
   context.helpers.sendResponse = sendResponse;
   context.helpers.fetch = fetchFn;
-  context.helpers.proxyRequest = proxyRequest;
+  context.helpers.proxyRequest = proxyRequest as Helpers<Request, Response>["proxyRequest"];
   context.helpers.getCookie = getCookie;
   context.helpers.setCookie = setCookie;
 

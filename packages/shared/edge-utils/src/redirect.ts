@@ -1,7 +1,6 @@
 import { GrowthBook } from "@growthbook/growthbook";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
-import { Request, Response } from "express";
 
 export default async function redirect({
   context,
@@ -13,8 +12,8 @@ export default async function redirect({
   setPreRedirectChangeIds,
 }: {
   context: Context;
-  req: Request;
-  res: Response;
+  req: unknown;
+  res: unknown;
   growthbook: GrowthBook;
   previousUrl: string;
   resetDomChanges: () => void;

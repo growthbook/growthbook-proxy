@@ -69,13 +69,13 @@ export interface Helpers<Req, Res> {
   getRequestHeader?: (req: Req, key: string) => string | undefined;
   setResponseHeader?: (res: Res, key: string, value: string) => void;
   sendResponse?: (res: Res, body: string, status?: number) => unknown;
-  fetch?: (ctx: Context, url: string) => Promise<Res>;
+  fetch?: (ctx: Context<Req, Res>, url: string) => Promise<Res>;
   proxyRequest?: (
-    ctx: Context,
+    ctx: Context<Req, Res>,
     req: Req,
     res?: Res,
     next?: any,
-  ) => Promise<Res | void>;
+  ) => Promise<unknown>;
   getCookie?: (req: Req, key: string) => string;
   setCookie?: (res: Res, key: string, value: string) => void;
 }

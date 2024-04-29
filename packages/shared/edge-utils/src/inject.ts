@@ -25,7 +25,7 @@ export function injectScript({
   body: string;
   nonce?: string;
   growthbook: GrowthBook;
-  stickyBucketService?: EdgeStickyBucketService | StickyBucketService;
+  stickyBucketService?: EdgeStickyBucketService<unknown, unknown> | StickyBucketService;
   attributes: Attributes;
   preRedirectChangeIds: string[];
   url: string;

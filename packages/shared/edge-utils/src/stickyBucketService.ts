@@ -3,12 +3,11 @@ import {
   StickyBucketService,
 } from "@growthbook/growthbook";
 import { Context } from "./types";
-import { Request } from "express";
 
-export class EdgeStickyBucketService extends StickyBucketService {
-  private context: Context;
+export class EdgeStickyBucketService<Req, Res> extends StickyBucketService {
+  private context: Context<Req, Res>;
   private prefix: string;
-  private req: Request;
+  private req: Req;
   private docs: Record<string, StickyAssignmentsDocument>;
 
   constructor({
@@ -16,9 +15,9 @@ export class EdgeStickyBucketService extends StickyBucketService {
     prefix = "gbStickyBuckets__",
     req,
   }: {
-    context: Context;
+    context: Context<Req, Res>;
     prefix?: string;
-    req: Request;
+    req: Req;
   }) {
     super();
     this.context = context;

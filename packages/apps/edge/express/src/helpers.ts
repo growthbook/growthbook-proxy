@@ -21,8 +21,9 @@ export function sendResponse(res: Response, body: string, status?: number) {
   return res.status(status || 200).send(body);
 }
 
-export async function fetchFn(_: Context<Request, Response>, url: string) {
-  return fetch(url);
+export async function fetchFn(ctx: Context<Request, Response>, url: string) {
+  // @ts-ignore
+  return fetch(url) as Promise<Response>;
 }
 
 // cache proxy function
