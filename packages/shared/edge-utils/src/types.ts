@@ -8,9 +8,9 @@ import {
   TrackingCallback,
 } from "@growthbook/growthbook";
 
-export interface Context {
+export interface Context<Request = unknown, Response = unknown>{
   config: Config;
-  helpers: Helpers;
+  helpers: Helpers<Request, Response>;
 }
 
 export interface Config {
@@ -62,7 +62,7 @@ export type ExperimentRunEnvironment =
   | "browser"
   | "skip";
 
-export interface Helpers {
+export interface Helpers<Request, Response> {
   // routing
   getRequestURL?: (req: Request) => string;
   getRequestMethod?: (req: Request) => string;
@@ -75,7 +75,7 @@ export interface Helpers {
     req: Request,
     res?: Response,
     next?: any,
-  ) => Promise<unknown>;
+  ) => Promise<Response | void>;
   getCookie?: (req: Request, key: string) => string;
   setCookie?: (res: Response, key: string, value: string) => void;
 }

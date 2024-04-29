@@ -21,14 +21,14 @@ export function sendResponse(res: Response, body: string, status?: number) {
   return res.status(status || 200).send(body);
 }
 
-export async function fetchFn(_: Context, url: string) {
+export async function fetchFn(_: Context<Request, Response>, url: string) {
   return fetch(url);
 }
 
 // cache proxy function
 let proxyFn: ReturnType<typeof proxy> | undefined = undefined;
 export async function proxyRequest(
-  ctx: Context,
+  ctx: Context<Request, Response>,
   req: Request,
   res: Response,
   next: NextFunction,

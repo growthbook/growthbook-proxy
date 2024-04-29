@@ -13,7 +13,7 @@ import { getRoute } from "./routing";
 import { EdgeStickyBucketService } from "./stickyBucketService";
 
 export async function edgeApp(
-  context: Context,
+  context: Context<any, any>,
   req: Request,
   res: Response,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

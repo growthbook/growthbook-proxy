@@ -13,7 +13,7 @@ import {
 
 export default (env: Env) => {
 	// Build context from default + env
-	const context: Context = defaultContext;
+	const context: Context<Request, Response> = defaultContext;
 
 	// config
 	context.config.proxyTarget = env.PROXY_TARGET ?? 'http://localhost';
@@ -29,13 +29,7 @@ export default (env: Env) => {
 	// config.attributeKeys
 	'ATTRIBUTE_UUID' in env && (context.config.attributeKeys.uuid = env.ATTRIBUTE_UUID);
 	'ATTRIBUTE_BROWSER' in env && (context.config.attributeKeys.browser = env.ATTRIBUTE_BROWSER);
-	'ATTRIBUTE_DEVICE_TYPE' in env && (context.config.attributeKeys.deviceType = env.ATTRIBUTE_DEVICE_TYPE);
-	'ATTRIBUTE_URL' in env && (context.config.attributeKeys.url = env.ATTRIBUTE_URL);
-	'ATTRIBUTE_PATH' in env && (context.config.attributeKeys.path = env.ATTRIBUTE_PATH);
-	'ATTRIBUTE_HOST' in env && (context.config.attributeKeys.host = env.ATTRIBUTE_HOST);
-	'ATTRIBUTE_QUERY' in env && (context.config.attributeKeys.query = env.ATTRIBUTE_QUERY);
-
-	// config.helpers
+	//send response
 	context.helpers.getRequestURL = getRequestURL;
 	context.helpers.getRequestMethod = getRequestMethod;
 	context.helpers.getRequestHeader = getRequestHeader;

@@ -2,6 +2,7 @@ import * as crypto from "crypto";
 import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
+import type {Request, Response } from "express";
 import {
   Context,
   defaultContext,
@@ -22,7 +23,7 @@ dotenv.config({ path: "./.env.local" });
 
 export default async () => {
   // Build context from default + env
-  const context: Context = defaultContext;
+  const context: Context<Request, Response> = defaultContext;
 
   // config
   context.config.proxyTarget =
@@ -123,7 +124,7 @@ export default async () => {
   context.helpers.setResponseHeader = setResponseHeader;
   context.helpers.sendResponse = sendResponse;
   context.helpers.fetch = fetchFn;
-  context.helpers.proxyRequest = proxyRequest;
+  // context.helpers.proxyRequest = proxyRequest;
   context.helpers.getCookie = getCookie;
   context.helpers.setCookie = setCookie;
 
