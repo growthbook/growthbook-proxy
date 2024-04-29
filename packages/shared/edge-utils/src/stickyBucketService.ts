@@ -4,15 +4,10 @@ import {
 } from "@growthbook/growthbook";
 import { Context } from "./types";
 
-interface RequestCompat {
-  cookies: Record<string, string>;
-  [key: string]: unknown;
-}
-
 export class EdgeStickyBucketService extends StickyBucketService {
   private context: Context;
   private prefix: string;
-  private req: RequestCompat;
+  private req: Request;
   private docs: Record<string, StickyAssignmentsDocument>;
 
   constructor({
@@ -22,7 +17,7 @@ export class EdgeStickyBucketService extends StickyBucketService {
   }: {
     context: Context;
     prefix?: string;
-    req: RequestCompat;
+    req: Request;
   }) {
     super();
     this.context = context;

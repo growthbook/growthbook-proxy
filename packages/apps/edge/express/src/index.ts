@@ -11,7 +11,7 @@ import { initializeLogger } from "./logger";
   app.use(cors());
   app.use(cookieParser());
 
-  app.all("/*", (req, res, next) => edgeApp(context, req, res, next));
+  app.all("/*", (req, res, next) => edgeApp(context, req as unknown as Request, res as unknown as Response, next as any));
 
   process.on("SIGTERM", () => {
     console.info("SIGTERM signal received: closing HTTP server");

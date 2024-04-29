@@ -14,10 +14,8 @@ import { EdgeStickyBucketService } from "./stickyBucketService";
 
 export async function edgeApp(
   context: Context,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  req: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  res: any,
+  req: Request,
+  res: Response,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   next?: any,
 ) {
@@ -40,7 +38,7 @@ export async function edgeApp(
     return context.helpers.proxyRequest?.(context, req, res, next);
   }
 
-  const attributes = getUserAttributes(context, req, res);
+  const attributes = getUserAttributes(context, req, res, url);
 
   let domChanges: AutoExperimentVariation[] = [];
   const resetDomChanges = () => (domChanges = []);
@@ -102,6 +100,8 @@ export async function edgeApp(
   const oldUrl = url;
   url = await redirect({
     context,
+    req,
+    res,
     growthbook,
     previousUrl: url,
     resetDomChanges,

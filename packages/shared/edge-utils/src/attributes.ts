@@ -4,10 +4,9 @@ import { Context } from "./types";
 // Get the user's attributes by merging the UUID cookie with any auto-attributes
 export function getUserAttributes(
   ctx: Context,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  req: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  res: any,
+  req: Request,
+  res: Response,
+  url: string,
 ): Attributes {
   const { config, helpers } = ctx;
 
@@ -23,12 +22,9 @@ export function getUserAttributes(
     }
     helpers.setCookie(res, config.uuidCookieName, uuid);
   }
-  const attributes = {
-    [config.attributeKeys.uuid || "id"]: uuid,
-  };
-  // enhance the attributes with any new information
-  const autoAttributes = getAutoAttributes(ctx, req);
-  return { ...attributes, ...autoAttributes, ...providedAttributes };
+
+  const autoAttributes = getAutoAttributes(ctx, req, url);
+  return { ...autoAttributes, ...providedAttributes };
 }
 
 // Get or create a UUID for the user:
@@ -36,8 +32,7 @@ export function getUserAttributes(
 // - Or create a new one and store in the cookie
 export function getUUID(
   ctx: Context,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  req: any,
+  req: Request,
 ) {
   const { config, helpers } = ctx;
 
@@ -67,63 +62,40 @@ export function getUUID(
 // - Other attributes come from the request headers and URL
 export function getAutoAttributes(
   ctx: Context,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  req: any,
+  req: Request,
+  url: string,
 ): Attributes {
   const { config, helpers } = ctx;
 
   const getHeader = helpers?.getRequestHeader;
-  const getUrl = helpers?.getRequestURL;
-  const attributeKeys = config?.attributeKeys || {};
 
-  const autoAttributes: Record<string, unknown> = {};
+  const autoAttributes: Attributes = {
+    [config.uuidKey]: getUUID(ctx, req),
+  };
 
-  // UUID
-  if (attributeKeys.uuid) {
-    autoAttributes[attributeKeys.uuid] = getUUID(ctx, req);
-  }
+  const ua = getHeader?.(req, "user-agent") || "";
+  autoAttributes.browser = ua.match(/Edg/)
+    ? "edge"
+    : ua.match(/Chrome/)
+    ? "chrome"
+    : ua.match(/Firefox/)
+    ? "firefox"
+    : ua.match(/Safari/)
+    ? "safari"
+    : "unknown";
+  autoAttributes.deviceType = ua.match(/Mobi/)
+    ? "mobile"
+    : "desktop";
 
-  // browser and deviceType
-  if (attributeKeys?.browser || attributeKeys?.deviceType) {
-    const ua = getHeader?.(req, "user-agent") || "";
-    if (attributeKeys?.browser) {
-      autoAttributes[attributeKeys.browser] = ua.match(/Edg/)
-        ? "edge"
-        : ua.match(/Chrome/)
-        ? "chrome"
-        : ua.match(/Firefox/)
-        ? "firefox"
-        : ua.match(/Safari/)
-        ? "safari"
-        : "unknown";
-    }
-    if (attributeKeys?.deviceType) {
-      autoAttributes[attributeKeys.deviceType] = ua.match(/Mobi/)
-        ? "mobile"
-        : "desktop";
-    }
-  }
+  autoAttributes.url = url;
 
-  // URL
-  const url = getUrl?.(req) || "";
-  if (attributeKeys.url) {
-    autoAttributes[attributeKeys.url] = url;
-  }
-  if (attributeKeys.path || attributeKeys.host || attributeKeys.query) {
-    try {
-      const urlObj = new URL(url);
-      if (attributeKeys.path) {
-        autoAttributes[attributeKeys.path] = urlObj.pathname;
-      }
-      if (attributeKeys.host) {
-        autoAttributes[attributeKeys.host] = urlObj.host;
-      }
-      if (attributeKeys.query) {
-        autoAttributes[attributeKeys.query] = urlObj.search;
-      }
-    } catch (e) {
-      // ignore
-    }
+  try {
+    const urlObj = new URL(url);
+    autoAttributes.path = urlObj.pathname;
+    autoAttributes.host = urlObj.host;
+    autoAttributes.query = urlObj.search;
+  } catch (e) {
+    // ignore
   }
 
   return autoAttributes;

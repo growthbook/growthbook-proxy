@@ -38,10 +38,9 @@ export function injectScript({
   const deferredTrackingCalls = growthbook.getDeferredTrackingCalls();
   const completedChangeIds = growthbook.getCompletedChangeIds();
 
-  const uuidCookieName = context.config.uuidCookieName || "gbuuid";
-  const uuidKey = context.config.attributeKeys.uuid || "id";
+  const uuidCookieName = context.config.uuidCookieName;
+  const uuidKey = context.config.uuidKey;
   const uuid = attributes[uuidKey];
-  const attributeKeys = context.config.attributeKeys;
   const trackingCallback = context.config.growthbook.trackingCallback;
   const blockedChangeIds = getBlockedExperiments({
     context,
@@ -59,8 +58,8 @@ export function injectScript({
     : undefined;
 
   const gbContext: Omit<GbContext, "trackingCallback"> & {
-    uuidCookieName?: string;
-    uuidKey?: string;
+    uuidCookieName: string;
+    uuidKey: string;
     uuid?: string;
     attributeKeys?: Record<string, string>;
     persistUuidOnLoad?: boolean;
@@ -73,7 +72,6 @@ export function injectScript({
     uuid,
     persistUuidOnLoad: true,
     attributes,
-    attributeKeys,
     trackingCallback: "__TRACKING_CALLBACK__",
     payload: sdkPayload,
     disableVisualExperiments: ["skip", "edge"].includes(

@@ -1,14 +1,19 @@
 import { GrowthBook } from "@growthbook/growthbook";
 import { Context } from "./types";
+import { getUserAttributes } from "./attributes";
 
 export default async function redirect({
   context,
+  req,
+  res,
   growthbook,
   previousUrl,
   resetDomChanges,
   setPreRedirectChangeIds,
 }: {
   context: Context;
+  req: Request;
+  res: Response;
   growthbook: GrowthBook;
   previousUrl: string;
   resetDomChanges: () => void;
@@ -38,6 +43,7 @@ export default async function redirect({
     );
 
     // change the URL to trigger the experiment
+    await growthbook.setAttributes(getUserAttributes(context, req, res, newUrl));
     await growthbook.setURL(newUrl);
     previousUrl = newUrl;
     newUrl = growthbook.getRedirectUrl();

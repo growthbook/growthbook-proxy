@@ -52,15 +52,7 @@ export interface Config {
 
   persistUuid: boolean;
   uuidCookieName: string;
-  attributeKeys: {
-    uuid?: string;
-    browser?: string;
-    deviceType?: string;
-    url?: string;
-    path?: string;
-    host?: string;
-    query?: string;
-  };
+  uuidKey: string;
   skipAutoAttributes: boolean;
 }
 
@@ -72,20 +64,20 @@ export type ExperimentRunEnvironment =
 
 export interface Helpers {
   // routing
-  getRequestURL?: (req: any) => string;
-  getRequestMethod?: (req: any) => string;
-  getRequestHeader?: (req: any, key: string) => string | undefined;
-  setResponseHeader?: (res: any, key: string, value: string) => void;
-  sendResponse?: (res: any, body: string, status?: number) => any;
-  fetch?: (ctx: Context, url: string) => Promise<any>;
+  getRequestURL?: (req: Request) => string;
+  getRequestMethod?: (req: Request) => string;
+  getRequestHeader?: (req: Request, key: string) => string | undefined;
+  setResponseHeader?: (res: Response, key: string, value: string) => void;
+  sendResponse?: (res: Response, body: string, status?: number) => unknown;
+  fetch?: (ctx: Context, url: string) => Promise<Response>;
   proxyRequest?: (
     ctx: Context,
-    req: any,
-    res?: any,
+    req: Request,
+    res?: Response,
     next?: any,
-  ) => Promise<any>;
-  getCookie?: (req: any, key: string) => string;
-  setCookie?: (res: any, key: string, value: string) => void;
+  ) => Promise<unknown>;
+  getCookie?: (req: Request, key: string) => string;
+  setCookie?: (res: Response, key: string, value: string) => void;
 }
 
 export type Route = {
