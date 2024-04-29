@@ -7,14 +7,14 @@ import { initializeLogger } from "./logger";
 
 (async () => {
   const { app, server, context } = await init();
-  initializeLogger(context);
+  initializeLogger<Request, Response>(context);
 
   app.use(cors());
   app.use(cookieParser());
 
   app.all("/*", (req, res, next) =>
-    edgeApp(
-      context<Request, Response>,
+    edgeApp<Request, Response>(
+      context,
       req as unknown as Request,
       res as unknown as Response,
       next as any,

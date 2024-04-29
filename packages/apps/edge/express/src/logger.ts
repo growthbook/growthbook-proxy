@@ -4,7 +4,7 @@ import { Context } from "@growthbook/edge-utils";
 let logger: HttpLogger["logger"] = pinoHttp().logger;
 export default logger;
 
-export const initializeLogger = (context: Context) => {
+export const initializeLogger = <Req, Res>(context: Context<Req, Res>) => {
   const environment = context.config.environment;
   const l = pinoHttp({
     autoLogging: environment === "production",

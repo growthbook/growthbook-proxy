@@ -11,11 +11,12 @@ import { applyDomMutations } from "./domMutations";
 import redirect from "./redirect";
 import { getRoute } from "./routing";
 import { EdgeStickyBucketService } from "./stickyBucketService";
+import { Request, Response } from "express";
 
-export async function edgeApp(
-  context: Context<any, any>,
-  req: Request,
-  res: Response,
+export async function edgeApp<Req, Res>(
+  context: Context<Req, Res>,
+  req: Req,
+  res: Res,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   next?: any,
 ) {

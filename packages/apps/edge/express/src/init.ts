@@ -2,7 +2,7 @@ import * as crypto from "crypto";
 import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
-import type {Request, Response } from "express";
+import type { Request, Response } from "express";
 import {
   Context,
   defaultContext,
@@ -124,7 +124,7 @@ export default async () => {
   context.helpers.setResponseHeader = setResponseHeader;
   context.helpers.sendResponse = sendResponse;
   context.helpers.fetch = fetchFn;
-  // context.helpers.proxyRequest = proxyRequest;
+  context.helpers.proxyRequest = proxyRequest;
   context.helpers.getCookie = getCookie;
   context.helpers.setCookie = setCookie;
 
