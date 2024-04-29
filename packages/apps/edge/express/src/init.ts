@@ -15,7 +15,8 @@ import {
   proxyRequest,
   getRequestURL,
   setResponseHeader,
-  getUUIDCookie,
+  getCookie,
+  setCookie
 } from "./helpers";
 dotenv.config({ path: "./.env.local" });
 
@@ -107,24 +108,8 @@ export default async () => {
   context.config.persistUuid = ["true", "1"].includes(
     process.env.PERSIST_UUID ?? "" + defaultContext.config.persistUuid,
   );
-  context.config.uuidCookieName = process.env.UUID_COOKIE_NAME || "gbuuid";
-
-  // config.attributeKeys
-  "ATTRIBUTE_UUID" in process.env &&
-    (context.config.attributeKeys.uuid = process.env.ATTRIBUTE_UUID);
-  "ATTRIBUTE_BROWSER" in process.env &&
-    (context.config.attributeKeys.browser = process.env.ATTRIBUTE_BROWSER);
-  "ATTRIBUTE_DEVICE_TYPE" in process.env &&
-    (context.config.attributeKeys.deviceType =
-      process.env.ATTRIBUTE_DEVICE_TYPE);
-  "ATTRIBUTE_URL" in process.env &&
-    (context.config.attributeKeys.url = process.env.ATTRIBUTE_URL);
-  "ATTRIBUTE_PATH" in process.env &&
-    (context.config.attributeKeys.path = process.env.ATTRIBUTE_PATH);
-  "ATTRIBUTE_HOST" in process.env &&
-    (context.config.attributeKeys.host = process.env.ATTRIBUTE_HOST);
-  "ATTRIBUTE_QUERY" in process.env &&
-    (context.config.attributeKeys.query = process.env.ATTRIBUTE_QUERY);
+  context.config.uuidCookieName = process.env.UUID_COOKIE_NAME || defaultContext.config.uuidCookieName;
+  context.config.uuidKey = process.env.UUID_KEY || defaultContext.config.uuidKey;
 
   context.config.skipAutoAttributes = ["true", "1"].includes(
     process.env.SKIP_AUTO_ATTRIBUTES ??
@@ -139,7 +124,8 @@ export default async () => {
   context.helpers.sendResponse = sendResponse;
   context.helpers.fetch = fetchFn;
   context.helpers.proxyRequest = proxyRequest;
-  context.helpers.getUUIDCookie = getUUIDCookie;
+  context.helpers.getCookie = getCookie;
+  context.helpers.setCookie = setCookie;
 
   // Express configuration consts:
   const USE_HTTP2 = process.env.USE_HTTP2;

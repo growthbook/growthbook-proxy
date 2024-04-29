@@ -14,10 +14,8 @@ import { EdgeStickyBucketService } from "./stickyBucketService";
 
 export async function edgeApp(
   context: Context,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  req: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  res: any,
+  req: Request,
+  res: Response,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   next?: any,
 ) {
@@ -40,14 +38,14 @@ export async function edgeApp(
     return context.helpers.proxyRequest?.(context, req, res, next);
   }
 
-  const attributes = getUserAttributes(context, req, res);
+  const attributes = getUserAttributes(context, req, res, url);
 
   let domChanges: AutoExperimentVariation[] = [];
   const resetDomChanges = () => (domChanges = []);
 
-  let preRedirectTrackedExperimentIds: string[] = [];
-  const setPreRedirectTrackedExperimentIds = (uids: string[]) =>
-    (preRedirectTrackedExperimentIds = uids);
+  let preRedirectChangeIds: string[] = [];
+  const setPreRedirectChangeIds = (changeIds: string[]) =>
+    (preRedirectChangeIds = changeIds);
 
   if (context.config.localStorage) {
     setPolyfills({ localStorage: context.config.localStorage });
@@ -62,13 +60,12 @@ export async function edgeApp(
   if (context.config.enableStickyBucketing) {
     stickyBucketService =
       context.config.growthbook.edgeStickyBucketService ??
-      new EdgeStickyBucketService({ req });
+      new EdgeStickyBucketService({ context, req });
   }
   const growthbook = new GrowthBook({
     apiHost: context.config.growthbook.apiHost,
     clientKey: context.config.growthbook.clientKey,
     decryptionKey: context.config.growthbook.decryptionKey,
-    payload: context.config.growthbook.payload,
     attributes,
     applyDomChangesCallback: (changes: AutoExperimentVariation) => {
       domChanges.push(changes);
@@ -91,19 +88,24 @@ export async function edgeApp(
       : undefined,
   });
 
+  // todo: remove
   growthbook.debug = true;
 
-  await growthbook.loadFeatures();
+  await growthbook.init({
+    payload: context.config.growthbook.payload,
+  });
 
   let body = "";
 
   const oldUrl = url;
   url = await redirect({
     context,
+    req,
+    res,
     growthbook,
     previousUrl: url,
     resetDomChanges,
-    setPreRedirectTrackedExperimentIds,
+    setPreRedirectChangeIds: setPreRedirectChangeIds,
   });
 
   const originUrl = getOriginUrl(context, url);
@@ -141,7 +143,7 @@ export async function edgeApp(
     growthbook,
     stickyBucketService,
     attributes,
-    preRedirectTrackedExperimentIds,
+    preRedirectChangeIds,
     url,
     oldUrl,
   });

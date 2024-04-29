@@ -40,16 +40,14 @@ export async function proxyRequest(
   return proxyFn(req, res, next);
 }
 
-export function getUUIDCookie(ctx: Context, req: Request): string {
-  const cookieName = ctx.config.uuidCookieName || "gbuuid";
-  const cookie = req.cookies[cookieName];
+export function getCookie(req: Request, key: string): string {
+  const cookie = req.cookies[key];
   return cookie || "";
 }
 
-export function setUUIDCookie(ctx: Context, res: Response, uuid: string) {
-  const cookieName = ctx.config.uuidCookieName || "gbuuid";
+export function setCookie(res: Response, key: string, value: string) {
   const COOKIE_DAYS = 400; // 400 days is the max cookie duration for chrome
-  res.cookie(cookieName, uuid, {
+  res.cookie(key, value, {
     maxAge: 24 * 60 * 60 * 1000 * COOKIE_DAYS,
   });
 }

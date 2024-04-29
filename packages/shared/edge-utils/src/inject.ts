@@ -4,7 +4,7 @@ import {
   TrackingData,
   AutoExperiment,
   GrowthBook,
-  StickyBucketService,
+  StickyBucketService, FeatureApiResponse
 } from "@growthbook/growthbook";
 import { sdkWrapper } from "./generated/sdkWrapper";
 import { Context } from "./types";
@@ -17,7 +17,7 @@ export function injectScript({
   growthbook,
   stickyBucketService,
   attributes,
-  preRedirectTrackedExperimentIds,
+  preRedirectChangeIds,
   url,
   oldUrl,
 }: {
@@ -27,7 +27,7 @@ export function injectScript({
   growthbook: GrowthBook;
   stickyBucketService?: EdgeStickyBucketService | StickyBucketService;
   attributes: Attributes;
-  preRedirectTrackedExperimentIds: string[];
+  preRedirectChangeIds: string[];
   url: string;
   oldUrl: string;
 }) {
@@ -36,18 +36,17 @@ export function injectScript({
   const sdkPayload = growthbook.getPayload();
   const experiments = growthbook.getExperiments();
   const deferredTrackingCalls = growthbook.getDeferredTrackingCalls();
-  const ranExperimentIds = growthbook.getRanExperimentIds();
+  const completedChangeIds = growthbook.getCompletedChangeIds();
 
-  const uuidCookieName = context.config.uuidCookieName || "gbuuid";
-  const uuidKey = context.config.attributeKeys.uuid || "id";
+  const uuidCookieName = context.config.uuidCookieName;
+  const uuidKey = context.config.uuidKey;
   const uuid = attributes[uuidKey];
-  const attributeKeys = context.config.attributeKeys;
   const trackingCallback = context.config.growthbook.trackingCallback;
-  const blockedExperimentIds = getBlockedExperiments({
+  const blockedChangeIds = getBlockedExperiments({
     context,
     experiments,
-    ranExperimentIds,
-    preRedirectTrackedExperimentIds,
+    completedChangeIds,
+    preRedirectChangeIds,
   });
   const injectRedirectUrlScript = context.config.injectRedirectUrlScript;
   const enableStreaming = context.config.enableStreaming;
@@ -59,20 +58,20 @@ export function injectScript({
     : undefined;
 
   const gbContext: Omit<GbContext, "trackingCallback"> & {
-    uuidCookieName?: string;
-    uuidKey?: string;
+    uuidCookieName: string;
+    uuidKey: string;
     uuid?: string;
     attributeKeys?: Record<string, string>;
     persistUuidOnLoad?: boolean;
     useStickyBucketService?: "cookie" | "localStorage";
     trackingCallback: string; // replaced by macro
+    payload?: FeatureApiResponse;
   } = {
     uuidCookieName,
     uuidKey,
     uuid,
     persistUuidOnLoad: true,
     attributes,
-    attributeKeys,
     trackingCallback: "__TRACKING_CALLBACK__",
     payload: sdkPayload,
     disableVisualExperiments: ["skip", "edge"].includes(
@@ -86,7 +85,7 @@ export function injectScript({
       context.config.runCrossOriginUrlRedirectExperiments,
     ),
     jsInjectionNonce: nonce,
-    blockedExperimentIds,
+    blockedChangeIds,
     backgroundSync: enableStreaming,
     useStickyBucketService: enableStickyBucketing ? "cookie" : undefined,
     stickyBucketAssignmentDocs: stickyAssignments,
@@ -110,7 +109,7 @@ ${
       gb.setDeferredTrackingCalls(${JSON.stringify(
         scrubInvalidTrackingCalls(
           deferredTrackingCalls,
-          preRedirectTrackedExperimentIds,
+          preRedirectChangeIds,
         ),
       )});
       gb.fireDeferredTrackingCalls();
@@ -174,59 +173,65 @@ export function getCspInfo(context: Context): {
 function getBlockedExperiments({
   context,
   experiments,
-  ranExperimentIds,
-  preRedirectTrackedExperimentIds,
+  completedChangeIds,
+  preRedirectChangeIds,
 }: {
   context: Context;
   experiments: AutoExperiment[];
-  ranExperimentIds: string[];
-  preRedirectTrackedExperimentIds: string[];
+  completedChangeIds: string[];
+  preRedirectChangeIds: string[];
 }): string[] | undefined {
   const runUrlRedirectExperimentsEverywhere =
     context.config.runUrlRedirectExperiments === "everywhere";
   const runVisualEditorExperimentsEverywhere =
     context.config.runVisualEditorExperiments === "everywhere";
 
-  const blockedExperimentIds: string[] = [];
+  const blockedChangeIds: string[] = [];
 
   if (runUrlRedirectExperimentsEverywhere) {
-    blockedExperimentIds.concat(
-      ...ranExperimentIds.filter((uid) => {
+    blockedChangeIds.concat(
+      ...completedChangeIds.filter((changeId) => {
         // only block hybrid redirect experiments if they've already been run on edge
         const exp = experiments.find(
-          (exp) => exp.changeType === "redirect" && exp.uid === uid,
+          (exp) => exp.changeType === "redirect" && exp.changeId === changeId,
         );
-        return !!(exp?.uid && ranExperimentIds.includes(exp.uid));
+        return !!(
+          exp?.changeId && completedChangeIds.includes(exp.changeId)
+        );
       }),
     );
   }
 
   if (runVisualEditorExperimentsEverywhere) {
-    blockedExperimentIds.concat(
-      ...preRedirectTrackedExperimentIds.filter((uid) => {
+    blockedChangeIds.concat(
+      ...preRedirectChangeIds.filter((changeId) => {
         // only block hybrid visual experiments if they've already been run on edge as part of the pre-redirect loop
         const exp = experiments.find(
-          (exp) => exp.changeType === "visual" && exp.uid === uid,
+          (exp) => exp.changeType === "visual" && exp.changeId === changeId,
         );
-        return !!(exp?.uid && ranExperimentIds.includes(exp.uid));
+        return !!(
+          exp?.changeId && completedChangeIds.includes(exp.changeId)
+        );
       }),
     );
   }
 
-  return blockedExperimentIds.length ? blockedExperimentIds : undefined;
+  return blockedChangeIds.length
+    ? blockedChangeIds
+    : undefined;
 }
 
 function scrubInvalidTrackingCalls(
   deferredTrackingCalls: TrackingData[],
-  preRedirectTrackedExperimentIds: string[],
+  preRedirectChangeIds: string[],
 ): TrackingData[] {
   return deferredTrackingCalls.filter((data) => {
     const exp = data.experiment as AutoExperiment;
     // remove tracking for any visual experiments that ran during the redirect loop
     if (
       exp.changeType === "visual" &&
-      exp?.uid &&
-      preRedirectTrackedExperimentIds.includes(exp.uid)
+      exp.changeId &&
+      preRedirectChangeIds.includes(exp.changeId)
     ) {
       return false;
     }
