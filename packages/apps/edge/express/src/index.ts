@@ -17,6 +17,7 @@ import { initializeLogger } from "./logger";
       context,
       req as unknown as Request,
       res as unknown as Response,
+      /* eslint-disable @typescript-eslint/no-explicit-any */
       next as any,
     ),
   );

@@ -4,7 +4,8 @@ import {
   TrackingData,
   AutoExperiment,
   GrowthBook,
-  StickyBucketService, FeatureApiResponse
+  StickyBucketService,
+  FeatureApiResponse,
 } from "@growthbook/growthbook";
 import { sdkWrapper } from "./generated/sdkWrapper";
 import { Context } from "./types";
@@ -25,7 +26,9 @@ export function injectScript({
   body: string;
   nonce?: string;
   growthbook: GrowthBook;
-  stickyBucketService?: EdgeStickyBucketService<unknown, unknown> | StickyBucketService;
+  stickyBucketService?:
+    | EdgeStickyBucketService<unknown, unknown>
+    | StickyBucketService;
   attributes: Attributes;
   preRedirectChangeIds: string[];
   url: string;
@@ -64,6 +67,7 @@ export function injectScript({
     attributeKeys?: Record<string, string>;
     persistUuidOnLoad?: boolean;
     useStickyBucketService?: "cookie" | "localStorage";
+    stickyBucketPrefix?: string;
     trackingCallback: string; // replaced by macro
     payload?: FeatureApiResponse;
   } = {
@@ -88,6 +92,7 @@ export function injectScript({
     blockedChangeIds,
     backgroundSync: enableStreaming,
     useStickyBucketService: enableStickyBucketing ? "cookie" : undefined,
+    stickyBucketPrefix: context.config.stickyBucketPrefix,
     stickyBucketAssignmentDocs: stickyAssignments,
   };
 
@@ -107,10 +112,7 @@ ${
   window.growthbook_queue = [
     (gb) => {
       gb.setDeferredTrackingCalls(${JSON.stringify(
-        scrubInvalidTrackingCalls(
-          deferredTrackingCalls,
-          preRedirectChangeIds,
-        ),
+        scrubInvalidTrackingCalls(deferredTrackingCalls, preRedirectChangeIds),
       )});
       gb.fireDeferredTrackingCalls();
     }
@@ -195,9 +197,7 @@ function getBlockedExperiments({
         const exp = experiments.find(
           (exp) => exp.changeType === "redirect" && exp.changeId === changeId,
         );
-        return !!(
-          exp?.changeId && completedChangeIds.includes(exp.changeId)
-        );
+        return !!(exp?.changeId && completedChangeIds.includes(exp.changeId));
       }),
     );
   }
@@ -209,16 +209,12 @@ function getBlockedExperiments({
         const exp = experiments.find(
           (exp) => exp.changeType === "visual" && exp.changeId === changeId,
         );
-        return !!(
-          exp?.changeId && completedChangeIds.includes(exp.changeId)
-        );
+        return !!(exp?.changeId && completedChangeIds.includes(exp.changeId));
       }),
     );
   }
 
-  return blockedChangeIds.length
-    ? blockedChangeIds
-    : undefined;
+  return blockedChangeIds.length ? blockedChangeIds : undefined;
 }
 
 function scrubInvalidTrackingCalls(

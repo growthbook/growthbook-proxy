@@ -8,7 +8,7 @@ import {
   TrackingCallback,
 } from "@growthbook/growthbook";
 
-export interface Context<Req = unknown, Res = unknown>{
+export interface Context<Req = unknown, Res = unknown> {
   config: Config;
   helpers: Helpers<Req, Res>;
 }
@@ -32,6 +32,7 @@ export interface Config {
 
   enableStreaming: boolean;
   enableStickyBucketing: boolean;
+  stickyBucketPrefix?: string;
 
   contentSecurityPolicy?: string; // __NONCE__ will be replaced with a generated nonce string
   nonce?: string; // can be used instead of __NONCE__ if known

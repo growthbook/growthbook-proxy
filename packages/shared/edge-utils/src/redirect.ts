@@ -38,12 +38,12 @@ export default async function redirect({
     // clear visual experiment effects since we're no longer on the same page
     resetDomChanges();
     // keep track of experiments that triggered prior to final redirect
-    setPreRedirectChangeIds(
-      growthbook.getCompletedChangeIds(),
-    );
+    setPreRedirectChangeIds(growthbook.getCompletedChangeIds());
 
     // change the URL to trigger the experiment
-    await growthbook.setAttributes(getUserAttributes(context, req, res, newUrl));
+    await growthbook.setAttributes(
+      getUserAttributes(context, req, res, newUrl),
+    );
     await growthbook.setURL(newUrl);
     previousUrl = newUrl;
     newUrl = growthbook.getRedirectUrl();

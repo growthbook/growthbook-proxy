@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
 import { CacheEngine, Context, StickyBucketEngine } from "./types";

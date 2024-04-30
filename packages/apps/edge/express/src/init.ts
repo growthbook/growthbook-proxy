@@ -6,7 +6,8 @@ import type { Request, Response } from "express";
 import {
   Context,
   defaultContext,
-  ExperimentRunEnvironment, Helpers
+  ExperimentRunEnvironment,
+  Helpers,
 } from "@growthbook/edge-utils";
 import {
   getRequestMethod,
@@ -17,7 +18,7 @@ import {
   getRequestURL,
   setResponseHeader,
   getCookie,
-  setCookie
+  setCookie,
 } from "./helpers";
 dotenv.config({ path: "./.env.local" });
 
@@ -80,6 +81,8 @@ export default async () => {
     process.env.ENABLE_STICKY_BUCKETING ??
       "" + defaultContext.config.enableStickyBucketing,
   );
+  "STICKY_BUCKET_PREFIX" in process.env &&
+    (context.config.stickyBucketPrefix = process.env.STICKY_BUCKET_PREFIX);
 
   context.config.contentSecurityPolicy =
     process.env.CONTENT_SECURITY_POLICY || "";
@@ -109,8 +112,10 @@ export default async () => {
   context.config.persistUuid = ["true", "1"].includes(
     process.env.PERSIST_UUID ?? "" + defaultContext.config.persistUuid,
   );
-  context.config.uuidCookieName = process.env.UUID_COOKIE_NAME || defaultContext.config.uuidCookieName;
-  context.config.uuidKey = process.env.UUID_KEY || defaultContext.config.uuidKey;
+  context.config.uuidCookieName =
+    process.env.UUID_COOKIE_NAME || defaultContext.config.uuidCookieName;
+  context.config.uuidKey =
+    process.env.UUID_KEY || defaultContext.config.uuidKey;
 
   context.config.skipAutoAttributes = ["true", "1"].includes(
     process.env.SKIP_AUTO_ATTRIBUTES ??
@@ -124,7 +129,10 @@ export default async () => {
   context.helpers.setResponseHeader = setResponseHeader;
   context.helpers.sendResponse = sendResponse;
   context.helpers.fetch = fetchFn;
-  context.helpers.proxyRequest = proxyRequest as Helpers<Request, Response>["proxyRequest"];
+  context.helpers.proxyRequest = proxyRequest as Helpers<
+    Request,
+    Response
+  >["proxyRequest"];
   context.helpers.getCookie = getCookie;
   context.helpers.setCookie = setCookie;
 

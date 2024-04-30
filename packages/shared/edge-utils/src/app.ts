@@ -60,7 +60,11 @@ export async function edgeApp<Req, Res>(
   if (context.config.enableStickyBucketing) {
     stickyBucketService =
       context.config.growthbook.edgeStickyBucketService ??
-      new EdgeStickyBucketService<Req, Res>({ context, req });
+      new EdgeStickyBucketService<Req, Res>({
+        context,
+        prefix: context.config.stickyBucketPrefix,
+        req,
+      });
   }
   const growthbook = new GrowthBook({
     apiHost: context.config.growthbook.apiHost,
@@ -110,12 +114,15 @@ export async function edgeApp<Req, Res>(
 
   const originUrl = getOriginUrl(context as Context<unknown, unknown>, url);
 
-  let fetchedResponse: (Res & { ok: boolean; text: any }) | undefined = undefined;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  let fetchedResponse: (Res & { ok: boolean; text: any }) | undefined =
+    undefined;
   try {
     fetchedResponse = (await context.helpers.fetch?.(
       context as Context<Req, Res>,
       originUrl,
-    )) as (Res & { ok: boolean; text: any });
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+    )) as Res & { ok: boolean; text: any };
     if (!fetchedResponse?.ok) {
       throw new Error("Fetch: non-2xx status returned");
     }

@@ -30,10 +30,7 @@ export function getUserAttributes<Req, Res>(
 // Get or create a UUID for the user:
 // - Try to get the UUID from the cookie
 // - Or create a new one and store in the cookie
-export function getUUID<Req, Res>(
-  ctx: Context<Req, Res>,
-  req: Req,
-) {
+export function getUUID<Req, Res>(ctx: Context<Req, Res>, req: Req) {
   const { config, helpers } = ctx;
 
   const crypto = config?.crypto || globalThis?.crypto;
@@ -83,9 +80,7 @@ export function getAutoAttributes<Req, Res>(
     : ua.match(/Safari/)
     ? "safari"
     : "unknown";
-  autoAttributes.deviceType = ua.match(/Mobi/)
-    ? "mobile"
-    : "desktop";
+  autoAttributes.deviceType = ua.match(/Mobi/) ? "mobile" : "desktop";
 
   autoAttributes.url = url;
 
