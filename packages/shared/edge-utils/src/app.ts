@@ -148,7 +148,6 @@ export async function edgeApp<Req, Res>(
     body,
     nonce,
     growthbook,
-    stickyBucketService,
     attributes,
     preRedirectChangeIds,
     url,

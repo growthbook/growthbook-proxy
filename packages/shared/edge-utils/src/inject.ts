@@ -6,6 +6,7 @@ import {
   GrowthBook,
   StickyBucketService,
   FeatureApiResponse,
+  getAutoExperimentChangeType,
 } from "@growthbook/growthbook";
 import { sdkWrapper } from "./generated/sdkWrapper";
 import { Context } from "./types";
@@ -16,7 +17,6 @@ export function injectScript({
   body,
   nonce,
   growthbook,
-  stickyBucketService,
   attributes,
   preRedirectChangeIds,
   url,
@@ -26,9 +26,6 @@ export function injectScript({
   body: string;
   nonce?: string;
   growthbook: GrowthBook;
-  stickyBucketService?:
-    | EdgeStickyBucketService<unknown, unknown>
-    | StickyBucketService;
   attributes: Attributes;
   preRedirectChangeIds: string[];
   url: string;
@@ -54,11 +51,7 @@ export function injectScript({
   const injectRedirectUrlScript = context.config.injectRedirectUrlScript;
   const enableStreaming = context.config.enableStreaming;
   const enableStickyBucketing = context.config.enableStickyBucketing;
-  const stickyAssignments = enableStickyBucketing
-    ? stickyBucketService instanceof EdgeStickyBucketService
-      ? stickyBucketService?.exportAssignmentDocs()
-      : undefined
-    : undefined;
+  const stickyAssignments = growthbook.getStickyBucketAssignmentDocs();
 
   const gbContext: Omit<GbContext, "trackingCallback"> & {
     uuidCookieName: string;
@@ -70,6 +63,7 @@ export function injectScript({
     stickyBucketPrefix?: string;
     trackingCallback: string; // replaced by macro
     payload?: FeatureApiResponse;
+    noStreaming?: boolean;
   } = {
     uuidCookieName,
     uuidKey,
@@ -90,7 +84,7 @@ export function injectScript({
     ),
     jsInjectionNonce: nonce,
     blockedChangeIds,
-    backgroundSync: enableStreaming,
+    noStreaming: !enableStreaming,
     useStickyBucketService: enableStickyBucketing ? "cookie" : undefined,
     stickyBucketPrefix: context.config.stickyBucketPrefix,
     stickyBucketAssignmentDocs: stickyAssignments,
@@ -195,7 +189,9 @@ function getBlockedExperiments({
       ...completedChangeIds.filter((changeId) => {
         // only block hybrid redirect experiments if they've already been run on edge
         const exp = experiments.find(
-          (exp) => exp.changeType === "redirect" && exp.changeId === changeId,
+          (exp) =>
+            getAutoExperimentChangeType(exp) === "redirect" &&
+            exp.changeId === changeId,
         );
         return !!(exp?.changeId && completedChangeIds.includes(exp.changeId));
       }),
@@ -207,7 +203,9 @@ function getBlockedExperiments({
       ...preRedirectChangeIds.filter((changeId) => {
         // only block hybrid visual experiments if they've already been run on edge as part of the pre-redirect loop
         const exp = experiments.find(
-          (exp) => exp.changeType === "visual" && exp.changeId === changeId,
+          (exp) =>
+            getAutoExperimentChangeType(exp) === "visual" &&
+            exp.changeId === changeId,
         );
         return !!(exp?.changeId && completedChangeIds.includes(exp.changeId));
       }),
@@ -225,7 +223,7 @@ function scrubInvalidTrackingCalls(
     const exp = data.experiment as AutoExperiment;
     // remove tracking for any visual experiments that ran during the redirect loop
     if (
-      exp.changeType === "visual" &&
+      getAutoExperimentChangeType(exp) === "visual" &&
       exp.changeId &&
       preRedirectChangeIds.includes(exp.changeId)
     ) {

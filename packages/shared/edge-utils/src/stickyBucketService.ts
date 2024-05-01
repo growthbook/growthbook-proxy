@@ -8,7 +8,6 @@ export class EdgeStickyBucketService<Req, Res> extends StickyBucketService {
   private context: Context<Req, Res>;
   private prefix: string;
   private req: Req;
-  private docs: Record<string, StickyAssignmentsDocument>;
 
   constructor({
     context,
@@ -23,7 +22,6 @@ export class EdgeStickyBucketService<Req, Res> extends StickyBucketService {
     this.context = context;
     this.prefix = prefix;
     this.req = req;
-    this.docs = {};
   }
 
   async getAssignments(attributeName: string, attributeValue: string) {
@@ -41,18 +39,10 @@ export class EdgeStickyBucketService<Req, Res> extends StickyBucketService {
     } catch (e) {
       // Ignore cookie errors
     }
-    if (doc) {
-      this.docs[key] = doc;
-    }
     return doc;
   }
 
   async saveAssignments(doc: StickyAssignmentsDocument) {
-    const key = `${doc.attributeName}||${doc.attributeValue}`;
-    this.docs[key] = doc;
-  }
-
-  exportAssignmentDocs(): Record<string, StickyAssignmentsDocument> {
-    return this.docs;
+    // Do nothing. User assignments will be hydrated from the SDK directly.
   }
 }
