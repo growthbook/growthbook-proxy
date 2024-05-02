@@ -92,7 +92,8 @@ export default async () => {
   context.config.crypto = crypto;
 
   // config.growthbook
-  context.config.growthbook.apiHost = process.env.GROWTHBOOK_API_HOST ?? "";
+  context.config.growthbook.apiHost = (process.env.GROWTHBOOK_API_HOST ?? "")
+    .replace(/\/*$/, "");
   context.config.growthbook.clientKey = process.env.GROWTHBOOK_CLIENT_KEY ?? "";
   "GROWTHBOOK_DECRYPTION_KEY" in process.env &&
     (context.config.growthbook.decryptionKey =
