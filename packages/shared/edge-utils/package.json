@@ -1,6 +1,6 @@
 {
   "name": "@growthbook/edge-utils",
-  "description": "Utilities for edge workers",
+  "description": "Edge worker base app",
   "version": "1.0.0",
   "main": "dist/index.js",
   "license": "MIT",
