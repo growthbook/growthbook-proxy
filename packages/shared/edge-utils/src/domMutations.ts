@@ -89,17 +89,19 @@ export async function applyDomMutations({
   return body;
 
   function html(selector: string, cb: (val: string) => string) {
-    const el = root.querySelector(selector);
-    if (el) el.innerHTML = cb(el.innerHTML);
+    const els = root.querySelectorAll(selector);
+    els.map((el) => {
+      el.innerHTML = cb(el.innerHTML);
+    });
   }
 
   function classes(selector: string, cb: (val: Set<string>) => void) {
-    const el = root.querySelector(selector);
-    if (el) {
+    const els = root.querySelectorAll(selector);
+    els.map((el) => {
       const classList = new Set(el.classNames);
       cb(classList);
       el.setAttribute("class", Array.from(classList).join(" "));
-    }
+    });
   }
 
   function attribute(
@@ -122,23 +124,23 @@ export async function applyDomMutations({
           .forEach((c) => classnames.add(c));
       });
     }
-    const el = root.querySelector(selector);
-    if (el) {
+    const els = root.querySelectorAll(selector);
+    els.map((el) => {
       const val = cb(el.getAttribute(attr) || "");
       if (val === null) {
         el.removeAttribute(attr);
       } else {
         el.setAttribute(attr, val);
       }
-    }
+    });
   }
 
   function position(
     selector: string,
     cb: () => { insertBeforeSelector?: string; parentSelector: string },
   ) {
-    const el = root.querySelector(selector);
-    if (el) {
+    const els = root.querySelectorAll(selector);
+    els.map((el) => {
       const { insertBeforeSelector, parentSelector } = cb();
       const parent = root.querySelector(parentSelector);
       const insertBefore = insertBeforeSelector
@@ -150,6 +152,6 @@ export async function applyDomMutations({
       } else if (parent) {
         parent.appendChild(el);
       }
-    }
+    });
   }
 }

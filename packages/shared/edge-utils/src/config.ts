@@ -11,7 +11,7 @@ export const defaultContext: Context = {
     runCrossOriginUrlRedirectExperiments: "browser",
     injectRedirectUrlScript: true,
     maxRedirects: 5,
-    scriptInjectionPattern: "</body>",
+    scriptInjectionPattern: "</head>",
     disableInjections: false,
     enableStreaming: false,
     enableStickyBucketing: false,

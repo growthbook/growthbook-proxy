@@ -127,9 +127,7 @@ ${
     trackingCallback || "undefined",
   );
 
-  const pattern = context.config.scriptInjectionPattern || "</body>";
-
-  const index = body.indexOf(pattern);
+  const index = body.indexOf(context.config.scriptInjectionPattern);
   if (index >= 0) {
     body = body.slice(0, index) + scriptTag + body.slice(index);
   } else {
