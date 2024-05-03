@@ -29,6 +29,10 @@ export default async () => {
   // config
   context.config.proxyTarget =
     process.env.PROXY_TARGET ?? defaultContext.config.proxyTarget;
+  context.config.forwardProxyHeaders = ["true", "1"].includes(
+    process.env.FORWARD_PROXY_HEADERS ??
+    "" + defaultContext.config.forwardProxyHeaders,
+  );
   context.config.environment =
     process.env.NODE_ENV ?? defaultContext.config.environment;
   context.config.maxPayloadSize =
@@ -129,6 +133,7 @@ export default async () => {
   context.helpers.getRequestHeader = getRequestHeader;
   context.helpers.setResponseHeader = setResponseHeader;
   context.helpers.sendResponse = sendResponse;
+  // no createNewResponse
   context.helpers.fetch = fetchFn;
   context.helpers.proxyRequest = proxyRequest as Helpers<
     Request,

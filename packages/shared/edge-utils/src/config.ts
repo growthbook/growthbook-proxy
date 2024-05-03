@@ -3,6 +3,7 @@ import { Context } from "./types";
 export const defaultContext: Context = {
   config: {
     proxyTarget: "/",
+    forwardProxyHeaders: true,
     environment: "production",
     maxPayloadSize: "2mb",
     runVisualEditorExperiments: "everywhere",

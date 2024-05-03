@@ -17,8 +17,19 @@ export function getRequestHeader(req: Request, key: string) {
 export function setResponseHeader(res: Response, key: string, value: string) {
   res.setHeader(key, value);
 }
-export function sendResponse(res: Response, body: string, status?: number) {
-  return res.status(status || 200).send(body);
+export function sendResponse(
+  ctx: Context<Request, Response>,
+  res: Response,
+  headers?: Record<string, any>,
+  body?: string,
+  status?: number
+) {
+  if (headers) {
+    for (const key in headers) {
+      ctx.helpers.setResponseHeader?.(res, key, headers[key]);
+    }
+  }
+  return res.status(status || 200).send(body || "");
 }
 
 export async function fetchFn(ctx: Context<Request, Response>, url: string) {

@@ -15,6 +15,7 @@ export interface Context<Req = unknown, Res = unknown> {
 
 export interface Config {
   proxyTarget: string;
+  forwardProxyHeaders: boolean;
   environment: string;
   maxPayloadSize?: string;
   routes?: Route[];
@@ -69,7 +70,8 @@ export interface Helpers<Req, Res> {
   getRequestMethod?: (req: Req) => string;
   getRequestHeader?: (req: Req, key: string) => string | undefined;
   setResponseHeader?: (res: Res, key: string, value: string) => void;
-  sendResponse?: (res: Res, body: string, status?: number) => unknown;
+  sendResponse?: (ctx: Context<Req, Res>, res: Res, headers?: any, body?: string, status?: number) => unknown;
+  createNewResponse?: (ctx: Context<Req, Res>) => Res;
   fetch?: (ctx: Context<Req, Res>, url: string) => Promise<Res>;
   proxyRequest?: (
     ctx: Context<Req, Res>,
