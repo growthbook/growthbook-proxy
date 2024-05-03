@@ -19,6 +19,8 @@ export async function edgeApp<Req, Res>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   next?: any,
 ) {
+  // todo: import default helpers, overwrite with context helpers
+
   let url = context.helpers.getRequestURL?.(req) || "";
 
   // Non GET requests are proxied
@@ -44,15 +46,11 @@ export async function edgeApp<Req, Res>(
   const resetDomChanges = () => (domChanges = []);
 
   let preRedirectChangeIds: string[] = [];
-  const setPreRedirectChangeIds = (changeIds: string[]) =>
-    (preRedirectChangeIds = changeIds);
+  const setPreRedirectChangeIds = (changeIds: string[]) => (preRedirectChangeIds = changeIds);
 
-  if (context.config.localStorage) {
-    setPolyfills({ localStorage: context.config.localStorage });
-  }
-  if (context.config.crypto) {
-    setPolyfills({ SubtleCrypto: context.config.crypto });
-  }
+  context.config.localStorage && setPolyfills({ localStorage: context.config.localStorage });
+  context.config.crypto && setPolyfills({ SubtleCrypto: context.config.crypto });
+
   let stickyBucketService:
     | EdgeStickyBucketService<Req, Res>
     | StickyBucketService
@@ -90,10 +88,8 @@ export async function edgeApp<Req, Res>(
     trackingCallback: context.config.disableInjections
       ? context.config.growthbook.edgeTrackingCallback
       : undefined,
+    debug: true, // todo: remove
   });
-
-  // todo: remove
-  growthbook.debug = true;
 
   await growthbook.init({
     payload: context.config.growthbook.payload,

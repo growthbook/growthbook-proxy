@@ -4,13 +4,11 @@ import {
   TrackingData,
   AutoExperiment,
   GrowthBook,
-  StickyBucketService,
   FeatureApiResponse,
   getAutoExperimentChangeType,
 } from "@growthbook/growthbook";
 import { sdkWrapper } from "./generated/sdkWrapper";
 import { Context } from "./types";
-import { EdgeStickyBucketService } from "./stickyBucketService";
 
 export function injectScript({
   context,
