@@ -10,19 +10,18 @@ import {
   Helpers,
 } from "@growthbook/edge-utils";
 import {
+  getRequestURL,
   getRequestMethod,
   getRequestHeader,
   sendResponse,
   fetchFn,
   proxyRequest,
-  getRequestURL,
-  setResponseHeader,
   getCookie,
   setCookie,
 } from "./helpers";
 dotenv.config({ path: "./.env.local" });
 
-export default async () => {
+export default () => {
   // Build context from default + env
   const context = defaultContext as Context<Request, Response>;
 
@@ -131,9 +130,7 @@ export default async () => {
   context.helpers.getRequestURL = getRequestURL;
   context.helpers.getRequestMethod = getRequestMethod;
   context.helpers.getRequestHeader = getRequestHeader;
-  context.helpers.setResponseHeader = setResponseHeader;
   context.helpers.sendResponse = sendResponse;
-  // no createNewResponse
   context.helpers.fetch = fetchFn;
   context.helpers.proxyRequest = proxyRequest as Helpers<
     Request,

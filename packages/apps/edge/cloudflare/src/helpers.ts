@@ -1,5 +1,4 @@
 import { Context } from '@growthbook/edge-utils';
-import { Attributes } from '@growthbook/growthbook';
 import { parse } from 'cookie';
 
 export function getRequestURL(req: Request) {
@@ -14,41 +13,28 @@ export function getRequestHeader(req: Request, key: string) {
 	return req.headers.get(key) || undefined;
 }
 
-export function setResponseHeader(res: Response, key: string, value: string) {
-	res.headers.set(key, value);
-}
-
-export function sendResponse(res: Response, body: string, status: number = 200) {
-	return new Response(body, { ...res, status });
-}
-
-export function getCookieAttributes(ctx: Context, req: Request): Attributes {
-	const cookieName = ctx.config.attributeCookieName || 'gb-user-attributes';
-	const cookies = parse(req.headers.get('Cookie') || '');
-	const cookie = cookies[cookieName];
-	if (!cookie) return {};
-	try {
-		return JSON.parse(cookie);
-	} catch (e) {
-		// ignore
+export function sendResponse(
+	ctx: Context<Request, Response>,
+	_?: Response,
+	headers?: Record<string, any>,
+	body?: string,
+	cookies?: Record<string, string>,
+	status?: number,
+) {
+	let resp = new Response(body, { headers, status });
+	if (cookies) {
+		for (const key in cookies) {
+			ctx.helpers.setCookie?.(resp, key, cookies[key]);
+		}
 	}
-	return {};
+	return resp;
 }
 
-export function setCookieAttributes(ctx: Context, res: Response, attributes: Attributes) {
-	const cookieName = ctx.config.attributeCookieName || 'gb-user-attributes';
-	res.headers.set(
-		encodeURIComponent(cookieName),
-		`${JSON.stringify(attributes)};
-     maxAge=${365 * 24 * 60 * 60 * 1000};
-      httpOnly: true;`,
-	);
-}
 export function fetchFn(_: Context, url: string) {
 	return fetch(url);
 }
 
-export function proxyRequest(ctx: Context, req: Request, res: Response) {
+export function proxyRequest(ctx: Context, req: Request) {
 	return fetch(ctx.config.proxyTarget + req.url, {
 		method: req.method,
 		headers: req.headers,
@@ -56,8 +42,18 @@ export function proxyRequest(ctx: Context, req: Request, res: Response) {
 	});
 }
 
-export function getUUIDCookie(ctx: Context, req: Request): string {
-	const cookieName = ctx.config.uuidCookieName || 'gbuuid';
-	const cookie = req.headers.get(cookieName);
-	return cookie || '';
+export function getCookie(req: Request, key: string): string {
+	const cookies = parse(req.headers.get('Cookie') || '');
+	return cookies[key] || "";
+}
+
+export function setCookie(res: Response, key: string, value: string) {
+	const COOKIE_DAYS = 400; // 400 days is the max cookie duration for chrome
+	const escapedKey = encodeURIComponent(key);
+	const escapedValue = encodeURIComponent(value);
+	const expires = new Date(Date.now() + (24 * 60 * 60 * 1000 * COOKIE_DAYS))
+	res.headers.append(
+		"Set-Cookie",
+		`${escapedKey}=${escapedValue}; Path=/; Expires=${expires.toUTCString()};`
+	);
 }

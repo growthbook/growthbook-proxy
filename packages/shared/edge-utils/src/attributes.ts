@@ -5,8 +5,8 @@ import { Context } from "./types";
 export function getUserAttributes<Req, Res>(
   ctx: Context<Req, Res>,
   req: Req,
-  res: Res,
   url: string,
+  setCookie: (key: string, value: string) => void,
 ): Attributes {
   const { config, helpers } = ctx;
 
@@ -20,7 +20,7 @@ export function getUserAttributes<Req, Res>(
     if (!helpers?.setCookie) {
       throw new Error("Missing required dependencies");
     }
-    helpers.setCookie(res, config.uuidCookieName, uuid);
+    setCookie(config.uuidCookieName, uuid);
   }
 
   const autoAttributes = getAutoAttributes(ctx, req, url);

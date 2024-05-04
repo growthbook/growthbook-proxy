@@ -21,12 +21,17 @@ export async function edgeApp<Req, Res>(
 ) {
   // todo: import default helpers, overwrite with context helpers
 
-  res = res || context.helpers.createNewResponse?.(context);
-  if (!res) throw new Error("Unable to create response");
+  // todo: this is too early for CF to use
+  // res = res || context.helpers.createNewResponse?.();
+  // if (!res) throw new Error("Unable to create response");
 
   let url = context.helpers.getRequestURL?.(req) || "";
 
   let headers: Record<string, any> = {};
+  const cookies: Record<string, string> = {};
+  const setCookie = (key: string, value: string) => {
+    cookies[key] = value;
+  }
   const { csp, nonce } = getCspInfo(context as Context<unknown, unknown>);
   if (csp) {
     headers["Content-Security-Policy"] = csp;
@@ -45,6 +50,7 @@ export async function edgeApp<Req, Res>(
       res,
       headers,
       route.body || "",
+      cookies,
       route.statusCode,
     );
   }
@@ -52,7 +58,7 @@ export async function edgeApp<Req, Res>(
     return context.helpers.proxyRequest?.(context, req, res, next);
   }
 
-  const attributes = getUserAttributes(context, req, res, url);
+  const attributes = getUserAttributes(context, req, url, setCookie);
 
   let domChanges: AutoExperimentVariation[] = [];
   const resetDomChanges = () => (domChanges = []);
@@ -111,7 +117,7 @@ export async function edgeApp<Req, Res>(
   url = await redirect({
     context: context as Context<unknown, unknown>,
     req,
-    res,
+    setCookie,
     growthbook,
     previousUrl: url,
     resetDomChanges,
@@ -139,6 +145,7 @@ export async function edgeApp<Req, Res>(
       res,
       headers,
       "Error fetching page",
+      cookies,
       500
     );
   }
@@ -168,7 +175,8 @@ export async function edgeApp<Req, Res>(
     context,
     res,
     headers,
-    body
+    body,
+    cookies,
   );
 }
 

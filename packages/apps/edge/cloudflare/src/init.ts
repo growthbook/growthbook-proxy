@@ -1,15 +1,20 @@
-import { Context, defaultContext } from '@growthbook/edge-utils';
 import {
-	fetchFn,
-	getCookieAttributes,
-	getRequestHeader,
-	getRequestMethod,
+	Context,
+	defaultContext,
+	ExperimentRunEnvironment,
+	Helpers,
+} from '@growthbook/edge-utils';
+import {
 	getRequestURL,
-	proxyRequest,
+	getRequestMethod,
+	getRequestHeader,
 	sendResponse,
-	setCookieAttributes,
-	setResponseHeader,
+	fetchFn,
+	proxyRequest,
+	getCookie,
+	setCookie,
 } from './helpers';
+import type { Request, Response } from "express";
 
 export default (env: Env) => {
 	// Build context from default + env
@@ -29,16 +34,20 @@ export default (env: Env) => {
 	// config.attributeKeys
 	'ATTRIBUTE_UUID' in env && (context.config.attributeKeys.uuid = env.ATTRIBUTE_UUID);
 	'ATTRIBUTE_BROWSER' in env && (context.config.attributeKeys.browser = env.ATTRIBUTE_BROWSER);
-	//send response
+
+
+	// config.helpers
 	context.helpers.getRequestURL = getRequestURL;
 	context.helpers.getRequestMethod = getRequestMethod;
 	context.helpers.getRequestHeader = getRequestHeader;
-	context.helpers.setResponseHeader = setResponseHeader;
-	context.helpers.proxyRequest = proxyRequest;
-	context.helpers.fetch = fetchFn;
-
-	//send response
 	context.helpers.sendResponse = sendResponse;
+	context.helpers.fetch = fetchFn;
+	context.helpers.proxyRequest = proxyRequest as Helpers<
+		Request,
+		Response
+	>["proxyRequest"];
+	context.helpers.getCookie = getCookie;
+	context.helpers.setCookie = setCookie;
 
 	return context;
 };

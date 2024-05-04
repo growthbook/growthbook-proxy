@@ -14,19 +14,25 @@ export function getRequestHeader(req: Request, key: string) {
   return req.get(key);
 }
 
-export function setResponseHeader(res: Response, key: string, value: string) {
-  res.setHeader(key, value);
-}
 export function sendResponse(
   ctx: Context<Request, Response>,
-  res: Response,
+  res?: Response,
   headers?: Record<string, any>,
   body?: string,
+  cookies?: Record<string, string>,
   status?: number
 ) {
+  if (!res) {
+    throw new Error("missing response");
+  }
   if (headers) {
     for (const key in headers) {
-      ctx.helpers.setResponseHeader?.(res, key, headers[key]);
+      res.setHeader(key, headers[key]);
+    }
+  }
+  if (cookies) {
+    for (const key in cookies) {
+      ctx.helpers.setCookie?.(res, key, cookies[key]);
     }
   }
   return res.status(status || 200).send(body || "");

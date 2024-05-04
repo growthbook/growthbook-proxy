@@ -6,7 +6,7 @@ import init from "./init";
 import { initializeLogger } from "./logger";
 
 (async () => {
-  const { app, server, context } = await init();
+  const { app, server, context } = init();
   initializeLogger(context);
 
   app.use(cors());
