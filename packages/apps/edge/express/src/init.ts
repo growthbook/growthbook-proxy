@@ -1,4 +1,3 @@
-import * as crypto from "crypto";
 import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
@@ -6,8 +5,8 @@ import type { Request, Response } from "express";
 import {
   Context,
   defaultContext,
-  ExperimentRunEnvironment,
   Helpers,
+  getConfig,
 } from "@growthbook/edge-utils";
 import {
   getRequestURL,
@@ -22,109 +21,8 @@ import {
 dotenv.config({ path: "./.env.local" });
 
 export default () => {
-  // Build context from default + env
   const context = defaultContext as Context<Request, Response>;
-
-  // config
-  context.config.proxyTarget =
-    process.env.PROXY_TARGET ?? defaultContext.config.proxyTarget;
-  context.config.forwardProxyHeaders = ["true", "1"].includes(
-    process.env.FORWARD_PROXY_HEADERS ??
-    "" + defaultContext.config.forwardProxyHeaders,
-  );
-  context.config.environment =
-    process.env.NODE_ENV ?? defaultContext.config.environment;
-  context.config.maxPayloadSize =
-    process.env.MAX_PAYLOAD_SIZE ?? defaultContext.config.maxPayloadSize;
-
-  try {
-    context.config.routes = JSON.parse(process.env.ROUTES || "[]");
-  } catch (e) {
-    console.error("Error parsing ROUTES", e);
-    context.config.routes = [];
-  }
-
-  context.config.runVisualEditorExperiments = (process.env
-    .RUN_VISUAL_EDITOR_EXPERIMENTS ??
-    defaultContext.config
-      .runVisualEditorExperiments) as ExperimentRunEnvironment;
-  context.config.disableJsInjection = ["true", "1"].includes(
-    process.env.DISABLE_JS_INJECTION ??
-      "" + defaultContext.config.disableJsInjection,
-  );
-
-  context.config.runUrlRedirectExperiments = (process.env
-    .RUN_URL_REDIRECT_EXPERIMENTS ??
-    defaultContext.config
-      .runUrlRedirectExperiments) as ExperimentRunEnvironment;
-  context.config.runCrossOriginUrlRedirectExperiments = (process.env
-    .RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS ??
-    defaultContext.config
-      .runCrossOriginUrlRedirectExperiments) as ExperimentRunEnvironment;
-  context.config.injectRedirectUrlScript = ["true", "1"].includes(
-    process.env.INJECT_REDIRECT_URL_SCRIPT ??
-      "" + defaultContext.config.injectRedirectUrlScript,
-  );
-  context.config.maxRedirects = parseInt(
-    process.env.MAX_REDIRECTS || "" + defaultContext.config.maxRedirects,
-  );
-
-  context.config.scriptInjectionPattern =
-    process.env.SCRIPT_INJECTION_PATTERN ||
-    defaultContext.config.scriptInjectionPattern;
-  context.config.disableInjections = ["true", "1"].includes(
-    process.env.DISABLE_INJECTIONS ??
-      "" + defaultContext.config.disableInjections,
-  );
-
-  context.config.enableStreaming = ["true", "1"].includes(
-    process.env.ENABLE_STREAMING ?? "" + defaultContext.config.enableStreaming,
-  );
-  context.config.enableStickyBucketing = ["true", "1"].includes(
-    process.env.ENABLE_STICKY_BUCKETING ??
-      "" + defaultContext.config.enableStickyBucketing,
-  );
-  "STICKY_BUCKET_PREFIX" in process.env &&
-    (context.config.stickyBucketPrefix = process.env.STICKY_BUCKET_PREFIX);
-
-  context.config.contentSecurityPolicy =
-    process.env.CONTENT_SECURITY_POLICY || "";
-  // warning: for testing only; nonce should be unique per request
-  context.config.nonce = process.env.NONCE || undefined;
-
-  context.config.crypto = crypto;
-
-  // config.growthbook
-  context.config.growthbook.apiHost = (process.env.GROWTHBOOK_API_HOST ?? "")
-    .replace(/\/*$/, "");
-  context.config.growthbook.clientKey = process.env.GROWTHBOOK_CLIENT_KEY ?? "";
-  "GROWTHBOOK_DECRYPTION_KEY" in process.env &&
-    (context.config.growthbook.decryptionKey =
-      process.env.GROWTHBOOK_DECRYPTION_KEY);
-  "GROWTHBOOK_TRACKING_CALLBACK" in process.env &&
-    (context.config.growthbook.trackingCallback =
-      process.env.GROWTHBOOK_TRACKING_CALLBACK);
-  try {
-    "GROWTHBOOK_PAYLOAD" in process.env &&
-      (context.config.growthbook.payload = JSON.parse(
-        process.env.GROWTHBOOK_PAYLOAD || "",
-      ));
-  } catch (e) {
-    console.error("Error parsing GROWTHBOOK_PAYLOAD", e);
-  }
-
-  context.config.persistUuid = ["true", "1"].includes(
-    process.env.PERSIST_UUID ?? "" + defaultContext.config.persistUuid,
-  );
-  context.config.uuidCookieName =
-    process.env.UUID_COOKIE_NAME || defaultContext.config.uuidCookieName;
-  context.config.uuidKey =
-    process.env.UUID_KEY || defaultContext.config.uuidKey;
-
-  context.config.skipAutoAttributes = ["true", "1"].includes(
-    process.env.SKIP_AUTO_ATTRIBUTES ??
-      "" + defaultContext.config.skipAutoAttributes,
-  );
+  context.config = getConfig(process.env as Record<string, string>);
 
   // config.helpers
   context.helpers.getRequestURL = getRequestURL;

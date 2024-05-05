@@ -21,10 +21,6 @@ export async function edgeApp<Req, Res>(
 ) {
   // todo: import default helpers, overwrite with context helpers
 
-  // todo: this is too early for CF to use
-  // res = res || context.helpers.createNewResponse?.();
-  // if (!res) throw new Error("Unable to create response");
-
   let url = context.helpers.getRequestURL?.(req) || "";
 
   let headers: Record<string, any> = {};
