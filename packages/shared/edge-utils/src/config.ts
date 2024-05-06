@@ -28,17 +28,57 @@ export const defaultContext: Context = {
   helpers: {},
 };
 
-export function getConfig(env: Record<string, string>): Config {
+export interface ConfigEnv {
+  PROXY_TARGET?: string;
+  FORWARD_PROXY_HEADERS?: string;
+  NODE_ENV?: string;
+  MAX_PAYLOAD_SIZE?: string;
+
+  ROUTES?: string;
+
+  RUN_VISUAL_EDITOR_EXPERIMENTS?: ExperimentRunEnvironment;
+  DISABLE_JS_INJECTION?: string;
+
+  RUN_URL_REDIRECT_EXPERIMENTS?: ExperimentRunEnvironment;
+  RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS?: ExperimentRunEnvironment;
+  INJECT_REDIRECT_URL_SCRIPT?: string;
+  MAX_REDIRECTS?: string;
+
+  SCRIPT_INJECTION_PATTERN?: string;
+  DISABLE_INJECTIONS?: string;
+
+  ENABLE_STREAMING?: string;
+  ENABLE_STICKY_BUCKETING?: string;
+  STICKY_BUCKET_PREFIX?: string;
+
+  CONTENT_SECURITY_POLICY?: string;
+  NONCE?: string;
+
+  GROWTHBOOK_API_HOST?: string;
+  GROWTHBOOK_CLIENT_KEY?: string;
+  GROWTHBOOK_DECRYPTION_KEY?: string;
+  GROWTHBOOK_TRACKING_CALLBACK?: string;
+  GROWTHBOOK_PAYLOAD?: string;
+
+  PERSIST_UUID?: string;
+  UUID_COOKIE_NAME?: string;
+  UUID_KEY?: string;
+
+  SKIP_AUTO_ATTRIBUTES?: string;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getConfig(env: ConfigEnv): Config {
   const config = defaultContext.config;
 
-  config.proxyTarget =
-    env.PROXY_TARGET ?? defaultContext.config.proxyTarget;
+  config.proxyTarget = env.PROXY_TARGET ?? defaultContext.config.proxyTarget;
   config.forwardProxyHeaders = ["true", "1"].includes(
-    env.FORWARD_PROXY_HEADERS ??
-    "" + defaultContext.config.forwardProxyHeaders,
+    env.FORWARD_PROXY_HEADERS ?? "" + defaultContext.config.forwardProxyHeaders,
   );
-  config.environment =
-    env.NODE_ENV ?? defaultContext.config.environment;
+  config.environment = env.NODE_ENV ?? defaultContext.config.environment;
   config.maxPayloadSize =
     env.MAX_PAYLOAD_SIZE ?? defaultContext.config.maxPayloadSize;
 
@@ -49,26 +89,23 @@ export function getConfig(env: Record<string, string>): Config {
     config.routes = [];
   }
 
-  config.runVisualEditorExperiments = (env
-      .RUN_VISUAL_EDITOR_EXPERIMENTS ??
+  config.runVisualEditorExperiments = (env.RUN_VISUAL_EDITOR_EXPERIMENTS ??
     defaultContext.config
       .runVisualEditorExperiments) as ExperimentRunEnvironment;
   config.disableJsInjection = ["true", "1"].includes(
-    env.DISABLE_JS_INJECTION ??
-    "" + defaultContext.config.disableJsInjection,
+    env.DISABLE_JS_INJECTION ?? "" + defaultContext.config.disableJsInjection,
   );
 
-  config.runUrlRedirectExperiments = (env
-      .RUN_URL_REDIRECT_EXPERIMENTS ??
+  config.runUrlRedirectExperiments = (env.RUN_URL_REDIRECT_EXPERIMENTS ??
     defaultContext.config
       .runUrlRedirectExperiments) as ExperimentRunEnvironment;
-  config.runCrossOriginUrlRedirectExperiments = (env
-      .RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS ??
-    defaultContext.config
-      .runCrossOriginUrlRedirectExperiments) as ExperimentRunEnvironment;
+  config.runCrossOriginUrlRedirectExperiments =
+    (env.RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS ??
+      defaultContext.config
+        .runCrossOriginUrlRedirectExperiments) as ExperimentRunEnvironment;
   config.injectRedirectUrlScript = ["true", "1"].includes(
     env.INJECT_REDIRECT_URL_SCRIPT ??
-    "" + defaultContext.config.injectRedirectUrlScript,
+      "" + defaultContext.config.injectRedirectUrlScript,
   );
   config.maxRedirects = parseInt(
     env.MAX_REDIRECTS || "" + defaultContext.config.maxRedirects,
@@ -78,8 +115,7 @@ export function getConfig(env: Record<string, string>): Config {
     env.SCRIPT_INJECTION_PATTERN ||
     defaultContext.config.scriptInjectionPattern;
   config.disableInjections = ["true", "1"].includes(
-    env.DISABLE_INJECTIONS ??
-    "" + defaultContext.config.disableInjections,
+    env.DISABLE_INJECTIONS ?? "" + defaultContext.config.disableInjections,
   );
 
   config.enableStreaming = ["true", "1"].includes(
@@ -87,33 +123,30 @@ export function getConfig(env: Record<string, string>): Config {
   );
   config.enableStickyBucketing = ["true", "1"].includes(
     env.ENABLE_STICKY_BUCKETING ??
-    "" + defaultContext.config.enableStickyBucketing,
+      "" + defaultContext.config.enableStickyBucketing,
   );
   "STICKY_BUCKET_PREFIX" in env &&
-  (config.stickyBucketPrefix = env.STICKY_BUCKET_PREFIX);
+    (config.stickyBucketPrefix = env.STICKY_BUCKET_PREFIX);
 
-  config.contentSecurityPolicy =
-    env.CONTENT_SECURITY_POLICY || "";
+  config.contentSecurityPolicy = env.CONTENT_SECURITY_POLICY || "";
   // warning: for testing only; nonce should be unique per request
   config.nonce = env.NONCE || undefined;
 
   config.crypto = crypto;
 
   // config.growthbook
-  config.growthbook.apiHost = (env.GROWTHBOOK_API_HOST ?? "")
-    .replace(/\/*$/, "");
+  config.growthbook.apiHost = (env.GROWTHBOOK_API_HOST ?? "").replace(
+    /\/*$/,
+    "",
+  );
   config.growthbook.clientKey = env.GROWTHBOOK_CLIENT_KEY ?? "";
   "GROWTHBOOK_DECRYPTION_KEY" in env &&
-  (config.growthbook.decryptionKey =
-    env.GROWTHBOOK_DECRYPTION_KEY);
+    (config.growthbook.decryptionKey = env.GROWTHBOOK_DECRYPTION_KEY);
   "GROWTHBOOK_TRACKING_CALLBACK" in env &&
-  (config.growthbook.trackingCallback =
-    env.GROWTHBOOK_TRACKING_CALLBACK);
+    (config.growthbook.trackingCallback = env.GROWTHBOOK_TRACKING_CALLBACK);
   try {
     "GROWTHBOOK_PAYLOAD" in env &&
-    (config.growthbook.payload = JSON.parse(
-      env.GROWTHBOOK_PAYLOAD || "",
-    ));
+      (config.growthbook.payload = JSON.parse(env.GROWTHBOOK_PAYLOAD || ""));
   } catch (e) {
     console.error("Error parsing GROWTHBOOK_PAYLOAD", e);
   }
@@ -123,12 +156,10 @@ export function getConfig(env: Record<string, string>): Config {
   );
   config.uuidCookieName =
     env.UUID_COOKIE_NAME || defaultContext.config.uuidCookieName;
-  config.uuidKey =
-    env.UUID_KEY || defaultContext.config.uuidKey;
+  config.uuidKey = env.UUID_KEY || defaultContext.config.uuidKey;
 
   config.skipAutoAttributes = ["true", "1"].includes(
-    env.SKIP_AUTO_ATTRIBUTES ??
-    "" + defaultContext.config.skipAutoAttributes,
+    env.SKIP_AUTO_ATTRIBUTES ?? "" + defaultContext.config.skipAutoAttributes,
   );
 
   return config;

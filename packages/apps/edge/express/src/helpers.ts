@@ -17,10 +17,11 @@ export function getRequestHeader(req: Request, key: string) {
 export function sendResponse(
   ctx: Context<Request, Response>,
   res?: Response,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   headers?: Record<string, any>,
   body?: string,
   cookies?: Record<string, string>,
-  status?: number
+  status?: number,
 ) {
   if (!res) {
     throw new Error("missing response");

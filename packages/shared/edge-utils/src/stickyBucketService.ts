@@ -42,7 +42,7 @@ export class EdgeStickyBucketService<Req, Res> extends StickyBucketService {
     return doc;
   }
 
-  async saveAssignments(doc: StickyAssignmentsDocument) {
+  async saveAssignments(_: StickyAssignmentsDocument) {
     // Do nothing. User assignments will be hydrated from the SDK directly.
   }
 }

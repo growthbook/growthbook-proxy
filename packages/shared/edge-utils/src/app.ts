@@ -23,13 +23,14 @@ export async function edgeApp<Req, Res>(
 
   let url = context.helpers.getRequestURL?.(req) || "";
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let headers: Record<string, any> = {
-    "Content-Type": "text/html"
+    "Content-Type": "text/html",
   };
   const cookies: Record<string, string> = {};
   const setCookie = (key: string, value: string) => {
     cookies[key] = value;
-  }
+  };
   const { csp, nonce } = getCspInfo(context as Context<unknown, unknown>);
   if (csp) {
     headers["Content-Security-Policy"] = csp;
@@ -62,10 +63,13 @@ export async function edgeApp<Req, Res>(
   const resetDomChanges = () => (domChanges = []);
 
   let preRedirectChangeIds: string[] = [];
-  const setPreRedirectChangeIds = (changeIds: string[]) => (preRedirectChangeIds = changeIds);
+  const setPreRedirectChangeIds = (changeIds: string[]) =>
+    (preRedirectChangeIds = changeIds);
 
-  context.config.localStorage && setPolyfills({ localStorage: context.config.localStorage });
-  context.config.crypto && setPolyfills({ SubtleCrypto: context.config.crypto });
+  context.config.localStorage &&
+    setPolyfills({ localStorage: context.config.localStorage });
+  context.config.crypto &&
+    setPolyfills({ SubtleCrypto: context.config.crypto });
 
   let stickyBucketService:
     | EdgeStickyBucketService<Req, Res>
@@ -125,14 +129,15 @@ export async function edgeApp<Req, Res>(
   const originUrl = getOriginUrl(context as Context<unknown, unknown>, url);
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  let fetchedResponse: (Res & { ok: boolean; headers: Record<string, any>; text: any }) | undefined =
-    undefined;
+  let fetchedResponse:
+    | (Res & { ok: boolean; headers: Record<string, any>; text: any })
+    | undefined = undefined;
   try {
     fetchedResponse = (await context.helpers.fetch?.(
       context as Context<Req, Res>,
       originUrl,
       /* eslint-disable @typescript-eslint/no-explicit-any */
-    )) as Res & { ok: boolean; headers: Record<string, any>, text: any };
+    )) as Res & { ok: boolean; headers: Record<string, any>; text: any };
     if (!fetchedResponse?.ok) {
       throw new Error("Fetch: non-2xx status returned");
     }
@@ -144,7 +149,7 @@ export async function edgeApp<Req, Res>(
       headers,
       "Error fetching page",
       cookies,
-      500
+      500,
     );
   }
   if (context.config.forwardProxyHeaders && fetchedResponse?.headers) {
@@ -169,16 +174,9 @@ export async function edgeApp<Req, Res>(
     oldUrl,
   });
 
-  return context.helpers.sendResponse?.(
-    context,
-    res,
-    headers,
-    body,
-    cookies,
-  );
+  return context.helpers.sendResponse?.(context, res, headers, body, cookies);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getOriginUrl(context: Context, currentURL: string): string {
   const proxyTarget = context.config.proxyTarget;
   const currentParsedURL = new URL(currentURL);

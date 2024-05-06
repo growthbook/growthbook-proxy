@@ -5,7 +5,7 @@ export {
   ExperimentRunEnvironment,
   Route,
 } from "./types";
-export { defaultContext, getConfig } from "./config";
+export { ConfigEnv, defaultContext, getConfig } from "./config";
 
 export { edgeApp, getOriginUrl } from "./app";
 

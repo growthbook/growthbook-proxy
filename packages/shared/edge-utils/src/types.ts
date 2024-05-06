@@ -75,7 +75,7 @@ export interface Helpers<Req, Res> {
     headers?: Record<string, any>,
     body?: string,
     cookies?: Record<string, string>,
-    status?: number
+    status?: number,
   ) => unknown;
   fetch?: (ctx: Context<Req, Res>, url: string) => Promise<Res>;
   proxyRequest?: (
