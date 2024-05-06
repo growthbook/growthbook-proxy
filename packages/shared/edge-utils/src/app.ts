@@ -23,7 +23,9 @@ export async function edgeApp<Req, Res>(
 
   let url = context.helpers.getRequestURL?.(req) || "";
 
-  let headers: Record<string, any> = {};
+  let headers: Record<string, any> = {
+    "Content-Type": "text/html"
+  };
   const cookies: Record<string, string> = {};
   const setCookie = (key: string, value: string) => {
     cookies[key] = value;

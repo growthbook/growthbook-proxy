@@ -1,4 +1,4 @@
-import { Context } from '@growthbook/edge-utils';
+import { Context, getOriginUrl } from "@growthbook/edge-utils";
 import { parse } from 'cookie';
 
 export function getRequestURL(req: Request) {
@@ -35,7 +35,8 @@ export function fetchFn(_: Context, url: string) {
 }
 
 export function proxyRequest(ctx: Context, req: Request) {
-	return fetch(ctx.config.proxyTarget + req.url, {
+	const originUrl = getOriginUrl(ctx, req.url);
+	return fetch(originUrl, {
 		method: req.method,
 		headers: req.headers,
 		body: req.body,
