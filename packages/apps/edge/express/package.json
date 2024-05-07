@@ -1,15 +1,14 @@
 {
   "name": "@growthbook/edge-express",
-  "description": "GrowthBook Edge Proxy for Express",
-  "version": "1.0.0",
+  "description": "GrowthBook edge worker for Express",
+  "version": "0.1.0",
   "main": "dist/index.js",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/growthbook/growthbook-edge-express.git",
+    "url": "git+https://github.com/growthbook/growthbook-proxy.git",
     "directory": "packages/apps/edge/express"
   },
-  "author": "Bryce Fitzsimons",
   "scripts": {
     "build:clean": "rimraf -rf dist",
     "build:typescript": "tsc",

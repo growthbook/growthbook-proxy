@@ -1,11 +1,21 @@
 {
-  "name": "@growthbook/cloudflare",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@growthbook/edge-cloudflare",
+  "description": "GrowthBook edge worker for CloudFlare",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/growthbook/growthbook-proxy.git",
+    "directory": "packages/apps/edge/express"
+  },
   "scripts": {
+    "build:clean": "rimraf -rf dist",
+    "build:typescript": "tsc",
+    "build": "yarn build:clean && yarn build:typescript",
+    "type-check": "tsc --pretty --noEmit",
     "deploy": "wrangler deploy",
-    "dev": "wrangler dev",
-    "start": "wrangler dev"
+    "dev": "wrangler dev"
   },
   "dependencies": {
     "@growthbook/edge-utils": "^0.0.1"
