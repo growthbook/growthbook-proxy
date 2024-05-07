@@ -108,7 +108,6 @@ export async function edgeApp<Req, Res>(
     trackingCallback: context.config.disableInjections
       ? context.config.growthbook.edgeTrackingCallback
       : undefined,
-    debug: true, // todo: remove
   });
 
   await growthbook.init({

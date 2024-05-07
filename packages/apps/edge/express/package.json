@@ -19,6 +19,7 @@
     "dev": "concurrently 'tsc --watch' 'nodemon -q dist/index.js | yarn pino-pretty'"
   },
   "dependencies": {
+    "@growthbook/edge-utils": "^0.0.1",
     "@growthbook/growthbook": "^1.0.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",

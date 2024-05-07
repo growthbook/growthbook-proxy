@@ -7,10 +7,13 @@
     "dev": "wrangler dev",
     "start": "wrangler dev"
   },
+  "dependencies": {
+    "@growthbook/edge-utils": "^0.0.1"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240314.0",
     "@types/cookie": "^0.6.0",
     "typescript": "^5.0.4",
-    "wrangler": "^3.34.2"
+    "wrangler": "^3.53.1"
   }
 }

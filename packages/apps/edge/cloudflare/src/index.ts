@@ -4,6 +4,6 @@ import init, { Env } from './init';
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const context = init(env);
-		return edgeApp<Request, Response>(context, request) as Promise<Response>;
+		return await edgeApp<Request, Response>(context, request) as Response;
 	},
 };

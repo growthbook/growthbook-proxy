@@ -1,5 +1,7 @@
 import { Context, ConfigEnv, defaultContext, Helpers, getConfig } from '@growthbook/edge-utils';
-import { getRequestURL, getRequestMethod, getRequestHeader, sendResponse, fetchFn, proxyRequest, getCookie, setCookie } from './helpers';
+import {
+	getRequestURL, getRequestMethod, getRequestHeader, sendResponse, fetchFn, proxyRequest, getCookie, setCookie
+} from './helpers';
 
 export interface Env extends ConfigEnv {
 	KV_CACHE_NAMESPACE?: KVNamespace;
