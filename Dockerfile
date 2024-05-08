@@ -6,7 +6,7 @@ WORKDIR /usr/local/src/app
 COPY package.json ./package.json
 COPY yarn.lock ./yarn.lock
 COPY packages/apps/proxy/package.json ./packages/apps/proxy/package.json
-COPY packages/shared/eval/package.json ./packages/shared/eval/package.json
+COPY packages/lib/eval/package.json ./packages/shared/eval/package.json
 # Yarn install with dev dependencies
 RUN yarn install --frozen-lockfile --ignore-optional
 

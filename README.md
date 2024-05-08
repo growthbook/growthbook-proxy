@@ -27,7 +27,7 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 | Package                  | link                                | description                                                                                                                               |
 |--------------------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
 | `@growthbook/proxy`      | [apps/proxy](packages/apps/proxy)   | The GrowthBook Proxy server. The remainder of this document pertains to this package.                                                     |
-| `@growthbook/proxy-eval` | [shared/eval](packages/shared/eval) | The remote evaluation engine used by the GrowthBook Proxy server. This package may be included into other back ends, edge functions, etc. |
+| `@growthbook/proxy-eval` | [shared/eval](packages/lib/eval) | The remote evaluation engine used by the GrowthBook Proxy server. This package may be included into other back ends, edge functions, etc. |
 
 ### What's new
 

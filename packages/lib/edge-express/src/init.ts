@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Express } from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
 import type { Request, Response } from "express";
@@ -20,7 +20,12 @@ import {
 } from "./helpers";
 dotenv.config({ path: "./.env.local" });
 
-export default () => {
+export function init (): {
+  app: Express;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  server: any;
+  context: Context<Request, Response>;
+} {
   const context = defaultContext as Context<Request, Response>;
   context.config = getConfig(process.env as Record<string, string>);
 
@@ -81,4 +86,4 @@ export default () => {
   }
 
   return { app, server, context };
-};
+}

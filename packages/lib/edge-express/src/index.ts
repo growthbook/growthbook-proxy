@@ -2,7 +2,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import { Request, Response } from "express";
 import { edgeApp } from "@growthbook/edge-utils";
-import init from "./init";
+import { init } from "./init";
 import { initializeLogger } from "./logger";
 
 (async () => {
