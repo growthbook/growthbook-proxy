@@ -21,6 +21,7 @@
     "@growthbook/edge-utils": "^0.0.1"
   },
   "devDependencies": {
+    "@growthbook/growthbook": "^1.0.0",
     "@cloudflare/workers-types": "^4.20240314.0",
     "@types/cookie": "^0.6.0",
     "typescript": "^5.0.4",

@@ -19,8 +19,6 @@ export async function edgeApp<Req, Res>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   next?: any,
 ) {
-  // todo: import default helpers, overwrite with context helpers
-
   let url = context.helpers.getRequestURL?.(req) || "";
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -4,6 +4,7 @@ import {
   defaultContext,
   getConfig,
 } from "@growthbook/edge-utils";
+import { FeatureApiResponse } from "@growthbook/growthbook";
 import {
   getRequestURL,
   getRequestMethod,
@@ -14,7 +15,6 @@ import {
   getCookie,
   setCookie,
 } from "./helpers";
-import { FeatureApiResponse } from "@growthbook/growthbook";
 
 export interface Env extends ConfigEnv {
   KV_GB_CACHE?: KVNamespace;
@@ -39,7 +39,10 @@ export async function init(env: Env): Promise<Context<Request, Response>> {
   return context;
 }
 
-export function getKVLocalStoragePolyfill(env: Env, namespace: string = "KV_GB_CACHE") {
+export function getKVLocalStoragePolyfill(
+  env: Env,
+  namespace: string = "KV_GB_CACHE",
+) {
   if (env?.[namespace]) {
     const KV: KVNamespace = env[namespace];
     return {
@@ -49,11 +52,15 @@ export function getKVLocalStoragePolyfill(env: Env, namespace: string = "KV_GB_C
   }
 }
 
-export async function getPayloadFromKV(env: Env, namespace: string = "KV_GB_PAYLOAD", key: string = "gb_payload") {
+export async function getPayloadFromKV(
+  env: Env,
+  namespace: string = "KV_GB_PAYLOAD",
+  key: string = "gb_payload",
+) {
   if (env?.[namespace]) {
     const KV: KVNamespace = env[namespace];
-    const value = await KV.get(key) || undefined;
-    let payload = undefined
+    const value = (await KV.get(key)) || undefined;
+    let payload = undefined;
     if (value) {
       try {
         payload = JSON.parse(value) as FeatureApiResponse;

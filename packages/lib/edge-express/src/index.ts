@@ -1,41 +1,27 @@
-import cookieParser from "cookie-parser";
-import cors from "cors";
-import { Request, Response } from "express";
-import { edgeApp } from "@growthbook/edge-utils";
-import { init } from "./init";
-import { initializeLogger } from "./logger";
+import { ConfigEnv } from "@growthbook/edge-utils";
 
-(async () => {
-  const { app, server, context } = init();
-  initializeLogger(context);
+export { init } from "./init";
 
-  app.use(cors());
-  app.use(cookieParser());
-
-  app.all("/*", (req, res, next) =>
-    edgeApp(
-      context,
-      req as unknown as Request,
-      res as unknown as Response,
-      /* eslint-disable @typescript-eslint/no-explicit-any */
-      next as any,
-    ),
-  );
-
-  process.on("SIGTERM", () => {
-    console.info("SIGTERM signal received: closing HTTP server");
-    onClose(server);
+export function mapHeadersToConfigEnv(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  req: any,
+  originType: "custom" | "s3" = "custom",
+  prefix: string = "x-env-",
+): ConfigEnv {
+  const config: ConfigEnv = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const headersObj: Record<string, any> =
+    req?.origin?.[originType]?.customHeaders || {};
+  const headers = Object.entries(headersObj);
+  headers.forEach(([key, header]) => {
+    key = key.toLowerCase();
+    const val = header?.[0]?.value;
+    if (!val) return;
+    if (key.startsWith(prefix)) {
+      const envKey =
+        key.slice(prefix.length)?.replace(/-/g, "_")?.toUpperCase?.() || "";
+      config[envKey] = val;
+    }
   });
-  process.on("SIGINT", () => {
-    console.info("SIGINT signal received: closing HTTP server");
-    onClose(server);
-  });
-})();
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-function onClose(server: any) {
-  server.close(() => {
-    console.info("HTTP server closed");
-    process.exit(0);
-  });
+  return config;
 }

@@ -15,13 +15,13 @@
     "sourceMap": true,
     "outDir": "dist",
     "declaration": true,
-    "typeRoots": ["node_modules/@types", "./typings"],
+    "typeRoots": ["../node_modules/@types", "./typings"],
     "strictNullChecks": true,
     "strictBindCallApply": true,
     "strictPropertyInitialization": true,
     "incremental": true
   },
   "include": [
-    "src/**/*",
+    "./**/*",
   ],
 }
