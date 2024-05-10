@@ -1,8 +1,12 @@
-import { edgeApp } from "@growthbook/edge-utils";
+import { edgeApp, Config } from "@growthbook/edge-utils";
 import { init, Env } from "./init";
 
-export async function handleRequest(request: Request, env: Env) {
-  const context = await init(env);
+export async function handleRequest(
+  request: Request,
+  env: Env,
+  config?: Partial<Config>,
+) {
+  const context = await init(env, config);
   return (await edgeApp<Request, Response>(context, request)) as Response;
 }
 

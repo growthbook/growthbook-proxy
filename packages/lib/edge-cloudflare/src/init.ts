@@ -3,6 +3,7 @@ import {
   ConfigEnv,
   defaultContext,
   getConfig,
+  Config,
 } from "@growthbook/edge-utils";
 import { FeatureApiResponse } from "@growthbook/growthbook";
 import {
@@ -20,11 +21,26 @@ export interface Env extends ConfigEnv {
   KV_GB_CACHE?: KVNamespace;
 }
 
-export async function init(env: Env): Promise<Context<Request, Response>> {
+export async function init(
+  env: Env,
+  config?: Partial<Config>,
+): Promise<Context<Request, Response>> {
   const context = defaultContext as Context<Request, Response>;
   context.config = getConfig(env);
   context.config.localStorage = getKVLocalStoragePolyfill(env);
   context.config.growthbook.payload = await getPayloadFromKV(env);
+
+  // apply overrides
+  if (config) {
+    context.config = {
+      ...context.config,
+      ...config,
+      growthbook: {
+        ...context.config.growthbook,
+        ...(config.growthbook || {}),
+      },
+    };
+  }
 
   // config.helpers
   context.helpers.getRequestURL = getRequestURL;

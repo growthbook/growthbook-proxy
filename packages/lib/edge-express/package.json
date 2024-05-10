@@ -1,6 +1,6 @@
 {
   "name": "@growthbook/edge-express",
-  "description": "GrowthBook edge worker for Express",
+  "description": "GrowthBook edge app for Express",
   "version": "0.1.0",
   "main": "dist/index.js",
   "license": "MIT",
