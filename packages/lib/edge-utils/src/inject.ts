@@ -39,7 +39,7 @@ export function injectScript({
   const uuidCookieName = context.config.uuidCookieName;
   const uuidKey = context.config.uuidKey;
   const uuid = attributes[uuidKey];
-  const trackingCallback = !context.config.edgeTrackingCallback ? context.config.trackingCallback : undefined;
+  const trackingCallback = context.config.trackingCallback;
   const blockedChangeIds = getBlockedExperiments({
     context,
     experiments,
@@ -59,7 +59,7 @@ export function injectScript({
     persistUuidOnLoad?: boolean;
     useStickyBucketService?: "cookie" | "localStorage";
     stickyBucketPrefix?: string;
-    trackingCallback: string; // replaced by macro
+    trackingCallback?: string; // replaced by macro
     payload?: FeatureApiResponse;
     noStreaming?: boolean;
   } = {
@@ -68,7 +68,6 @@ export function injectScript({
     uuid,
     persistUuidOnLoad: true,
     attributes,
-    trackingCallback: "__TRACKING_CALLBACK__",
     payload: sdkPayload,
     disableVisualExperiments: ["skip", "edge"].includes(
       context.config.runVisualEditorExperiments,
@@ -87,6 +86,9 @@ export function injectScript({
     stickyBucketPrefix: context.config.stickyBucketPrefix,
     stickyBucketAssignmentDocs: stickyAssignments,
   };
+  if (trackingCallback) {
+    gbContext.trackingCallback =  "__TRACKING_CALLBACK__";
+  }
 
   let scriptTag = `
 <script

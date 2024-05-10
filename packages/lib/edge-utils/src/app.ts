@@ -103,9 +103,7 @@ export async function edgeApp<Req, Res>(
       context.config.runCrossOriginUrlRedirectExperiments,
     ),
     stickyBucketService,
-    trackingCallback: (context.config.disableInjections || context.config.edgeTrackingCallback)
-      ? context.config.edgeTrackingCallback
-      : undefined,
+    trackingCallback: context.config.edgeTrackingCallback,
   });
 
   await growthbook.init({
