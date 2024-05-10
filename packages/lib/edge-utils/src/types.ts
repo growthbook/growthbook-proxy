@@ -41,16 +41,15 @@ export interface Config {
   crypto?: any;
   localStorage?: LocalStorageCompat;
 
-  growthbook: {
-    apiHost: string;
-    clientKey: string;
-    decryptionKey?: string;
-    trackingCallback?: string; // (experiment, result) => void;
-    edgeTrackingCallback?: TrackingCallback;
-    attributes?: Attributes;
-    edgeStickyBucketService?: StickyBucketService;
-    payload?: FeatureApiResponse;
-  };
+  // growthbook
+  apiHost: string;
+  clientKey: string;
+  decryptionKey?: string;
+  trackingCallback?: string; // (experiment, result) => void;
+  edgeTrackingCallback?: TrackingCallback;
+  attributes?: Attributes;
+  edgeStickyBucketService?: StickyBucketService;
+  payload?: FeatureApiResponse;
 
   persistUuid: boolean;
   uuidCookieName: string;

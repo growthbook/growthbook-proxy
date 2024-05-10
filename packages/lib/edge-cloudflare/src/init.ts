@@ -28,17 +28,13 @@ export async function init(
   const context = defaultContext as Context<Request, Response>;
   context.config = getConfig(env);
   context.config.localStorage = getKVLocalStoragePolyfill(env);
-  context.config.growthbook.payload = await getPayloadFromKV(env);
+  context.config.payload = await getPayloadFromKV(env);
 
   // apply overrides
   if (config) {
     context.config = {
       ...context.config,
       ...config,
-      growthbook: {
-        ...context.config.growthbook,
-        ...(config.growthbook || {}),
-      },
     };
   }
 

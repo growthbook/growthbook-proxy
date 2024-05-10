@@ -6,6 +6,11 @@ export default {
     env: Env,
     _: ExecutionContext,
   ): Promise<Response> {
-    return await handleRequest(request, env);
+    const config = {
+      edgeTrackingCallback: (experiment: Experiment<any>, results: Result<any>) => {
+        console.log('tracking callback', {experiment, results});
+      }
+    }
+    return await handleRequest(request, env, config);
   },
 };

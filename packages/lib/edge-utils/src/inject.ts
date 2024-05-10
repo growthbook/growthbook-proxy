@@ -39,7 +39,7 @@ export function injectScript({
   const uuidCookieName = context.config.uuidCookieName;
   const uuidKey = context.config.uuidKey;
   const uuid = attributes[uuidKey];
-  const trackingCallback = context.config.growthbook.trackingCallback;
+  const trackingCallback = !context.config.edgeTrackingCallback ? context.config.trackingCallback : undefined;
   const blockedChangeIds = getBlockedExperiments({
     context,
     experiments,
@@ -90,10 +90,10 @@ export function injectScript({
 
   let scriptTag = `
 <script
-  data-api-host="${context.config.growthbook.apiHost}"
-  data-client-key="${context.config.growthbook.clientKey}"${
-    context.config.growthbook.decryptionKey
-      ? `\n  data-decryption-key="${context.config.growthbook.decryptionKey}"`
+  data-api-host="${context.config.apiHost}"
+  data-client-key="${context.config.clientKey}"${
+    context.config.decryptionKey
+      ? `\n  data-decryption-key="${context.config.decryptionKey}"`
       : ""
   }${nonce ? `\n  nonce="${nonce}"` : ""}
 >

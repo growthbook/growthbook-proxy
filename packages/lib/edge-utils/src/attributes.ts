@@ -10,7 +10,7 @@ export function getUserAttributes<Req, Res>(
 ): Attributes {
   const { config, helpers } = ctx;
 
-  const providedAttributes = config.growthbook.attributes || {};
+  const providedAttributes = config.attributes || {};
   if (config.skipAutoAttributes) {
     return providedAttributes;
   }

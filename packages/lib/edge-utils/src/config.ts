@@ -16,10 +16,8 @@ export const defaultContext: Context = {
     disableInjections: false,
     enableStreaming: false,
     enableStickyBucketing: false,
-    growthbook: {
-      apiHost: "",
-      clientKey: "",
-    },
+    apiHost: "",
+    clientKey: "",
     persistUuid: false,
     uuidCookieName: "gbuuid",
     uuidKey: "id",
@@ -134,19 +132,19 @@ export function getConfig(env: ConfigEnv): Config {
 
   config.crypto = crypto;
 
-  // config.growthbook
-  config.growthbook.apiHost = (env.GROWTHBOOK_API_HOST ?? "").replace(
+  // growthbook
+  config.apiHost = (env.GROWTHBOOK_API_HOST ?? "").replace(
     /\/*$/,
     "",
   );
-  config.growthbook.clientKey = env.GROWTHBOOK_CLIENT_KEY ?? "";
+  config.clientKey = env.GROWTHBOOK_CLIENT_KEY ?? "";
   "GROWTHBOOK_DECRYPTION_KEY" in env &&
-    (config.growthbook.decryptionKey = env.GROWTHBOOK_DECRYPTION_KEY);
+    (config.decryptionKey = env.GROWTHBOOK_DECRYPTION_KEY);
   "GROWTHBOOK_TRACKING_CALLBACK" in env &&
-    (config.growthbook.trackingCallback = env.GROWTHBOOK_TRACKING_CALLBACK);
+    (config.trackingCallback = env.GROWTHBOOK_TRACKING_CALLBACK);
   try {
     "GROWTHBOOK_PAYLOAD" in env &&
-      (config.growthbook.payload = JSON.parse(env.GROWTHBOOK_PAYLOAD || ""));
+      (config.payload = JSON.parse(env.GROWTHBOOK_PAYLOAD || ""));
   } catch (e) {
     console.error("Error parsing GROWTHBOOK_PAYLOAD", e);
   }

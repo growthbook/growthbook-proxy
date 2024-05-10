@@ -75,7 +75,7 @@ export async function edgeApp<Req, Res>(
     | undefined = undefined;
   if (context.config.enableStickyBucketing) {
     stickyBucketService =
-      context.config.growthbook.edgeStickyBucketService ??
+      context.config.edgeStickyBucketService ??
       new EdgeStickyBucketService<Req, Res>({
         context,
         prefix: context.config.stickyBucketPrefix,
@@ -83,9 +83,9 @@ export async function edgeApp<Req, Res>(
       });
   }
   const growthbook = new GrowthBook({
-    apiHost: context.config.growthbook.apiHost,
-    clientKey: context.config.growthbook.clientKey,
-    decryptionKey: context.config.growthbook.decryptionKey,
+    apiHost: context.config.apiHost,
+    clientKey: context.config.clientKey,
+    decryptionKey: context.config.decryptionKey,
     attributes,
     applyDomChangesCallback: (changes: AutoExperimentVariation) => {
       domChanges.push(changes);
@@ -103,13 +103,13 @@ export async function edgeApp<Req, Res>(
       context.config.runCrossOriginUrlRedirectExperiments,
     ),
     stickyBucketService,
-    trackingCallback: context.config.disableInjections
-      ? context.config.growthbook.edgeTrackingCallback
+    trackingCallback: (context.config.disableInjections || context.config.edgeTrackingCallback)
+      ? context.config.edgeTrackingCallback
       : undefined,
   });
 
   await growthbook.init({
-    payload: context.config.growthbook.payload,
+    payload: context.config.payload,
   });
 
   const oldUrl = url;
