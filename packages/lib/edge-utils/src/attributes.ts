@@ -16,7 +16,7 @@ export function getUserAttributes<Req, Res>(
   }
   // get any saved attributes from the cookie
   const uuid = getUUID(ctx, req);
-  if (config.persistUuid) {
+  if (config.persistUuid && !config.noAutoCookies) {
     if (!helpers?.setCookie) {
       throw new Error("Missing required dependencies");
     }

@@ -51,9 +51,11 @@ export interface Config {
   edgeStickyBucketService?: StickyBucketService;
   payload?: FeatureApiResponse;
 
-  persistUuid: boolean;
+  persistUuid: boolean; // true: write cookie from edge, false: write cookie from browser
+  noAutoCookies: boolean; // true: don't write any cookies until user permission
   uuidCookieName: string;
   uuidKey: string;
+
   skipAutoAttributes: boolean;
 }
 

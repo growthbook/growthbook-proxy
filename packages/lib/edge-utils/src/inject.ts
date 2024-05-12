@@ -62,6 +62,7 @@ export function injectScript({
     trackingCallback?: string; // replaced by macro
     payload?: FeatureApiResponse;
     noStreaming?: boolean;
+    // todo: support noAutoCookies
   } = {
     uuidCookieName,
     uuidKey,
@@ -97,7 +98,11 @@ export function injectScript({
     context.config.decryptionKey
       ? `\n  data-decryption-key="${context.config.decryptionKey}"`
       : ""
-  }${nonce ? `\n  nonce="${nonce}"` : ""}
+  }${nonce ? `\n  nonce="${nonce}"` : ""}${
+    context.config.noAutoCookies
+      ? `\n  data-no-auto-cookies="true"`
+      : ""
+  }
 >
   window.growthbook_config = ${JSON.stringify(gbContext)};
 ${

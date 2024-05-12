@@ -19,6 +19,7 @@ export const defaultContext: Context = {
     apiHost: "",
     clientKey: "",
     persistUuid: false,
+    noAutoCookies: false,
     uuidCookieName: "gbuuid",
     uuidKey: "id",
     skipAutoAttributes: false,
@@ -59,6 +60,7 @@ export interface ConfigEnv {
   GROWTHBOOK_PAYLOAD?: string;
 
   PERSIST_UUID?: string;
+  NO_AUTO_COOKIES?: string;
   UUID_COOKIE_NAME?: string;
   UUID_KEY?: string;
 
@@ -151,6 +153,9 @@ export function getConfig(env: ConfigEnv): Config {
 
   config.persistUuid = ["true", "1"].includes(
     env.PERSIST_UUID ?? "" + defaultContext.config.persistUuid,
+  );
+  config.noAutoCookies = ["true", "1"].includes(
+    env.NO_AUTO_COOKIES ?? "" + defaultContext.config.noAutoCookies,
   );
   config.uuidCookieName =
     env.UUID_COOKIE_NAME || defaultContext.config.uuidCookieName;
