@@ -62,7 +62,6 @@ export function injectScript({
     trackingCallback?: string; // replaced by macro
     payload?: FeatureApiResponse;
     noStreaming?: boolean;
-    // todo: support noAutoCookies
   } = {
     uuidCookieName,
     uuidKey,
