@@ -135,10 +135,7 @@ export function getConfig(env: ConfigEnv): Config {
   config.crypto = crypto;
 
   // growthbook
-  config.apiHost = (env.GROWTHBOOK_API_HOST ?? "").replace(
-    /\/*$/,
-    "",
-  );
+  config.apiHost = (env.GROWTHBOOK_API_HOST ?? "").replace(/\/*$/, "");
   config.clientKey = env.GROWTHBOOK_CLIENT_KEY ?? "";
   "GROWTHBOOK_DECRYPTION_KEY" in env &&
     (config.decryptionKey = env.GROWTHBOOK_DECRYPTION_KEY);

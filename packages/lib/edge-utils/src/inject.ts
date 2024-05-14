@@ -87,7 +87,7 @@ export function injectScript({
     stickyBucketAssignmentDocs: stickyAssignments,
   };
   if (trackingCallback) {
-    gbContext.trackingCallback =  "__TRACKING_CALLBACK__";
+    gbContext.trackingCallback = "__TRACKING_CALLBACK__";
   }
 
   let scriptTag = `
@@ -98,9 +98,7 @@ export function injectScript({
       ? `\n  data-decryption-key="${context.config.decryptionKey}"`
       : ""
   }${nonce ? `\n  nonce="${nonce}"` : ""}${
-    context.config.noAutoCookies
-      ? `\n  data-no-auto-cookies="true"`
-      : ""
+    context.config.noAutoCookies ? `\n  data-no-auto-cookies="true"` : ""
   }
 >
   window.growthbook_config = ${JSON.stringify(gbContext)};

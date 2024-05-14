@@ -66,7 +66,6 @@ export type ExperimentRunEnvironment =
   | "skip";
 
 export interface Helpers<Req, Res> {
-  // routing
   getRequestURL?: (req: Req) => string;
   getRequestMethod?: (req: Req) => string;
   getRequestHeader?: (req: Req, key: string) => string | undefined;
