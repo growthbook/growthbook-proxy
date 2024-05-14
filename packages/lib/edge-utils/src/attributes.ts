@@ -66,7 +66,7 @@ export function getAutoAttributes<Req, Res>(
 
   const getHeader = helpers?.getRequestHeader;
 
-  const autoAttributes: Attributes = {
+  let autoAttributes: Attributes = {
     [config.uuidKey]: getUUID(ctx, req),
   };
 
@@ -89,9 +89,32 @@ export function getAutoAttributes<Req, Res>(
     autoAttributes.path = urlObj.pathname;
     autoAttributes.host = urlObj.host;
     autoAttributes.query = urlObj.search;
+    autoAttributes = {...autoAttributes, ...getUtmAttributes(urlObj)};
   } catch (e) {
     // ignore
   }
 
   return autoAttributes;
+}
+
+function getUtmAttributes(urlObj: URL) {
+  // Store utm- params in sessionStorage for future page loads
+  let utms: Record<string, string> = {};
+
+  // Add utm params from querystring
+  if (location.search) {
+    const params = new URLSearchParams(urlObj.search);
+    ["source", "medium", "campaign", "term", "content"].forEach((k) => {
+      // Querystring is in snake_case
+      const param = `utm_${k}`;
+      // Attribute keys are camelCase
+      const attr = `utm` + k[0].toUpperCase() + k.slice(1);
+
+      if (params.has(param)) {
+        utms[attr] = params.get(param) || "";
+      }
+    });
+  }
+
+  return utms;
 }
