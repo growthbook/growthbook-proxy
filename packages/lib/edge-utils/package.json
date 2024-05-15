@@ -1,0 +1,30 @@
+{
+  "name": "@growthbook/edge-utils",
+  "description": "Edge worker base app",
+  "version": "0.0.7",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/growthbook/growthbook-proxy.git",
+    "directory": "packages/shared/edge-utils"
+  },
+  "author": "Bryce Fitzsimons",
+  "scripts": {
+    "build:clean": "rimraf -rf dist",
+    "build:typescript": "tsc",
+    "build": "yarn build:clean && yarn generate-sdk-wrapper && yarn build:typescript",
+    "generate-sdk-wrapper": "node scripts/generate-sdk-wrapper.js",
+    "type-check": "tsc --pretty --noEmit",
+    "dev": "node scripts/generate-sdk-wrapper.js && tsc --watch"
+  },
+  "dependencies": {
+    "@growthbook/growthbook": "^1.0.0",
+    "node-html-parser": "^6.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.2",
+    "rimraf": "^5.0.5",
+    "typescript": "5.2.2"
+  }
+}

@@ -1,0 +1,21 @@
+name = "GrowthBook example edge app for CloudFlare"
+main = "index.ts"
+compatibility_date = "2024-05-07"
+
+# Variable bindings. These are arbitrary, plaintext strings (similar to environment variables)
+# Note: Use secrets to store sensitive data.
+# Docs: https://developers.cloudflare.com/workers/platform/environment-variables
+
+kv_namespaces = [
+  { binding = "KV_GB_CACHE", id = "abcde12345" },
+  { binding = "KV_GB_PAYLOAD", id = "qwerty123" }
+]
+
+[vars]
+NODE_ENV="production"
+PROXY_TARGET="https://yoursite.io/"
+GROWTHBOOK_API_HOST="https://cdn.growthbook.io"
+GROWTHBOOK_CLIENT_KEY="sdk-abc123"
+RUN_VISUAL_EDITOR_EXPERIMENTS="edge"
+RUN_URL_REDIRECT_EXPERIMENTS="browser"
+ENABLE_STICKY_BUCKETING="true"
