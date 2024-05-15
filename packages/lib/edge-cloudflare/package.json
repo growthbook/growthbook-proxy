@@ -1,13 +1,13 @@
 {
   "name": "@growthbook/edge-cloudflare",
   "description": "GrowthBook edge app for CloudFlare Workers",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "main": "dist/index.js",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/growthbook/growthbook-proxy.git",
-    "directory": "packages/apps/edge/express"
+    "directory": "packages/lib/edge-cloudflare"
   },
   "scripts": {
     "build:clean": "rimraf -rf dist",

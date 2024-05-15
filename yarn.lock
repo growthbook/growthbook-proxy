@@ -223,6 +223,14 @@
   resolved "https://registry.npmjs.org/@fastify/busboy/-/busboy-2.1.1.tgz"
   integrity sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==
 
+"@growthbook/edge-utils@^0.0.7":
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/@growthbook/edge-utils/-/edge-utils-0.0.7.tgz#38e1a43eb98dc2d60c6e2955e3607ec767a68fbc"
+  integrity sha512-VxYwQ1ik+hwqyLwPsFjk4YmI4KJdZpLp7/xgarQoOxHk9BZoBTNYo63VEJvAQu3j/db83S6E8BEyorkJwpqX+A==
+  dependencies:
+    "@growthbook/growthbook" "^1.0.0"
+    node-html-parser "^6.1.13"
+
 "@growthbook/growthbook@^0.34.0":
   version "0.34.0"
   resolved "https://registry.npmjs.org/@growthbook/growthbook/-/growthbook-0.34.0.tgz"

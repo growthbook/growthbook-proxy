@@ -1,13 +1,13 @@
 {
   "name": "@growthbook/edge-utils",
   "description": "Edge worker base app",
-  "version": "0.0.7",
+  "version": "0.1.0",
   "main": "dist/index.js",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/growthbook/growthbook-proxy.git",
-    "directory": "packages/shared/edge-utils"
+    "directory": "packages/lib/edge-utils"
   },
   "author": "Bryce Fitzsimons",
   "scripts": {
