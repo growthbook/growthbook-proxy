@@ -19,7 +19,7 @@ The **GrowthBook Edge App** provides turnkey Visual Editor and URL Redirect expe
 To run the edge app, add our base app to request handler to your project. You will need to manually build app context and helper functions:
 
 ```javascript
-import { edgeApp, getConfig } from "@growthbook/edge-utils";
+import { edgeApp, getConfig, defaultContext } from "@growthbook/edge-utils";
 
 export async function handler(request, env) {
   const context = await init(env);
@@ -27,7 +27,8 @@ export async function handler(request, env) {
 }
 
 function init(env) {
-  const context = getConfig(env);
+  const context = defaultContext;
+  context.config = getConfig(env);
   context.helpers = {
     // define utility functions for request/response manipulation
   };
