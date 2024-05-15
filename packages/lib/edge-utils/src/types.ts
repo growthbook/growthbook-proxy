@@ -40,6 +40,7 @@ export interface Config {
 
   crypto?: any;
   localStorage?: LocalStorageCompat;
+  staleTTL?: number;
 
   // growthbook
   apiHost: string;

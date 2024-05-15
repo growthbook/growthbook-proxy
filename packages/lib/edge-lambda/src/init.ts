@@ -30,7 +30,12 @@ export async function init(
   config?: Partial<Config>,
 ): Promise<Context> {
   const context = defaultContext;
-  context.config = getConfig(env || {});
+  const configEnv = env || {};
+  if (configEnv.STALE_TTL === undefined) {
+    // 10 minute in-mem TTL if not set
+    configEnv.STALE_TTL = (10 * 1000 * 60) + "";
+  }
+  context.config = getConfig(configEnv);
 
   // apply overrides
   if (config) {
@@ -41,7 +46,7 @@ export async function init(
   }
 
   // config.helpers
-  context.helpers.getRequestURL = buildGetRequestURL(env || {});
+  context.helpers.getRequestURL = buildGetRequestURL(configEnv);
   context.helpers.getRequestMethod = getRequestMethod;
   context.helpers.getRequestHeader = getRequestHeader;
   context.helpers.sendResponse = sendResponse;

@@ -1,8 +1,8 @@
 import {
-  AutoExperimentVariation,
+  AutoExperimentVariation, configureCache,
   GrowthBook,
   setPolyfills,
-  StickyBucketService,
+  StickyBucketService
 } from "@growthbook/growthbook";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
@@ -68,6 +68,9 @@ export async function edgeApp<Req, Res>(
     setPolyfills({ localStorage: context.config.localStorage });
   context.config.crypto &&
     setPolyfills({ SubtleCrypto: context.config.crypto });
+  if (context.config.staleTTL !== undefined) {
+    configureCache({ staleTTL: context.config.staleTTL });
+  }
 
   let stickyBucketService:
     | EdgeStickyBucketService<Req, Res>

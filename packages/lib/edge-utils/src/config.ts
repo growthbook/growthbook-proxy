@@ -58,6 +58,7 @@ export interface ConfigEnv {
   GROWTHBOOK_DECRYPTION_KEY?: string;
   GROWTHBOOK_TRACKING_CALLBACK?: string;
   GROWTHBOOK_PAYLOAD?: string;
+  STALE_TTL?: string;
 
   PERSIST_UUID?: string;
   NO_AUTO_COOKIES?: string;
@@ -148,6 +149,7 @@ export function getConfig(env: ConfigEnv): Config {
     console.error("Error parsing GROWTHBOOK_PAYLOAD", e);
   }
 
+  "STALE_TTL" in env && (config.staleTTL = parseInt(env.STALE_TTL || (1000 * 60)+""))
   config.persistUuid = ["true", "1"].includes(
     env.PERSIST_UUID ?? "" + defaultContext.config.persistUuid,
   );
