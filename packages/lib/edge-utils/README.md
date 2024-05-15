@@ -8,9 +8,12 @@ The GrowthBook Edge App provides turnkey Visual Editor and URL Redirect experime
 - Automatically run server-side or hybrid URL Redirect Experiments without flicker or delay.
 - Inject the JavaScript SDK with hydrated payload, allowing the front-end to pick up where the edge left off without any extra network requests.
 
+> [!NOTE]
+> This is a vendor-agnostic base application for the GrowthBook Edge App. It is used by our vendor-specific Edge Apps (CloudFlare Workers, Lambda@Edge). You can also easily build a custom edge implementation for your own edge provider. 
+
 ## Installation
 
-### Step 1: Implement our Edge App request handler
+### Implement our Edge App request handler
 
 To run the edge app, add our base app to request handler to your project. You will need to manually build app context and helper functions:
 
@@ -18,20 +21,20 @@ To run the edge app, add our base app to request handler to your project. You wi
 import { edgeApp, getConfig } from "@growthbook/edge-utils";
 
 export async function handler(request, env) {
-const context = await init(env);
-return edgeApp(context, request);
+  const context = await init(env);
+  return edgeApp(context, request);
 }
 
 function init(env) {
-const context = getConfig(env);
-context.helpers = {
-// define utility functions for request/response manipulation
-};
+  const context = getConfig(env);
+  context.helpers = {
+    // define utility functions for request/response manipulation
+  };
 return context;
 }
 ```
 
-### Step 2: Set up environment variables
+### Set up environment variables
 
 Add these required fields, at minimum, to your environment variables:
 
@@ -42,10 +45,11 @@ GROWTHBOOK_CLIENT_KEY="abc123"
 GROWTHBOOK_DECRYPTION_KEY="qwerty1234"  # Optional
 ```
 
-### Step 3: Set up payload caching (optional)
+See the complete list of environment variables in the [Configuration](#configuration) section.
+
+### Set up payload caching (optional)
 
 Set up an edge key-val store and optionally use a GrowthBook SDK Webhook to keep feature and experiment values synced between GrowthBook and your edge worker. This eliminates network requests from your edge to GrowthBook.
-
 
 ## Configuration
 
@@ -89,3 +93,7 @@ The GrowthBook Edge App supports a number of configuration options available via
 
 #### Misc
 - `CONTENT_SECURITY_POLICY` - CSP header value
+
+## Further reading
+
+See the Edge App [documentation](https://docs.growthbook.io/lib/edge/other) for more details and examples.
