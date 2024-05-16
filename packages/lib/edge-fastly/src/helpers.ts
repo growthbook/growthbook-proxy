@@ -33,21 +33,23 @@ export function sendResponse(
 }
 
 export function fetchFn(ctx: Context<Request, Response>, url: string) {
+  const backend = getBackend(ctx, url);
   return fetch(
     url,
     // @ts-ignore
-    { backend: getBackend(ctx, url) }
+    { backend }
   );
 }
 
 export function proxyRequest(ctx: Context<Request, Response>, req: Request) {
   const originUrl = getOriginUrl(ctx as Context<unknown, unknown>, req.url);
+  const backend = getBackend(ctx, originUrl);
   return fetch(originUrl, {
     method: req.method,
     headers: req.headers,
     body: req.body,
-    // @ts-ignoreZ
-    backend: getBackend(ctx, originUrl),
+    // @ts-ignore
+    backend: backend,
   });
 }
 

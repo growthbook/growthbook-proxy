@@ -15,7 +15,7 @@
     "@fastly/js-compute": "^3.7.0"
   },
   "devDependencies": {
-    "@growthbook/edge-fastly": "^0.1.0",
+    "@growthbook/edge-fastly": "^0.1.1",
     "typescript": "^5.2.2",
     "@types/cookie": "^0.6.0"
   }

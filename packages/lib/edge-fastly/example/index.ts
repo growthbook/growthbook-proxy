@@ -1,5 +1,6 @@
 /// <reference types="@fastly/js-compute" />
 import { ConfigStore } from "fastly:config-store";
+import { KVStore } from "fastly:kv-store";
 import { FastlyConfig, gbHandleRequest, getConfigEnvFromStore } from "@growthbook/edge-fastly";
 
 addEventListener("fetch", (event) => event.respondWith(handleRequest(event)));
@@ -10,8 +11,8 @@ async function handleRequest(event: FetchEvent) {
   const envVarsStore = new ConfigStore("env_vars");
 
   // typically only need to choose one or the other:
-  const gbCacheStore = new ConfigStore("gb_cache");
-  const gbPayloadStore = new ConfigStore("gb_payload");
+  const gbCacheStore = new KVStore("gb_cache");
+  const gbPayloadStore = new KVStore("gb_payload");
 
   const gbEnv = getConfigEnvFromStore(envVarsStore);
 
