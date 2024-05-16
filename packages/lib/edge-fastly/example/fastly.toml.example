@@ -1,0 +1,22 @@
+# This file describes a Fastly Compute package. To learn more visit:
+# https://www.fastly.com/documentation/reference/compute/fastly-toml
+
+authors = [""]
+description = ""
+language = "javascript"
+manifest_version = 3
+name = "GrowthBook example app for Fastly"
+service_id = ""
+
+[scripts]
+  build = "npm run build"
+  post_init = "npm install"
+
+[local_server]
+  [local_server.config_stores]
+    [local_server.config_stores.env_vars]
+      file = "config.env_vars.json"
+      format = "json"
+  [local_server.backends]
+    [local_server.backends.yoursite]
+      url = "https://www.yoursite.io"

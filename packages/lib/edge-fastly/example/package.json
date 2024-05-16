@@ -1,0 +1,21 @@
+{
+  "name": "growthbook-fastly-example",
+  "version": "0.0.1",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": "^16 || >=18"
+  },
+  "scripts": {
+    "prebuild": "tsc",
+    "build": "js-compute-runtime build/index.js bin/main.wasm",
+    "deploy": "fastly compute publish"
+  },
+  "dependencies": {
+    "@fastly/js-compute": "^3.7.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2",
+    "@types/cookie": "^0.6.0"
+  }
+}

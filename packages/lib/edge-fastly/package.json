@@ -1,0 +1,26 @@
+{
+  "name": "@growthbook/edge-fastly",
+  "description": "GrowthBook edge app for Fastly Compute",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/growthbook/growthbook-proxy.git",
+    "directory": "packages/lib/edge-fastly"
+  },
+  "scripts": {
+    "build:clean": "rimraf -rf dist",
+    "build:typescript": "tsc",
+    "build": "yarn build:clean && yarn build:typescript",
+    "type-check": "tsc --pretty --noEmit"
+  },
+  "dependencies": {
+    "@growthbook/edge-utils": "^0.1.0"
+  },
+  "devDependencies": {
+    "@growthbook/growthbook": "^1.0.0",
+    "typescript": "^5.0.4",
+    "@fastly/js-compute": "^3.13.1"
+  }
+}
