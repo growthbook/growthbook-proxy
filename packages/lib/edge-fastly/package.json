@@ -20,7 +20,6 @@
   },
   "devDependencies": {
     "@growthbook/growthbook": "^1.0.0",
-    "typescript": "^5.0.4",
-    "@fastly/js-compute": "^3.13.1"
+    "typescript": "^5.0.4"
   }
 }
