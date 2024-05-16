@@ -15,16 +15,12 @@ import {
   getCookie,
   setCookie,
 } from "./helpers";
+import { FeatureApiResponse } from "@growthbook/growthbook";
 
 export interface FastlyConfig extends Config {
   backends?: Record<string, string>;
-}
-// export interface Env extends ConfigEnv {
-//   KV_GB_CACHE?: KVNamespace;
-// }
-
-interface ConfigStore {
-  get(key: string): string;
+  gbCacheStore?: any;
+  gbPayloadStore?: any;
 }
 
 export async function init(
@@ -36,9 +32,12 @@ export async function init(
     context.config = getConfig(env) as FastlyConfig;
   }
 
-  // todo:
-  // context.config.localStorage = getKVLocalStoragePolyfill(env);
-  // context.config.payload = await getPayloadFromKV(env);
+  if (config?.gbCacheStore) {
+    context.config.localStorage = getKVLocalStoragePolyfill(config.gbCacheStore);
+  }
+  if (config?.gbPayloadStore) {
+    context.config.payload = await getPayloadFromKV(config.gbPayloadStore);
+  }
 
   // apply overrides
   if (config) {
@@ -58,6 +57,33 @@ export async function init(
   context.helpers.setCookie = setCookie;
 
   return context;
+}
+
+export function getKVLocalStoragePolyfill(store: any) {
+  return {
+    getItem: async (key: string) => {
+      const entry = await store.get(key);
+      return await entry?.text() ?? null;
+    },
+    setItem: async (key: string, value: string) => await store.put(key, value),
+  };
+}
+
+export async function getPayloadFromKV(
+  store: any,
+  key: string = "gb_payload",
+) {
+  const entry = await store.get(key);
+  const value = await entry?.text();
+  let payload = undefined;
+  if (value) {
+    try {
+      payload = JSON.parse(value) as FeatureApiResponse;
+    } catch (e) {
+      console.warn("Unable to parse payload", e);
+    }
+  }
+  return payload;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
