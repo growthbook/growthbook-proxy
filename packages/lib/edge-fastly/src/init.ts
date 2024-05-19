@@ -18,6 +18,7 @@ import {
 import { FeatureApiResponse } from "@growthbook/growthbook";
 
 export interface FastlyConfig extends Config {
+  apiHostBackend?: string;
   backends?: Record<string, string>;
   gbCacheStore?: any;
   gbPayloadStore?: any;
@@ -37,6 +38,18 @@ export async function init(
   }
   if (config?.gbPayloadStore) {
     context.config.payload = await getPayloadFromKV(config.gbPayloadStore);
+  }
+  if (config?.apiHostBackend) {
+    config.fetchFeaturesCall = ({ host, clientKey, headers }: {host: string, clientKey: string, headers?: Record<string, string>}) => {
+      return fetch(
+        `${host}/api/features/${clientKey}`,
+        {
+          headers,
+          // @ts-ignore
+          backend: config.apiHostBackend
+        }
+      );
+    };
   }
 
   // apply overrides

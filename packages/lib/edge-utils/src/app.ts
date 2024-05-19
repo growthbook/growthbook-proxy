@@ -1,6 +1,7 @@
 import {
   AutoExperimentVariation, configureCache,
   GrowthBook,
+  helpers,
   setPolyfills,
   StickyBucketService
 } from "@growthbook/growthbook";
@@ -64,13 +65,14 @@ export async function edgeApp<Req, Res>(
   const setPreRedirectChangeIds = (changeIds: string[]) =>
     (preRedirectChangeIds = changeIds);
 
-  context.config.localStorage &&
+  if (context.config.localStorage)
     setPolyfills({ localStorage: context.config.localStorage });
-  context.config.crypto &&
+  if (context.config.crypto)
     setPolyfills({ SubtleCrypto: context.config.crypto });
-  if (context.config.staleTTL !== undefined) {
+  if (context.config.staleTTL !== undefined)
     configureCache({ staleTTL: context.config.staleTTL });
-  }
+  if (context.config.fetchFeaturesCall)
+    helpers.fetchFeaturesCall = context.config.fetchFeaturesCall;
 
   let stickyBucketService:
     | EdgeStickyBucketService<Req, Res>

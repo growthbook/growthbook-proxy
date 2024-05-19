@@ -41,6 +41,11 @@ export interface Config {
   crypto?: any;
   localStorage?: LocalStorageCompat;
   staleTTL?: number;
+  fetchFeaturesCall?: ({host, clientKey, headers}: {
+    host: string;
+    clientKey: string;
+    headers?: Record<string, string>;
+  }) => Promise<any>;
 
   // growthbook
   apiHost: string;
