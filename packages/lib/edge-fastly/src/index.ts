@@ -10,5 +10,5 @@ export async function gbHandleRequest(
   return (await edgeApp<Request, Response>(context, request)) as Response;
 }
 
-export { getConfigEnvFromStore } from "./init";
+export { getConfigEnvFromStore, getKVLocalStoragePolyfill, getPayloadFromKV } from "./init";
 export type { FastlyConfig } from "./init";
