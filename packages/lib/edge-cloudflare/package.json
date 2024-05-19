@@ -1,7 +1,7 @@
 {
   "name": "@growthbook/edge-cloudflare",
   "description": "GrowthBook edge app for CloudFlare Workers",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "main": "dist/index.js",
   "license": "MIT",
   "repository": {
@@ -18,7 +18,7 @@
     "dev": "wrangler dev"
   },
   "dependencies": {
-    "@growthbook/edge-utils": "^0.0.7"
+    "@growthbook/edge-utils": "^0.1.2"
   },
   "devDependencies": {
     "@growthbook/growthbook": "^1.0.0",

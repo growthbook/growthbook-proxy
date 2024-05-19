@@ -16,6 +16,7 @@ import {
   getCookie,
   setCookie,
 } from "./helpers";
+import { KVNamespace } from "@cloudflare/workers-types";
 
 export interface Env extends ConfigEnv {
   KV_GB_CACHE?: KVNamespace;
