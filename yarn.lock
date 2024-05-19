@@ -289,9 +289,9 @@
   integrity sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==
 
 "@fastly/js-compute@^3.7.0":
-  version "3.13.1"
-  resolved "https://registry.yarnpkg.com/@fastly/js-compute/-/js-compute-3.13.1.tgz#6ea630717ccc504aec33b71667fc703bab70e8c3"
-  integrity sha512-6rVZwR/GnrsmyV+53XerDsRS5ErUOCm/Ww/F7AMzTOUZwzfkQaftCFTtX7MM/k2ROrAeJyuU59MON8huDUKR5Q==
+  version "3.14.1"
+  resolved "https://registry.yarnpkg.com/@fastly/js-compute/-/js-compute-3.14.1.tgz#17a0b409574ad765569c7e9c7c444fbe68d7747d"
+  integrity sha512-4Eydi2CHaGYRUMPpY+pImtfYQZjBVrA8UvnxxWeQrCJlLZJUipBkCm4m47d+9wcuZ+Jgg4TAIH/swLGs8QFo3Q==
   dependencies:
     "@bytecodealliance/jco" "^0.10.0"
     "@bytecodealliance/wizer" "^3.0.1"
@@ -300,14 +300,6 @@
     esbuild "^0.17.18"
     magic-string "^0.30.0"
     regexpu-core "^5.3.2"
-
-"@growthbook/edge-utils@^0.0.7":
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/@growthbook/edge-utils/-/edge-utils-0.0.7.tgz#38e1a43eb98dc2d60c6e2955e3607ec767a68fbc"
-  integrity sha512-VxYwQ1ik+hwqyLwPsFjk4YmI4KJdZpLp7/xgarQoOxHk9BZoBTNYo63VEJvAQu3j/db83S6E8BEyorkJwpqX+A==
-  dependencies:
-    "@growthbook/growthbook" "^1.0.0"
-    node-html-parser "^6.1.13"
 
 "@growthbook/growthbook@^0.34.0":
   version "0.34.0"

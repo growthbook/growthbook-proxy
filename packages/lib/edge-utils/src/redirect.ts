@@ -32,7 +32,6 @@ export default async function redirect({
   if (!newUrl) return previousUrl;
 
   while (previousUrl != newUrl) {
-    newUrl = previousUrl;
     if (redirectCount >= maxRedirects) return previousUrl;
 
     // clear visual experiment effects since we're no longer on the same page
@@ -40,13 +39,15 @@ export default async function redirect({
     // keep track of experiments that triggered prior to final redirect
     setPreRedirectChangeIds(growthbook.getCompletedChangeIds());
 
-    // change the URL to trigger the experiment
+    // update attributes and change the URL to trigger the experiment
     await growthbook.setAttributes(
       getUserAttributes(context, req, newUrl, setCookie),
     );
     await growthbook.setURL(newUrl);
+
     previousUrl = newUrl;
-    newUrl = growthbook.getRedirectUrl();
+    newUrl = growthbook.getRedirectUrl() || previousUrl;
+
     redirectCount++;
   }
   return newUrl;
