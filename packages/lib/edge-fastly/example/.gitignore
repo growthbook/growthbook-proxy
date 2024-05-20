@@ -1,0 +1,8 @@
+/dist
+/node_modules
+/bin
+/build
+/pkg
+
+config.env_vars.json
+fastly.toml

@@ -13,7 +13,6 @@ export async function init(env, config) {
     }
     if (config?.apiHostBackend) {
         config.fetchFeaturesCall = ({ host, clientKey, headers }) => {
-            console.log('custom fetch (4)', { url: `${host}/api/features/${clientKey}`, backend: config.apiHostBackend });
             return fetch(`${host}/api/features/${clientKey}`, {
                 headers,
                 // @ts-ignore

@@ -4,5 +4,5 @@ export async function gbHandleRequest(request, env, config) {
     const context = await init(env, config);
     return (await edgeApp(context, request));
 }
-export { getConfigEnvFromStore } from "./init";
+export { getConfigEnvFromStore, getKVLocalStoragePolyfill, getPayloadFromKV } from "./init";
 //# sourceMappingURL=index.js.map
