@@ -1,4 +1,4 @@
-# CloudFlare Workers App & SDK
+# Cloudflare Workers App & SDK
 
 [GrowthBook](https://www.growthbook.io) is a modular Feature Flagging and Experimentation platform.
 
@@ -10,13 +10,13 @@ The **GrowthBook Edge App** provides turnkey Visual Editor and URL Redirect expe
 
 ### In this package
 
-This package provides an implementation of our Edge App specific to CloudFlare Workers.
+This package provides an implementation of our Edge App specific to Cloudflare Workers.
 
-This package also exports utility methods for using our JavaScript SDK in a CloudFlare Worker.
+This package also exports utility methods for using our JavaScript SDK in a Cloudflare Worker.
 
 ## References
 
-- See the GrowthBook [CloudFlare Workers docs](https://docs.growthbook.io/lib/edge/cloudflare) for full installation instructions.
+- See the GrowthBook [Cloudflare Workers docs](https://docs.growthbook.io/lib/edge/cloudflare) for full installation instructions.
 
 
 - See the [base GrowthBook Edge App](../edge-utils) for a complete list of configuration environment variables

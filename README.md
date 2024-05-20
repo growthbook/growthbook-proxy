@@ -29,7 +29,7 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 | `@growthbook/proxy`           | [apps/proxy](packages/apps/proxy)                   | The GrowthBook Proxy server. The remainder of this document pertains to this package.                                                     |
 | `@growthbook/proxy-eval`      | [lib/eval](packages/lib/eval)                       | The remote evaluation engine used by the GrowthBook Proxy server. This package may be included into other back ends, edge functions, etc. |
 | `@growthbook/edge-utils`      | [lib/edge-utils](packages/lib/edge-utils)           | The base GrowthBook Edge App. Can be used standalone. Used in vendor-specific edge libs.                                                  |
-| `@growthbook/edge-cloudflare` | [lib/edge-cloudflare](packages/lib/edge-cloudflare) | The CloudFlare Edge Worker implementation of the GrowthBook Edge App.                                                                     |
+| `@growthbook/edge-cloudflare` | [lib/edge-cloudflare](packages/lib/edge-cloudflare) | The Cloudflare Workers implementation of the GrowthBook Edge App.                                                                         |
 | `@growthbook/edge-fastly`     | [lib/edge-fastly](packages/lib/edge-fastly)         | The Fastly Compute implementation of the GrowthBook Edge App.                                                                             |
 | `@growthbook/edge-lambda`     | [lib/edge-lambda](packages/lib/edge-lambda)         | The AWS Lambda@Edge implementation of the GrowthBook Edge App.                                                                            |
 

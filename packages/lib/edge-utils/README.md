@@ -10,7 +10,7 @@ The **GrowthBook Edge App** provides turnkey Visual Editor and URL Redirect expe
 
 > [!NOTE]
 > 
-> This is a vendor-agnostic **base app** for the GrowthBook Edge App. It is used by our vendor-specific Edge Apps (CloudFlare Workers, Lambda@Edge). You can also easily build a custom implementation for your edge provider. 
+> This is a vendor-agnostic **base app** for the GrowthBook Edge App. It is used by our vendor-specific Edge Apps (Cloudflare Workers, Lambda@Edge). You can also easily build a custom implementation for your edge provider. 
 
 ## Installation
 

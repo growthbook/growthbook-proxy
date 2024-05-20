@@ -1,4 +1,4 @@
-name = "GrowthBook example edge app for CloudFlare"
+name = "GrowthBook example edge app for Cloudflare"
 main = "index.ts"
 compatibility_date = "2024-05-07"
 
