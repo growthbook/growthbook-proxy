@@ -301,17 +301,10 @@
     magic-string "^0.30.0"
     regexpu-core "^5.3.2"
 
-"@growthbook/growthbook@^0.34.0":
-  version "0.34.0"
-  resolved "https://registry.npmjs.org/@growthbook/growthbook/-/growthbook-0.34.0.tgz"
-  integrity sha512-3K5JL8QftX7y77EpieYg9anXVYb6+ZafTsrNCWp0HOdmtf4lxHOzCUYwuYDaS3bvmaeIUWJ5hYcOTc6WhNbfJw==
-  dependencies:
-    dom-mutator "^0.6.0"
-
-"@growthbook/growthbook@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@growthbook/growthbook/-/growthbook-1.0.0.tgz#6e22cd09f4a56428225c464ea043557a0a40ce3f"
-  integrity sha512-qfVhZcubsGjJI8oNjZp5g69N7c+NMxWl3WS05Sa93V6qNjE9Uz2PZqj7Qj+6iTEOZ1ignmEsIBJEKfdlpa9INg==
+"@growthbook/growthbook@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@growthbook/growthbook/-/growthbook-1.0.1.tgz#125c43153d091427353b5ff8ecc39dfe25848f1c"
+  integrity sha512-26IFpeByfWX2oelVw0Gs3eqnLzwAFiriAje0pT0LPQ78PxozkTEDnt9piedNBIgzMGx5HacTZy//eJIuTgsUgg==
   dependencies:
     dom-mutator "^0.6.0"
 

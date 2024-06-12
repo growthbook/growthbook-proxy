@@ -1,7 +1,7 @@
 {
   "name": "@growthbook/edge-utils",
   "description": "Edge worker base app",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "main": "dist/index.js",
   "license": "MIT",
   "repository": {
@@ -19,7 +19,7 @@
     "dev": "node scripts/generate-sdk-wrapper.js && tsc --watch"
   },
   "dependencies": {
-    "@growthbook/growthbook": "^1.0.0",
+    "@growthbook/growthbook": "^1.0.1",
     "node-html-parser": "^6.1.13"
   },
   "devDependencies": {

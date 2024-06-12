@@ -1,7 +1,7 @@
 {
   "name": "@growthbook/proxy-eval",
   "description": "Remote evaluation service for proxies, edge workers, or backend APIs",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "dist/index.js",
   "license": "MIT",
   "repository": {
@@ -18,7 +18,7 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "@growthbook/growthbook": "^0.34.0"
+    "@growthbook/growthbook": "^1.0.1"
   },
   "devDependencies": {
     "rimraf": "^5.0.5",
