@@ -27,5 +27,5 @@ jobs:
           npm set //registry.npmjs.org/:_authToken $NPM_TOKEN
           yarn install
           yarn build:deps:proxy
-          cd packages/shared/eval
+          cd packages/lib/eval
           npm publish
