@@ -29,12 +29,16 @@ export async function evaluateFeatures({
 
   const features = payload?.features;
   const experiments = payload?.experiments;
+  const idLists = payload?.idLists;
   const context: GBContext = { attributes };
   if (features) {
     context.features = features;
   }
   if (experiments) {
     context.experiments = experiments;
+  }
+  if (idLists) {
+    context.idLists = idLists;
   }
   if (forcedVariations) {
     context.forcedVariations = forcedVariations;
