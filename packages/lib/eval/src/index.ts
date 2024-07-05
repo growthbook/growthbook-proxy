@@ -29,7 +29,7 @@ export async function evaluateFeatures({
 
   const features = payload?.features;
   const experiments = payload?.experiments;
-  const idLists = payload?.idLists;
+  const savedGroups = payload?.savedGroups;
   const context: GBContext = { attributes };
   if (features) {
     context.features = features;
@@ -37,8 +37,8 @@ export async function evaluateFeatures({
   if (experiments) {
     context.experiments = experiments;
   }
-  if (idLists) {
-    context.idLists = idLists;
+  if (savedGroups) {
+    context.savedGroups = savedGroups;
   }
   if (forcedVariations) {
     context.forcedVariations = forcedVariations;
