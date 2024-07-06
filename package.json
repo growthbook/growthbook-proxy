@@ -32,7 +32,6 @@
     ]
   },
   "dependencies": {
-    "@growthbook/edge-utils": "0.1.5",
     "wsrun": "^5.2.4"
   },
   "devDependencies": {
