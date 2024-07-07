@@ -12,7 +12,7 @@
     "deploy": "fastly compute publish"
   },
   "dependencies": {
-    "@fastly/js-compute": "^3.7.0"
+    "@fastly/js-compute": "^3.16.0"
   },
   "devDependencies": {
     "@growthbook/edge-fastly": "^0.1.3",
