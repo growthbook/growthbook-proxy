@@ -22,9 +22,15 @@
     "dev:proxy": "wsrun -p @growthbook/proxy @growthbook/proxy-eval -c dev",
     "dev:edge": "wsrun -p @growthbook/edge-utils @growthbook/edge-express -c dev"
   },
-  "workspaces": [
-    "packages/**"
-  ],
+  "workspaces": {
+    "packages": [
+      "packages/**"
+    ],
+    "nohoist": [
+      "**/@growthbook/growthbook",
+      "**/@growthbook/growthbook/**"
+    ]
+  },
   "dependencies": {
     "wsrun": "^5.2.4"
   },

@@ -20,11 +20,25 @@ headers, body, cookies, status) {
     }
     return resp;
 }
-export function fetchFn(ctx, url) {
+export async function fetchFn(ctx, url) {
+    const maxRedirects = 5;
     const backend = getBackend(ctx, url);
-    return fetch(url, 
+    const init = { backend };
     // @ts-ignore
-    { backend });
+    let response = await fetch(url, init);
+    let location = response.headers.get('location');
+    let redirectCount = 0;
+    while (response.status >= 300 && response.status < 400 && location && redirectCount < maxRedirects) {
+        if (location) {
+            const backend = getBackend(ctx, url);
+            const init = { backend };
+            // @ts-ignore
+            response = await fetch(location, init);
+            location = response.headers.get('location');
+            redirectCount++;
+        }
+    }
+    return response;
 }
 export function proxyRequest(ctx, req) {
     const originUrl = getOriginUrl(ctx, req.url);
