@@ -32,7 +32,7 @@
     "spdy": "^4.0.2",
     "uuid": "^9.0.0",
     "@growthbook/growthbook": "^1.1.0",
-    "@growthbook/proxy-eval": "^1.0.3"
+    "@growthbook/proxy-eval": "^1.0.4"
   },
   "devDependencies": {
     "@types/cors": "^2.8.14",
