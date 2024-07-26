@@ -18,6 +18,7 @@
     "build:proxy": "yarn build:deps:proxy && wsrun -p @growthbook/proxy -c build",
     "type-check": "wsrun -r type-check",
     "start": "wsrun -p @growthbook/proxy -c start",
+    "start:with-tracing": "wsrun -p @growthbook/proxy -c start:with-tracing",
     "dev": "wsrun -r dev",
     "dev:proxy": "wsrun -p @growthbook/proxy @growthbook/proxy-eval -c dev",
     "dev:edge": "wsrun -p @growthbook/edge-utils @growthbook/edge-express -c dev"
