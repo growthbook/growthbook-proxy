@@ -4,7 +4,7 @@
     "node": ">=18"
   },
   "description": "GrowthBook proxy server for caching, realtime updates, telemetry, etc",
-  "version": "1.1.6",
+  "version": "1.1.9",
   "main": "dist/app.js",
   "license": "MIT",
   "repository": {
@@ -19,6 +19,7 @@
     "build": "yarn build:clean && yarn build:typescript",
     "type-check": "tsc --pretty --noEmit",
     "start": "node dist/index.js",
+    "start:with-tracing": "node --require ./dist/tracing.js dist/index.js",
     "dev": "concurrently 'tsc --watch' 'nodemon -q dist/index.js | yarn pino-pretty'"
   },
   "dependencies": {
@@ -32,7 +33,11 @@
     "spdy": "^4.0.2",
     "uuid": "^9.0.0",
     "@growthbook/growthbook": "^1.1.0",
-    "@growthbook/proxy-eval": "^1.0.4"
+    "@growthbook/proxy-eval": "^1.0.4",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.48.0",
+    "@opentelemetry/exporter-metrics-otlp-proto": "^0.52.1",
+    "@opentelemetry/sdk-metrics": "^1.25.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.14",

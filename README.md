@@ -35,6 +35,9 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ### What's new
 
+**Version 1.1.8**
+- Auto-instrument OpenTelemetry when using `yarn start:with-tracing`
+
 **Version 1.1.4**
 - Support Redis-based sticky bucketing for remote evaluation
 - Update remote evaluation to allow for buffered sticky bucket writes
@@ -110,7 +113,7 @@ The GrowthBook Proxy supports a number of configuration options available via en
 
 ### Caching
 
-By default, features are cached in memory in GrowthBook Proxy; you may provide your own cache service via Redis or Mongo. To fully utilize the GrowthBook Proxy, we highly recommend using Redis, which is a prerequisite for real-time updates when your proxy is horizontally scaled (as proxy instances are kept in-sync using Redis pub/sub).
+By default, features are cached in memory in the GrowthBook Proxy; you may provide your own cache service via Redis or Mongo. To fully utilize the GrowthBook Proxy, we highly recommend using Redis, which is a prerequisite for real-time updates when your proxy is horizontally scaled (as proxy instances are kept in-sync using Redis pub/sub).
 
 - `CACHE_ENGINE` - One of: `memory`, `redis`, or `mongo` (default: `memory`)
 - `CACHE_CONNECTION_URL` - The URL of your Redis or Mongo Database
@@ -148,6 +151,14 @@ Although we recommend terminating SSL using your load balancer, you can also con
 - `HTTPS_KEY` - The SSL key
 
 If the GrowthBook app your proxy is connecting to is using a self-signed certificate, you can disable certificate verification by setting `NODE_TLS_REJECT_UNAUTHORIZED` to "0".
+
+### Observability (OpenTelemetry)
+
+The GrowthBook Proxy is instrumented with OpenTelemetry to publish observability metrics, traces, and logs.
+
+To enable, you must change the Docker CMD from the default `yarn start` to `yarn start:with-tracing`.
+
+The standard [OTEL\_\* Environment Variables](https://opentelemetry.io/docs/concepts/sdk-configuration/) are supported, such as `OTEL_SERVICE_NAME` and `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
 ### Other common configuration options
 
