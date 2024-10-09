@@ -5,8 +5,8 @@ import {
 import { Context } from "./types";
 
 export class EdgeStickyBucketService<Req, Res> extends StickyBucketService {
+  protected prefix: string;
   private context: Context<Req, Res>;
-  private prefix: string;
   private req: Req;
 
   constructor({
@@ -25,13 +25,13 @@ export class EdgeStickyBucketService<Req, Res> extends StickyBucketService {
   }
 
   async getAssignments(attributeName: string, attributeValue: string) {
-    const key = `${attributeName}||${attributeValue}`;
+    const key = this.getKey(attributeName, attributeValue);
     let doc: StickyAssignmentsDocument | null = null;
     if (!this.req) return doc;
     try {
       // const raw = this.req.cookies[this.prefix + key] || "{}";
       const raw =
-        this.context.helpers?.getCookie?.(this.req, this.prefix + key) || "{}";
+        this.context.helpers?.getCookie?.(this.req, key) || "{}";
       const data = JSON.parse(raw);
       if (data.attributeName && data.attributeValue && data.assignments) {
         doc = data;

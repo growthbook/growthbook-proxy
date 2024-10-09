@@ -308,6 +308,13 @@
   dependencies:
     dom-mutator "^0.6.0"
 
+"@growthbook/growthbook@^1.2.1":
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/@growthbook/growthbook/-/growthbook-1.2.1.tgz#efc236afec8aa061d306d72ab1c9fa67697e513e"
+  integrity sha512-V0of0mGXZ69poOTPoZ8TFkJkPpC9T766NZiJ1qwzwFAl8ZsuunmguC6RP4muri4q5DRPDzf3lRUSWLk0g8bdbw==
+  dependencies:
+    dom-mutator "^0.6.0"
+
 "@grpc/grpc-js@^1.7.1":
   version "1.11.1"
   resolved "https://registry.yarnpkg.com/@grpc/grpc-js/-/grpc-js-1.11.1.tgz#a92f33e98f1959feffcd1b25a33b113d2c977b70"
