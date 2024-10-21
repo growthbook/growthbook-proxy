@@ -17,12 +17,12 @@
   },
   "dependencies": {
     "@growthbook/edge-utils": "^0.1.6",
-    "cookie": "^0.6.0"
+    "cookie": "^1.0.1"
   },
   "devDependencies": {
     "@growthbook/growthbook": "^1.2.1",
-    "concurrently": "^8.2.1",
-    "rimraf": "^5.0.5",
+    "concurrently": "^9.0.1",
+    "rimraf": "^6.0.1",
     "typescript": "5.2.2"
   }
 }
