@@ -18,10 +18,10 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "@growthbook/growthbook": "^1.1.0"
+    "@growthbook/growthbook": "^1.2.1"
   },
   "devDependencies": {
-    "rimraf": "^5.0.5",
+    "rimraf": "^6.0.1",
     "typescript": "5.2.2"
   }
 }
