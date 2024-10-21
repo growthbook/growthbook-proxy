@@ -22,7 +22,7 @@
   "devDependencies": {
     "@growthbook/growthbook": "^1.2.1",
     "concurrently": "^9.0.1",
-    "rimraf": "^6.0.1",
+    "rimraf": "^5.0.5",
     "typescript": "5.2.2"
   }
 }
