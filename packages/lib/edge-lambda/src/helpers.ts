@@ -42,7 +42,7 @@ export function sendResponse(
   status?: number,
 ) {
   const res: any = {
-    status,
+    status: String(status || "200"),
     body: body || "",
   };
   if (headers) {
@@ -76,12 +76,14 @@ export async function proxyRequest(ctx: Context, req: any) {
 
 export function getCookie(req: any, key: string): string {
   const parsedCookie: Record<string, string> = {};
-  if (req.headers.cookie) {
-    for (let i = 0; i < req.headers.cookies.length; i++) {
-      req.headers.cookie[i]?.value?.split?.(";")?.forEach((cookie: string) => {
+  if (req?.headers?.cookie) {
+    for (let i = 0; i < (req?.headers?.cookie?.length || 0); i++) {
+      req?.headers?.cookie?.[i]?.value?.split?.(";")?.forEach((cookie: string) => {
         if (cookie) {
-          const parts = cookie.split("=");
-          parsedCookie[parts[0].trim()] = decodeURIComponent(parts[1].trim());
+          const [c0, c1] = cookie.split("=");
+          if (c0) {
+            parsedCookie[c0.trim()] = c1 ? decodeURIComponent(c1.trim()) : "";
+          }
         }
       });
     }
@@ -95,7 +97,7 @@ export function setCookie(res: any, key: string, value: string) {
     maxAge: 24 * 60 * 60 * 1000 * COOKIE_DAYS,
   });
   if (!res.headers["cookie"]) {
-    res.headers.cookie = [];
+    res.headers["cookie"] = [];
   }
   res.headers["cookie"].push({ key, value: serialized });
 }
