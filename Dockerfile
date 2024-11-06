@@ -1,4 +1,4 @@
-# Build the GrowthBook Proxy app
+# Use the official arm64 base image
 FROM node:18-slim
 WORKDIR /usr/local/src/app
 
@@ -7,6 +7,7 @@ COPY package.json ./package.json
 COPY yarn.lock ./yarn.lock
 COPY packages/apps/proxy/package.json ./packages/apps/proxy/package.json
 COPY packages/lib/eval/package.json ./packages/lib/eval/package.json
+
 # Yarn install with dev dependencies
 RUN yarn install --frozen-lockfile --ignore-optional
 
@@ -20,7 +21,10 @@ RUN \
   && yarn install --frozen-lockfile --production=true --ignore-optional
 
 # Directory with build info (git commit sha, build date)
-COPY buildinfo* ./buildinfo
+RUN mkdir -p ./buildinfo
+COPY buildinfo* ./buildinfo/
 
 EXPOSE 3300
-CMD ["yarn","start"]
+
+# Start the GrowthBook proxy
+CMD ["yarn", "start"]
