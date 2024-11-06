@@ -31,9 +31,9 @@ jobs:
           echo "${GITHUB_SHA}" > buildinfo/SHA
           printf '%(%Y-%m-%dT%H:%M:%SZ)T' > buildinfo/DATE
           # Build and push the docker image
-          docker buildx build --platform linux/amd64,linux/arm64 -t growthbook/proxy:git-${GITHUB_SHA::7} .
+          docker buildx build --platform linux/amd64,linux/arm64 -t growthbook/proxy:latest -t growthbook/proxy:git-${GITHUB_SHA::7} --push .
           tag=$(git tag --points-at HEAD)
           if [ -n "$tag" ]; then
             docker tag growthbook/proxy:latest growthbook/proxy:"$tag"
+            docker push growthbook/proxy:"$tag"
           fi
-          docker push -a growthbook/proxy
