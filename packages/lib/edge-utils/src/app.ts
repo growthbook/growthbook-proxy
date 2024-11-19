@@ -130,16 +130,28 @@ export async function edgeApp<Req, Res>(
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   let fetchedResponse:
-    | (Res & { ok: boolean; headers: Record<string, any>; text: any })
+    | (Res & { status: number; headers: Record<string, any>; text: any })
     | undefined = undefined;
   try {
     fetchedResponse = (await context.helpers.fetch?.(
       context as Context<Req, Res>,
       originUrl,
       /* eslint-disable @typescript-eslint/no-explicit-any */
-    )) as Res & { ok: boolean; headers: Record<string, any>; text: any };
-    if (!fetchedResponse?.ok) {
-      throw new Error("Fetch: non-2xx status returned");
+    )) as Res & { status: number; headers: Record<string, any>; text: any };
+    const status = parseInt(fetchedResponse.status ? fetchedResponse.status + "" : "400");
+    if (status >= 500) {
+      console.error("Fetch: 5xx status returned");
+      return context.helpers.sendResponse?.(
+        context,
+        res,
+        headers,
+        "Error fetching page",
+        cookies,
+        500,
+      );
+    }
+    if (status >= 400) {
+      return context.helpers.proxyRequest?.(context, req, res, next);
     }
   } catch (e) {
     console.error(e);
