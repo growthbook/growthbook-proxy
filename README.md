@@ -35,6 +35,9 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ### What's new
 
+**Version 1.1.11**
+- Guard against crashes when API server is down
+
 **Version 1.1.8**
 - Auto-instrument OpenTelemetry when using `yarn start:with-tracing`
 
