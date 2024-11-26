@@ -118,7 +118,7 @@ By default, features are cached in memory in the GrowthBook Proxy; you may provi
 - `CACHE_ENGINE` - One of: `memory`, `redis`, or `mongo` (default: `memory`)
 - `CACHE_CONNECTION_URL` - The URL of your Redis or Mongo Database
 - `CACHE_STALE_TTL` - Number of seconds until a cache entry is considered stale (default: `60` = 1 minute)
-- `CACHE_EXPIRES_TTL` - Number of seconds until a cache entry is expired (default: `600` = 10 minutes)
+- `CACHE_EXPIRES_TTL` - Number of seconds until a cache entry is expired (default: `3600` = 1 hour)
 
 #### Redis Cluster
 

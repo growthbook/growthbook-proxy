@@ -122,28 +122,29 @@ export class Registrar {
         fetchOptions.agent = new https.Agent({ rejectUnauthorized: false });
       }
 
-      const resp = await fetch(url, fetchOptions);
-      if (!resp.ok) {
-        logger.error(`connection polling error: status code is ${resp.status}`);
-        logger.error(resp.text());
-        return;
-      }
-
       let data:
         | {
-            connections: ConnectionDoc[];
-            limit?: number;
-            offset?: number;
-            total?: number;
-            hasMore?: boolean;
-            nextOffset?: number | null;
-          }
+        connections: ConnectionDoc[];
+        limit?: number;
+        offset?: number;
+        total?: number;
+        hasMore?: boolean;
+        nextOffset?: number | null;
+      }
         | undefined = undefined;
+
       try {
+        const resp = await fetch(url, fetchOptions);
+        if (!resp.ok) {
+          logger.error(`connection polling error: status code is ${resp.status}`);
+          const text = await resp.text();
+          logger.error(text);
+          return;
+        }
         data = await resp.json();
-      } catch (e) {
-        logger.error(e, "connection polling error");
-        logger.error(resp.text());
+
+      } catch(e) {
+        logger.error(`connection polling error: API server unreachable`);
       }
 
       if (!data?.connections) {
