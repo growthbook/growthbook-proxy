@@ -11,6 +11,9 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     if: ${{ github.repository == 'growthbook/growthbook-proxy' }}
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -21,16 +24,34 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Build, tag, and push image to Docker Hub
+      - name: Install Depot CLI
+        uses: depot/setup-action@v1
+
+      - name: Prepare build metadata
+        id: metadata
         run: |
           # Store current git hash and date in files
           mkdir -p buildinfo
           echo "${GITHUB_SHA}" > buildinfo/SHA
           printf '%(%Y-%m-%dT%H:%M:%SZ)T' > buildinfo/DATE
-          # Build and push the docker image
-          docker build -t growthbook/proxy:latest -t growthbook/proxy:git-${GITHUB_SHA::7} .
+          echo "docker_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+          # If this is a tag, echo tag to output
           tag=$(git tag --points-at HEAD)
           if [ -n "$tag" ]; then
-            docker tag growthbook/proxy:latest growthbook/proxy:"$tag"
+            echo "tag=growthbook/proxy:$tag" >> $GITHUB_OUTPUT
+          else
+            echo "tag=" >> $GITHUB_OUTPUT
           fi
-          docker push -a growthbook/proxy
+
+      - name: Build, tag, and push image to Docker Hub
+        uses: depot/build-push-action@v1
+        with:
+          push: true
+          context: .
+          project: rrh2d9pr3p
+          tags: |
+            growthbook/proxy:latest
+            growthbook/proxy:git-${{ steps.metadata.outputs.docker_sha }}
+            ${{ steps.metadata.outputs.tag }}
+          platforms: linux/amd64,linux/arm64
