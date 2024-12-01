@@ -42,4 +42,8 @@ export class MemoryCache {
       expiresOn: new Date(Date.now() + this.expiresTTL),
     });
   }
+
+  public async getStatus() {
+    return "up";
+  }
 }

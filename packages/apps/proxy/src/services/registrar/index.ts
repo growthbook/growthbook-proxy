@@ -40,6 +40,8 @@ export class Registrar {
   private getConnectionsPollingFrequency: number = 1000 * 60; // 1 min;
   private multiOrg = false;
 
+  public status: "pending" | "connected" | "disconnected" | "unknown" = "pending";
+
   public getConnection(apiKey: ApiKey): Connection | undefined {
     return this.connections.get(apiKey);
   }
@@ -139,20 +141,24 @@ export class Registrar {
           logger.error(`connection polling error: status code is ${resp.status}`);
           const text = await resp.text();
           logger.error(text);
+          this.status = "disconnected";
           return;
         }
         data = await resp.json();
 
       } catch(e) {
         logger.error(`connection polling error: API server unreachable`);
+        this.status = "disconnected";
       }
 
       if (!data?.connections) {
         logger.error("connection polling error: no data");
+        this.status = "disconnected";
         return;
       }
       if (Object.keys(data.connections).length === 0) {
         logger.warn("connection polling: no connections found");
+        this.status = "unknown";
         return;
       }
 
@@ -198,6 +204,7 @@ export class Registrar {
         `SDK connections count: ${Object.keys(newConnections).length}`,
       );
     }
+    this.status = "connected";
   }
 }
 
@@ -211,6 +218,7 @@ export const initializeRegistrar = async (context: Context) => {
     for (const connection of context.connections) {
       registrar.setConnection(connection.apiKey, connection);
     }
+    registrar.status = "connected";
   }
 
   if (context.createConnectionsFromEnv) {
@@ -222,6 +230,7 @@ export const initializeRegistrar = async (context: Context) => {
         registrar.setConnection(connection.apiKey, connection);
       }
     });
+    registrar.status = "connected";
   }
 
   if (context.pollForConnections) {
@@ -230,6 +239,4 @@ export const initializeRegistrar = async (context: Context) => {
     }
     await registrar.startConnectionPolling(context);
   }
-
-  Object.freeze(registrar);
 };
