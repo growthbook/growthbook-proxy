@@ -35,6 +35,10 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ### What's new
 
+**Version 1.2.0**
+- ARM support (via Depot)
+- More detailed /healthcheck status 
+
 **Version 1.1.11**
 - Guard against crashes when API server is down
 

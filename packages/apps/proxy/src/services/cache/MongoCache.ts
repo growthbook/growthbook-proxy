@@ -1,10 +1,11 @@
-import { Collection, MongoClient } from "mongodb";
+import { Collection, Db, MongoClient } from "mongodb";
 import logger from "../logger";
 import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, CacheSettings } from "./index";
 
 export class MongoCache {
   private client: MongoClient | undefined;
+  private db: Db | undefined;
   private collection: Collection | undefined;
   private readonly memoryCacheClient: MemoryCache | undefined;
   private readonly connectionUrl: string | undefined;
@@ -49,8 +50,8 @@ export class MongoCache {
         logger.error(e, "Error connecting to mongo client");
       });
       await this.client.connect();
-      const db = this.client.db(this.databaseName);
-      this.collection = db.collection(this.collectionName);
+      this.db = this.client.db(this.databaseName);
+      this.collection = this.db.collection(this.collectionName);
       await this.collection.createIndex({ key: 1 }, { unique: true });
       await this.collection.createIndex(
         { "entry.expiresOn": 1 },
@@ -133,5 +134,18 @@ export class MongoCache {
 
   public getClient() {
     return this.client;
+  }
+
+  public async getStatus() {
+    if (!this.db) {
+      return "down";
+    }
+    try {
+      const stats = await this.db.stats({ maxTimeMS: 1000 });
+      return stats?.ok === 1 ? "up" : "down"
+    } catch (e) {
+      logger.error("Mongo getStatus", e);
+      return "down";
+    }
   }
 }

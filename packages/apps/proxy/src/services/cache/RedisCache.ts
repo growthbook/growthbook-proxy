@@ -266,4 +266,8 @@ export class RedisCache {
   public getsubscriberClient() {
     return this.subscriberClient;
   }
+
+  public async getStatus() {
+    return this.client?.status;
+  }
 }

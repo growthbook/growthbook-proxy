@@ -1,5 +1,3 @@
-import fs from "fs";
-import path from "path";
 import { Express } from "express";
 import cors from "cors";
 import { adminRouter } from "./controllers/adminController";
@@ -15,29 +13,12 @@ import {
 import { Context, GrowthBookProxy } from "./types";
 import logger, { initializeLogger } from "./services/logger";
 import { initializeStickyBucketService } from "./services/stickyBucket";
+import { healthRouter } from "./controllers/healthController";
 
 export { Context, GrowthBookProxy, CacheEngine } from "./types";
 
-let build: { sha: string; date: string };
-function getBuild() {
-  if (!build) {
-    build = {
-      sha: "",
-      date: "",
-    };
-    const rootPath = path.join(__dirname, "..", "buildinfo");
-    if (fs.existsSync(path.join(rootPath, "SHA"))) {
-      build.sha = fs.readFileSync(path.join(rootPath, "SHA")).toString().trim();
-    }
-    if (fs.existsSync(path.join(rootPath, "DATE"))) {
-      build.date = fs
-        .readFileSync(path.join(rootPath, "DATE"))
-        .toString()
-        .trim();
-    }
-  }
-  return build;
-}
+const packageJson = require("../package.json");
+export const version = (packageJson.version ?? "unknown") + "";
 
 const defaultContext: Context = {
   growthbookApiHost: "",
@@ -66,9 +47,6 @@ export const growthBookProxy = async (
   app: Express,
   context?: Partial<Context>,
 ): Promise<GrowthBookProxy> => {
-  const packageJson = require("../package.json");
-  const version = (packageJson.version ?? "unknown") + "";
-
   const ctx: Context = { ...defaultContext, ...context };
   app.locals.ctx = ctx;
   if (!ctx.growthbookApiHost) console.error("GROWTHBOOK_API_HOST is missing");
@@ -85,15 +63,7 @@ export const growthBookProxy = async (
 
   // set up handlers
   ctx.enableCors && app.use(cors());
-  ctx.enableHealthCheck &&
-    app.get("/healthcheck", (req, res) => {
-      const build = getBuild();
-      res.status(200).json({
-        ok: true,
-        proxyVersion: version,
-        build,
-      });
-    });
+  ctx.enableHealthCheck && app.use("/healthcheck", healthRouter);
   ctx.enableAdmin && logger.warn("Admin API is enabled");
   ctx.enableAdmin && app.use("/admin", adminRouter);
 
