@@ -151,7 +151,7 @@ export async function edgeApp<Req, Res>(
       );
     }
     if (status >= 400) {
-      return context.helpers.proxyRequest?.(context, req, res, next);
+      return fetchedResponse;
     }
   } catch (e) {
     console.error(e);
@@ -165,7 +165,8 @@ export async function edgeApp<Req, Res>(
     );
   }
   if (context.config.forwardProxyHeaders && fetchedResponse?.headers) {
-    headers = { ...fetchedResponse.headers, ...headers };
+    const fetchedHeaders = Object.fromEntries(fetchedResponse.headers.entries());
+    headers = {...fetchedHeaders, ...headers};
   }
   body = await fetchedResponse.text();
 
