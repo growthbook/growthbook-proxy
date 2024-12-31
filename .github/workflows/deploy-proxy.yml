@@ -3,8 +3,8 @@ name: "Proxy: deploy"
 on:
   # Push to the main branch
   push:
-    branches:
-      - main
+    tags:
+      - "v*"
 
 jobs:
   # Build and publish the commit to docker
