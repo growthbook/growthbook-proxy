@@ -60,9 +60,13 @@ export function sendResponse(
   return res;
 }
 
-export async function fetchFn(_: Context, url: string) {
+export async function fetchFn(_: Context, url: string, req: any) {
   // @ts-ignore
-  return fetch(url);
+  return fetch(url, {
+    method: req.method,
+    headers: req.headers,
+    body: req.body,
+  });
 }
 
 export async function proxyRequest(ctx: Context, req: any) {

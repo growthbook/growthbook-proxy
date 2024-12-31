@@ -136,6 +136,7 @@ export async function edgeApp<Req, Res>(
     fetchedResponse = (await context.helpers.fetch?.(
       context as Context<Req, Res>,
       originUrl,
+      req,
       /* eslint-disable @typescript-eslint/no-explicit-any */
     )) as Res & { status: number; headers: Record<string, any>; text: any };
     const status = parseInt(fetchedResponse.status ? fetchedResponse.status + "" : "400");

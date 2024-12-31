@@ -39,9 +39,9 @@ export function sendResponse(
   return res.status(status || 200).send(body || "");
 }
 
-export async function fetchFn(ctx: Context<Request, Response>, url: string) {
+export async function fetchFn(ctx: Context<Request, Response>, url: string, req: Request) {
   // @ts-ignore
-  return fetch(url) as Promise<Response>;
+  return fetch(url, request) as Promise<Response>;
 }
 
 // cache proxy function
