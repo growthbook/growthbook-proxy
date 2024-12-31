@@ -1,18 +1,21 @@
 import { AutoExperimentVariation, DOMMutation } from "@growthbook/growthbook";
-import { parse } from "node-html-parser";
+import { HTMLElement, parse } from "node-html-parser";
 
 export async function applyDomMutations({
   body,
+  root,
   nonce,
   domChanges,
 }: {
   body: string;
+  root?: HTMLElement;
   nonce?: string;
   domChanges: AutoExperimentVariation[];
 }) {
   if (!domChanges.length) return body;
+  root = root ?? parse(body);
+  if (!root) return body;
 
-  const root = parse(body);
   const headEl = root.querySelector("head");
 
   domChanges.forEach(({ domMutations, css, js }) => {

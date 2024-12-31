@@ -5,7 +5,7 @@ import { getUserAttributes } from "./attributes";
 export default async function redirect({
   context,
   req,
-  setCookie,
+  setRespCookie,
   growthbook,
   previousUrl,
   resetDomChanges,
@@ -13,7 +13,7 @@ export default async function redirect({
 }: {
   context: Context;
   req: unknown;
-  setCookie: (key: string, value: string) => void;
+  setRespCookie: (key: string, value: string) => void;
   growthbook: GrowthBook;
   previousUrl: string;
   resetDomChanges: () => void;
@@ -41,7 +41,7 @@ export default async function redirect({
 
     // update attributes and change the URL to trigger the experiment
     await growthbook.setAttributes(
-      getUserAttributes(context, req, newUrl, setCookie),
+      getUserAttributes(context, req, newUrl, setRespCookie),
     );
     await growthbook.setURL(newUrl);
 

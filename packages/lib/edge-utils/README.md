@@ -93,6 +93,9 @@ The GrowthBook Edge App supports a number of configuration options available via
 - `UUID_KEY` - Customize the user identifier name (default `id`)
 - `SKIP_AUTO_ATTRIBUTES` "true" or "1" to skip auto-generating targeting attributes (default `false`)
 
+#### Lifecycle hooks
+- `ALWAYS_PARSE_DOM` - Normally the worker will only build a virtual DOM if there are visual changes. Set to "true" or "1" to always build a virtual DOM so that you can access it in lifecycle hooks (ex: `onBodyReady`)
+
 #### Misc
 - `CONTENT_SECURITY_POLICY` - CSP header value
 

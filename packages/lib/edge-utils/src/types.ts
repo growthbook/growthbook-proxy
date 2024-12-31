@@ -2,15 +2,17 @@
 
 import {
   Attributes,
-  FeatureApiResponse,
+  FeatureApiResponse, GrowthBook,
   LocalStorageCompat,
   StickyBucketService,
-  TrackingCallback,
+  TrackingCallback
 } from "@growthbook/growthbook";
+import { HTMLElement } from "node-html-parser";
 
 export interface Context<Req = unknown, Res = unknown> {
   config: Config;
   helpers: Helpers<Req, Res>;
+  hooks: Hooks<Req, Res>;
 }
 
 export interface Config {
@@ -22,6 +24,7 @@ export interface Config {
 
   runVisualEditorExperiments: ExperimentRunEnvironment; // default: everywhere
   disableJsInjection: boolean;
+  alwaysParseDOM: boolean;
 
   runUrlRedirectExperiments: ExperimentRunEnvironment; // default: browser
   runCrossOriginUrlRedirectExperiments: ExperimentRunEnvironment; // default: browser
@@ -92,6 +95,22 @@ export interface Helpers<Req, Res> {
   ) => Promise<unknown>;
   getCookie?: (req: Req, key: string) => string;
   setCookie?: (res: Res, key: string, value: string) => void;
+}
+
+interface BaseHookParams<Req> {
+  req: Req;
+  requestUrl: string;
+  originUrl: string;
+}
+export interface Hooks<Req, Res> {
+  onRequest?: ({ req, requestUrl, originUrl }: BaseHookParams<Req>) => Promise<Res | undefined>;
+  onRoute?: ({ req, requestUrl, originUrl, route }: BaseHookParams<Req> & { route: Route; }) => Promise<Res | undefined>;
+  onUserAttributes?: ({ req, requestUrl, originUrl, attributes } : BaseHookParams<Req> & { attributes: Attributes; }) => Promise<Res | undefined>;
+  onGrowthbookInit?: ({ req, requestUrl, originUrl, growthbook } : BaseHookParams<Req> & { growthbook: GrowthBook; }) => Promise<Res | undefined>;
+  onBeforeOriginFetch?: ({ req, requestUrl, redirectRequestUrl, originUrl, growthbook } : BaseHookParams<Req> & { redirectRequestUrl: string; growthbook: GrowthBook; }) => Promise<Res | undefined>;
+  onOriginFetch?: ({ req, requestUrl, redirectRequestUrl, originUrl, status, response, growthbook } : BaseHookParams<Req> & { redirectRequestUrl: string; status: number; response: Res | undefined; growthbook: GrowthBook; }) => Promise<Res | undefined>;
+  onBodyReady?: ({ req, requestUrl, redirectRequestUrl, originUrl, status, response, growthbook, body, root } : BaseHookParams<Req> & { redirectRequestUrl: string; status: number; response: Res | undefined; growthbook: GrowthBook; body: string; root?: HTMLElement; }) => Promise<Res | undefined>;
+  onBeforeResponse?: ({ req, requestUrl, redirectRequestUrl, originUrl, status, response, growthbook, body, root } : BaseHookParams<Req> & { redirectRequestUrl: string; status: number; response: Res | undefined; growthbook: GrowthBook; body: string; }) => Promise<Res | undefined>;
 }
 
 export type Route = {
