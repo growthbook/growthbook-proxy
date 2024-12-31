@@ -23,18 +23,11 @@ export async function edgeApp<Req, Res>(
   let url = context.helpers.getRequestURL?.(req) || "";
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let headers: Record<string, any> = {
-    "Content-Type": "text/html",
-  };
+  let headers: Record<string, any> = {};
   const cookies: Record<string, string> = {};
   const setCookie = (key: string, value: string) => {
     cookies[key] = value;
   };
-  const { csp, nonce } = getCspInfo(context as Context<unknown, unknown>);
-  if (csp) {
-    headers["Content-Security-Policy"] = csp;
-  }
-  let body = "";
 
   // Non GET requests are proxied
   if (context.helpers.getRequestMethod?.(req) !== "GET") {
@@ -145,7 +138,7 @@ export async function edgeApp<Req, Res>(
       return context.helpers.sendResponse?.(
         context,
         res,
-        headers,
+        {},
         "Error fetching page",
         cookies,
         500,
@@ -159,17 +152,28 @@ export async function edgeApp<Req, Res>(
     return context.helpers.sendResponse?.(
       context,
       res,
-      headers,
+      {},
       "Error fetching page",
       cookies,
       500,
     );
   }
+
+  // Got a valid response, begin processing
+  const fetchedHeaders = Object.fromEntries(fetchedResponse.headers.entries());
   if (context.config.forwardProxyHeaders && fetchedResponse?.headers) {
-    const fetchedHeaders = Object.fromEntries(fetchedResponse.headers.entries());
     headers = {...fetchedHeaders, ...headers};
+  } else {
+    headers["Content-Type"] = fetchedHeaders?.["Content-Type"];
   }
-  body = await fetchedResponse.text();
+  headers["Content-Type"] = headers["Content-Type"] ?? "text/html";
+
+  const { csp, nonce } =  getCspInfo(context as Context<unknown, unknown>);
+  if (csp) {
+    headers["Content-Security-Policy"] = csp;
+  }
+
+  let body = await fetchedResponse.text();
 
   body = await applyDomMutations({
     body,
