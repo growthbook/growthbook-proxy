@@ -2,6 +2,12 @@
 FROM node:18-slim
 WORKDIR /usr/local/src/app
 
+# Install ca-certificates
+RUN apt-get update && \
+  apt-get install -y ca-certificates && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/*
+
 # Copy over minimum files to install dependencies
 COPY package.json ./package.json
 COPY yarn.lock ./yarn.lock
