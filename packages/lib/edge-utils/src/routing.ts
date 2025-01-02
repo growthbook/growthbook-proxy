@@ -8,7 +8,7 @@ const defaultRoute: Route = {
 };
 
 export function getRoute(context: Context, url: string): Route {
-  const routes = context.config.routes || [defaultRoute];
+  const routes = [...(context.config.routes || []), defaultRoute];
   for (const route of routes) {
     route.type = route.type ?? "simple";
     route.behavior = route.behavior ?? "intercept";
