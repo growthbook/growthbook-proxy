@@ -21,6 +21,7 @@ export async function applyDomMutations({
   domChanges.forEach(({ domMutations, css, js }) => {
     if (css) {
       const parentEl = headEl || root;
+      if (!parentEl) return;
       const el = parse(`<style>${css}</style>`);
       parentEl.appendChild(el);
     }
@@ -92,6 +93,7 @@ export async function applyDomMutations({
   return body;
 
   function html(selector: string, cb: (val: string) => string) {
+    if (!root) return;
     const els = root.querySelectorAll(selector);
     els.map((el) => {
       el.innerHTML = cb(el.innerHTML);
@@ -99,6 +101,7 @@ export async function applyDomMutations({
   }
 
   function classes(selector: string, cb: (val: Set<string>) => void) {
+    if (!root) return;
     const els = root.querySelectorAll(selector);
     els.map((el) => {
       const classList = new Set(el.classNames);
@@ -112,6 +115,7 @@ export async function applyDomMutations({
     attr: string,
     cb: (val: string | null) => string | null,
   ) {
+    if (!root) return;
     const validAttributeName = /^[a-zA-Z:_][a-zA-Z0-9:_.-]*$/;
     if (!validAttributeName.test(attr)) {
       return;
@@ -142,8 +146,10 @@ export async function applyDomMutations({
     selector: string,
     cb: () => { insertBeforeSelector?: string; parentSelector: string },
   ) {
+    if (!root) return;
     const els = root.querySelectorAll(selector);
     els.map((el) => {
+      if (!root) return;
       const { insertBeforeSelector, parentSelector } = cb();
       const parent = root.querySelector(parentSelector);
       const insertBefore = insertBeforeSelector

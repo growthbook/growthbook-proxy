@@ -80,7 +80,7 @@ export async function edgeApp<Req, Res>(
   const attributes = getUserAttributes(context, req, requestUrl, setRespCookie);
 
   // Hook to allow enriching user attributes, etc
-  hookResp = await context?.hooks?.onUserAttributes?.({ req, requestUrl, originUrl, attributes });
+  hookResp = await context?.hooks?.onUserAttributes?.({ req, requestUrl, originUrl, route, attributes });
   if (hookResp) return hookResp;
 
   /**
@@ -135,7 +135,7 @@ export async function edgeApp<Req, Res>(
   });
 
   // Hook to perform any custom logic given the initialized SDK
-  hookResp = await context?.hooks?.onGrowthbookInit?.({ req, requestUrl, originUrl, growthbook });
+  hookResp = await context?.hooks?.onGrowthbookInit?.({ req, requestUrl, originUrl, route, attributes, growthbook });
   if (hookResp) return hookResp;
 
 
@@ -154,7 +154,7 @@ export async function edgeApp<Req, Res>(
   originUrl = getOriginUrl(context as Context, redirectRequestUrl);
 
   // Pre-origin-fetch hook (after redirect logic):
-  hookResp = await context?.hooks?.onBeforeOriginFetch?.({ req, requestUrl, redirectRequestUrl, originUrl, growthbook });
+  hookResp = await context?.hooks?.onBeforeOriginFetch?.({ req, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook });
   if (hookResp) return hookResp;
 
   /**
@@ -172,7 +172,7 @@ export async function edgeApp<Req, Res>(
   const status = fetchedResponse ? parseInt(fetchedResponse.status ? fetchedResponse.status + "" : "400") : 500;
 
   // On fetch hook (for custom response processing, etc)
-  hookResp = await context?.hooks?.onOriginFetch?.({ req, requestUrl, redirectRequestUrl, originUrl, status, response: fetchedResponse, growthbook });
+  hookResp = await context?.hooks?.onOriginFetch?.({ req, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, response: fetchedResponse, status });
   if (hookResp) return hookResp;
 
   // Standard response processing for origin errors
@@ -211,7 +211,7 @@ export async function edgeApp<Req, Res>(
   }
 
   // Body ready hook (pre-DOM-mutations):
-  hookResp = await context?.hooks?.onBodyReady?.({ req, requestUrl, redirectRequestUrl, originUrl, status, response: fetchedResponse, growthbook, body, root });
+  hookResp = await context?.hooks?.onBodyReady?.({ req, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, response: fetchedResponse, status, body, root });
   if (hookResp) return hookResp;
 
   /**
@@ -239,7 +239,7 @@ export async function edgeApp<Req, Res>(
   });
 
   // Final hook (post-mutations) before sending back
-  hookResp = await context?.hooks?.onBeforeResponse?.({ req, requestUrl, redirectRequestUrl, originUrl, status, response: fetchedResponse, growthbook, body });
+  hookResp = await context?.hooks?.onBeforeResponse?.({ req, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, response: fetchedResponse, status, body });
   if (hookResp) return hookResp;
 
   /**

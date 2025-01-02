@@ -99,20 +99,42 @@ export interface Helpers<Req, Res> {
   setCookie?: (res: Res, key: string, value: string) => void;
 }
 
-interface BaseHookParams<Req> {
+type BaseHookParams<Req> = {
   req: Req;
   requestUrl: string;
   originUrl: string;
-}
+};
+type OnRequestParams<Req> = BaseHookParams<Req> & {
+  route: Route;
+};
+type OnUserAttributesParams<Req> = OnRequestParams<Req> & {
+  attributes: Attributes;
+};
+type OnGrowthBookInitParams<Req> = OnUserAttributesParams<Req> & {
+  growthbook: GrowthBook;
+};
+type OnBeforeOriginFetchParams<Req> = OnGrowthBookInitParams<Req> & {
+  redirectRequestUrl: string;
+};
+type OnOriginFetchParams<Req, Res> = OnBeforeOriginFetchParams<Req> & {
+  response: Res | undefined;
+  status: number;
+};
+type OnBodyReadyParams<Req, Res> = OnOriginFetchParams<Req, Res> & {
+  body: string;
+  root?: HTMLElement;
+};
+type OnBeforeResponseParams<Req, Res> = Omit<OnBodyReadyParams<Req, Res>, "root">;
+
 export interface Hooks<Req, Res> {
-  onRequest?: ({ req, requestUrl, originUrl }: BaseHookParams<Req>) => Promise<Res | undefined>;
-  onRoute?: ({ req, requestUrl, originUrl, route }: BaseHookParams<Req> & { route: Route; }) => Promise<Res | undefined>;
-  onUserAttributes?: ({ req, requestUrl, originUrl, attributes } : BaseHookParams<Req> & { attributes: Attributes; }) => Promise<Res | undefined>;
-  onGrowthbookInit?: ({ req, requestUrl, originUrl, growthbook } : BaseHookParams<Req> & { growthbook: GrowthBook; }) => Promise<Res | undefined>;
-  onBeforeOriginFetch?: ({ req, requestUrl, redirectRequestUrl, originUrl, growthbook } : BaseHookParams<Req> & { redirectRequestUrl: string; growthbook: GrowthBook; }) => Promise<Res | undefined>;
-  onOriginFetch?: ({ req, requestUrl, redirectRequestUrl, originUrl, status, response, growthbook } : BaseHookParams<Req> & { redirectRequestUrl: string; status: number; response: Res | undefined; growthbook: GrowthBook; }) => Promise<Res | undefined>;
-  onBodyReady?: ({ req, requestUrl, redirectRequestUrl, originUrl, status, response, growthbook, body, root } : BaseHookParams<Req> & { redirectRequestUrl: string; status: number; response: Res | undefined; growthbook: GrowthBook; body: string; root?: HTMLElement; }) => Promise<Res | undefined>;
-  onBeforeResponse?: ({ req, requestUrl, redirectRequestUrl, originUrl, status, response, growthbook, body, root } : BaseHookParams<Req> & { redirectRequestUrl: string; status: number; response: Res | undefined; growthbook: GrowthBook; body: string; }) => Promise<Res | undefined>;
+  onRequest?: (params: BaseHookParams<Req>) => Promise<Res | undefined>;
+  onRoute?: (params: OnRequestParams<Req>) => Promise<Res | undefined>;
+  onUserAttributes?: (params: OnUserAttributesParams<Req>) => Promise<Res | undefined>;
+  onGrowthbookInit?: (params: OnGrowthBookInitParams<Req> ) => Promise<Res | undefined>;
+  onBeforeOriginFetch?: (params: OnBeforeOriginFetchParams<Req>) => Promise<Res | undefined>;
+  onOriginFetch?: (params: OnOriginFetchParams<Req, Res>) => Promise<Res | undefined>;
+  onBodyReady?: (params: OnBodyReadyParams<Req, Res>) => Promise<Res | undefined>;
+  onBeforeResponse?: (params: OnBeforeResponseParams<Req, Res>) => Promise<Res | undefined>;
 }
 
 export type Route = {
