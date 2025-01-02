@@ -4,6 +4,8 @@ export const defaultContext: Context = {
   config: {
     proxyTarget: "/",
     forwardProxyHeaders: true,
+    useDefaultContentType: false,
+    processTextHtmlOnly: true,
     environment: "production",
     maxPayloadSize: "2mb",
     runVisualEditorExperiments: "everywhere",
@@ -26,11 +28,14 @@ export const defaultContext: Context = {
     skipAutoAttributes: false,
   },
   helpers: {},
+  hooks: {},
 };
 
 export interface ConfigEnv {
   PROXY_TARGET?: string;
   FORWARD_PROXY_HEADERS?: string;
+  USE_DEFAULT_CONTENT_TYPE?: string;
+  PROCESS_TEXT_HTML_ONLY?: string;
   NODE_ENV?: string;
   MAX_PAYLOAD_SIZE?: string;
 
@@ -80,6 +85,12 @@ export function getConfig(env: ConfigEnv): Config {
   config.proxyTarget = env.PROXY_TARGET ?? defaultContext.config.proxyTarget;
   config.forwardProxyHeaders = ["true", "1"].includes(
     env.FORWARD_PROXY_HEADERS ?? "" + defaultContext.config.forwardProxyHeaders,
+  );
+  config.useDefaultContentType = ["true", "1"].includes(
+    env.USE_DEFAULT_CONTENT_TYPE ?? "" + defaultContext.config.useDefaultContentType,
+  );
+  config.processTextHtmlOnly = ["true", "1"].includes(
+    env.PROCESS_TEXT_HTML_ONLY ?? "" + defaultContext.config.processTextHtmlOnly,
   );
   config.environment = env.NODE_ENV ?? defaultContext.config.environment;
   config.maxPayloadSize =

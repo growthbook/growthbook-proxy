@@ -18,6 +18,8 @@ export interface Context<Req = unknown, Res = unknown> {
 export interface Config {
   proxyTarget: string;
   forwardProxyHeaders: boolean;
+  useDefaultContentType: boolean;
+  processTextHtmlOnly: boolean;
   environment: string;
   maxPayloadSize?: string;
   routes?: Route[];

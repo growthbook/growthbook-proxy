@@ -188,10 +188,16 @@ export async function edgeApp<Req, Res>(
   const fetchedHeaders = fetchedResponse.headers || {};
   if (context.config.forwardProxyHeaders) {
     respHeaders = { ...fetchedHeaders, ...respHeaders };
-  } else {
-    respHeaders["Content-Type"] = fetchedHeaders?.["Content-Type"];
   }
-  respHeaders["Content-Type"] = respHeaders["Content-Type"] || "text/html";
+  // At minimum, the content-type is forwarded
+  respHeaders["Content-Type"] = fetchedHeaders?.["Content-Type"];
+
+  if (context.config.useDefaultContentType && !respHeaders["Content-Type"]) {
+    respHeaders["Content-Type"] = "text/html";
+  }
+  if (context.config.processTextHtmlOnly && respHeaders["Content-Type"] !== "text/html") {
+    return context.helpers.proxyRequest?.(context, req, res, next);
+  }
 
   const { csp, nonce } = getCspInfo(context as Context<unknown, unknown>);
   if (csp) {
