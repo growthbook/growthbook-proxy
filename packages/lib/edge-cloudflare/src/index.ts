@@ -12,3 +12,4 @@ export async function handleRequest(
 
 export type { Env } from "./init";
 export { getKVLocalStoragePolyfill, getPayloadFromKV } from "./init";
+export * as helpers from "./helpers";

@@ -12,3 +12,4 @@ export async function gbHandleRequest(
 
 export { getConfigEnvFromStore, getKVLocalStoragePolyfill, getPayloadFromKV } from "./init";
 export type { FastlyConfig } from "./init";
+export * as helpers from "./helpers";
