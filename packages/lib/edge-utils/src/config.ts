@@ -1,6 +1,9 @@
 import { Config, Context, ExperimentRunEnvironment } from "./types";
 
-export const defaultContext: Context = {
+type Req = any; // placeholder
+type Res = any; // placeholder
+
+export const defaultContext: Context<Req, Res> = {
   config: {
     proxyTarget: "/",
     forwardProxyHeaders: true,
@@ -27,7 +30,23 @@ export const defaultContext: Context = {
     uuidKey: "id",
     skipAutoAttributes: false,
   },
-  helpers: {},
+  helpers: {
+    getRequestURL: function(req: Req): string {
+      throw new Error("getRequestURL not implemented");
+    },
+    getRequestMethod: function(req: Req): string {
+      throw new Error("getRequestMethod not implemented");
+    },
+    sendResponse: function(ctx: Context<Req, Res>, res?: any, headers?: Record<string, any> | undefined, body?: string | undefined, cookies?: Record<string, string> | undefined, status?: number | undefined): unknown {
+      throw new Error("sendResponse not implemented");
+    },
+    fetch: function(ctx: Context<Req, Res>, url: string, req: Req): Promise<Res> {
+      throw new Error("fetchFn not implemented");
+    },
+    proxyRequest: function(ctx: Context<Req, Res>, req: Req, res?: any, next?: any): Promise<unknown> {
+      throw new Error("proxyRequest not implemented");
+    }
+  },
   hooks: {},
 };
 
