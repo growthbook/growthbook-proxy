@@ -107,10 +107,10 @@ type BaseHookParams<Req, Res> = {
   requestUrl: string;
   originUrl: string;
 };
-type OnRequestParams<Req, Res> = BaseHookParams<Req, Res> & {
+type OnRouteParams<Req, Res> = BaseHookParams<Req, Res> & {
   route: Route;
 };
-type OnUserAttributesParams<Req, Res> = OnRequestParams<Req, Res> & {
+type OnUserAttributesParams<Req, Res> = OnRouteParams<Req, Res> & {
   attributes: Attributes;
 };
 type OnGrowthBookInitParams<Req, Res> = OnUserAttributesParams<Req, Res> & {
@@ -131,7 +131,7 @@ type OnBeforeResponseParams<Req, Res> = Omit<OnBodyReadyParams<Req, Res>, "root"
 
 export interface Hooks<Req, Res> {
   onRequest?: (params: BaseHookParams<Req, Res>) => Promise<Res | undefined>;
-  onRoute?: (params: OnRequestParams<Req, Res>) => Promise<Res | undefined>;
+  onRoute?: (params: OnRouteParams<Req, Res>) => Promise<Res | undefined>;
   onUserAttributes?: (params: OnUserAttributesParams<Req, Res>) => Promise<Res | undefined>;
   onGrowthbookInit?: (params: OnGrowthBookInitParams<Req, Res> ) => Promise<Res | undefined>;
   onBeforeOriginFetch?: (params: OnBeforeOriginFetchParams<Req, Res>) => Promise<Res | undefined>;
