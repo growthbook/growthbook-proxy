@@ -17,8 +17,7 @@ import { HTMLElement, parse } from "node-html-parser";
 interface FetchedResponse {
   status: number;
   headers: Record<string, string | undefined>;
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  text: any;
+  text: () => Promise<string>;
 }
 
 export async function edgeApp<Req, Res>(
@@ -175,7 +174,7 @@ export async function edgeApp<Req, Res>(
   hookResp = await context?.hooks?.onOriginFetch?.({ req, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, response: fetchedResponse, status });
   if (hookResp) return hookResp;
 
-  // Standard response processing for origin errors
+  // Standard error response handling
   if (status >= 500 || !fetchedResponse) {
     console.error("Fetch: 5xx status returned");
     return context.helpers.sendResponse?.(context, res, {}, "Error fetching page", {}, 500);
