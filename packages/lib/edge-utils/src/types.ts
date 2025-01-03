@@ -125,6 +125,7 @@ type OnOriginFetchParams<Req, Res> = OnBeforeOriginFetchParams<Req, Res> & {
 };
 type OnBodyReadyParams<Req, Res> = OnOriginFetchParams<Req, Res> & {
   body: string;
+  setBody: (s: string) => void;
   root?: HTMLElement;
 };
 type OnBeforeResponseParams<Req, Res> = Omit<OnBodyReadyParams<Req, Res>, "root">;

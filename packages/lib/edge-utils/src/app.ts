@@ -32,7 +32,7 @@ export async function edgeApp<Req, Res>(
    */
     // Request vars:
   let requestUrl = context.helpers.getRequestURL?.(req) || "";
-  let originUrl = getOriginUrl(context as Context<unknown, unknown>, requestUrl);
+  let originUrl = getOriginUrl(context, requestUrl);
   // Response vars:
   let originResponse: (OriginResponse & Res) | undefined = undefined;
   let respHeaders: Record<string, string | undefined> = {};
@@ -203,21 +203,26 @@ export async function edgeApp<Req, Res>(
     respHeaders["Content-Security-Policy"] = csp;
   }
 
-  let body: string = await originResponse.text() as string;
+  let body: string = await originResponse.text();
+  let setBody = (s: string) => {
+    body = s;
+  }
+
   let root: HTMLElement | undefined;
   if (context.config.alwaysParseDOM) {
     root = parse(body);
   }
 
   // Body ready hook (pre-DOM-mutations):
-  hookResp = await context?.hooks?.onBodyReady?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus, body, root });
+  hookResp = await context?.hooks?.onBodyReady?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus, body, setBody, root });
   if (hookResp) return hookResp;
 
   /**
    * 7. Apply visual editor DOM mutations
    */
-  body = await applyDomMutations({
+  await applyDomMutations({
     body,
+    setBody,
     root,
     nonce,
     domChanges,
@@ -226,9 +231,10 @@ export async function edgeApp<Req, Res>(
   /**
    * 8. Inject the client-facing GrowthBook SDK (auto-wrapper)
    */
-  body = injectScript({
+  injectScript({
     context: context as Context<unknown, unknown>,
     body,
+    setBody,
     nonce,
     growthbook,
     attributes,
@@ -238,7 +244,7 @@ export async function edgeApp<Req, Res>(
   });
 
   // Final hook (post-mutations) before sending back
-  hookResp = await context?.hooks?.onBeforeResponse?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus, body });
+  hookResp = await context?.hooks?.onBeforeResponse?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus, body, setBody });
   if (hookResp) return hookResp;
 
   /**
@@ -248,7 +254,7 @@ export async function edgeApp<Req, Res>(
 }
 
 
-export function getOriginUrl(context: Context, currentURL: string): string {
+export function getOriginUrl<Req, Res>(context: Context<Req, Res>, currentURL: string): string {
   const proxyTarget = context.config.proxyTarget;
   const currentParsedURL = new URL(currentURL);
   const proxyParsedURL = new URL(proxyTarget);

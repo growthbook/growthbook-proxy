@@ -3,18 +3,20 @@ import { HTMLElement, parse } from "node-html-parser";
 
 export async function applyDomMutations({
   body,
+  setBody,
   root,
   nonce,
   domChanges,
 }: {
   body: string;
+  setBody: (s: string) => void;
   root?: HTMLElement;
   nonce?: string;
   domChanges: AutoExperimentVariation[];
 }) {
-  if (!domChanges.length) return body;
+  if (!domChanges.length) return;
   root = root ?? parse(body);
-  if (!root) return body;
+  if (!root) return;
 
   const headEl = root.querySelector("head");
 
@@ -90,7 +92,8 @@ export async function applyDomMutations({
   });
 
   body = root.toString();
-  return body;
+  setBody(body);
+  return;
 
   function html(selector: string, cb: (val: string) => string) {
     if (!root) return;

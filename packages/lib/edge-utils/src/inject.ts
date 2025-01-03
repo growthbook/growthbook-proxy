@@ -13,6 +13,7 @@ import { Context } from "./types";
 export function injectScript({
   context,
   body,
+  setBody,
   nonce,
   growthbook,
   attributes,
@@ -22,6 +23,7 @@ export function injectScript({
 }: {
   context: Context;
   body: string;
+  setBody: (s: string) => void;
   nonce?: string;
   growthbook: GrowthBook;
   attributes: Attributes;
@@ -29,7 +31,7 @@ export function injectScript({
   url: string;
   oldUrl: string;
 }) {
-  if (context.config.disableInjections) return body;
+  if (context.config.disableInjections) return;
 
   const sdkPayload = growthbook.getPayload();
   const experiments = growthbook.getExperiments();
@@ -138,7 +140,8 @@ ${
     body += scriptTag;
   }
 
-  return body;
+  setBody(body);
+  return;
 }
 
 export function getCspInfo(context: Context): {
