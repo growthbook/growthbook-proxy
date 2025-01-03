@@ -14,7 +14,7 @@ import { getRoute } from "./routing";
 import { EdgeStickyBucketService } from "./stickyBucketService";
 import { HTMLElement, parse } from "node-html-parser";
 
-interface FetchedResponse {
+interface OriginResponse {
   status: number;
   headers: Record<string, string | undefined>;
   text: () => Promise<string>;
@@ -34,7 +34,7 @@ export async function edgeApp<Req, Res>(
   let requestUrl = context.helpers.getRequestURL?.(req) || "";
   let originUrl = getOriginUrl(context as Context<unknown, unknown>, requestUrl);
   // Response vars:
-  let fetchedResponse: (FetchedResponse & Res) | undefined = undefined;
+  let originResponse: (OriginResponse & Res) | undefined = undefined;
   let respHeaders: Record<string, string | undefined> = {};
   const respCookies: Record<string, string> = {};
   const setRespCookie = (key: string, value: string) => {
@@ -42,7 +42,7 @@ export async function edgeApp<Req, Res>(
   };
   // Initial hook:
   let hookResp: Res | undefined;
-  hookResp = await context?.hooks?.onRequest?.({ req, requestUrl, originUrl });
+  hookResp = await context?.hooks?.onRequest?.({ context, req, res, next, requestUrl, originUrl });
   if (hookResp) return hookResp;
 
   // DOM mutations
@@ -70,7 +70,7 @@ export async function edgeApp<Req, Res>(
     return context.helpers.proxyRequest?.(context, req, res, next);
   }
   // Custom route behavior via hook:
-  hookResp = await context?.hooks?.onRoute?.({ req, requestUrl, originUrl, route });
+  hookResp = await context?.hooks?.onRoute?.({ context, req, res, next, requestUrl, originUrl, route });
   if (hookResp) return hookResp;
 
   /**
@@ -79,7 +79,7 @@ export async function edgeApp<Req, Res>(
   const attributes = getUserAttributes(context, req, requestUrl, setRespCookie);
 
   // Hook to allow enriching user attributes, etc
-  hookResp = await context?.hooks?.onUserAttributes?.({ req, requestUrl, originUrl, route, attributes });
+  hookResp = await context?.hooks?.onUserAttributes?.({ context, req, res, next, requestUrl, originUrl, route, attributes });
   if (hookResp) return hookResp;
 
   /**
@@ -134,7 +134,7 @@ export async function edgeApp<Req, Res>(
   });
 
   // Hook to perform any custom logic given the initialized SDK
-  hookResp = await context?.hooks?.onGrowthbookInit?.({ req, requestUrl, originUrl, route, attributes, growthbook });
+  hookResp = await context?.hooks?.onGrowthbookInit?.({ context, req, res, next, requestUrl, originUrl, route, attributes, growthbook });
   if (hookResp) return hookResp;
 
 
@@ -153,38 +153,38 @@ export async function edgeApp<Req, Res>(
   originUrl = getOriginUrl(context as Context, redirectRequestUrl);
 
   // Pre-origin-fetch hook (after redirect logic):
-  hookResp = await context?.hooks?.onBeforeOriginFetch?.({ req, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook });
+  hookResp = await context?.hooks?.onBeforeOriginFetch?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook });
   if (hookResp) return hookResp;
 
   /**
    * 6. Fetch from origin, parse body / DOM
    */
   try {
-    fetchedResponse = await context.helpers.fetch?.(
+    originResponse = await context.helpers.fetch?.(
       context as Context<Req, Res>,
       originUrl,
       req,
-    ) as FetchedResponse & Res;
+    ) as OriginResponse & Res;
   } catch (e) {
     console.error(e);
   }
-  const status = fetchedResponse ? parseInt(fetchedResponse.status ? fetchedResponse.status + "" : "400") : 500;
+  const originStatus = originResponse ? parseInt(originResponse.status ? originResponse.status + "" : "400") : 500;
 
   // On fetch hook (for custom response processing, etc)
-  hookResp = await context?.hooks?.onOriginFetch?.({ req, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, response: fetchedResponse, status });
+  hookResp = await context?.hooks?.onOriginFetch?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus });
   if (hookResp) return hookResp;
 
   // Standard error response handling
-  if (status >= 500 || !fetchedResponse) {
+  if (originStatus >= 500 || !originResponse) {
     console.error("Fetch: 5xx status returned");
     return context.helpers.sendResponse?.(context, res, {}, "Error fetching page", {}, 500);
   }
-  if (status >= 400) {
-    return fetchedResponse;
+  if (originStatus >= 400) {
+    return originResponse;
   }
 
   // Got a valid response, begin processing
-  const fetchedHeaders = fetchedResponse.headers || {};
+  const fetchedHeaders = originResponse.headers || {};
   if (context.config.forwardProxyHeaders) {
     respHeaders = { ...fetchedHeaders, ...respHeaders };
   }
@@ -203,14 +203,14 @@ export async function edgeApp<Req, Res>(
     respHeaders["Content-Security-Policy"] = csp;
   }
 
-  let body: string = await fetchedResponse.text() as string;
+  let body: string = await originResponse.text() as string;
   let root: HTMLElement | undefined;
   if (context.config.alwaysParseDOM) {
     root = parse(body);
   }
 
   // Body ready hook (pre-DOM-mutations):
-  hookResp = await context?.hooks?.onBodyReady?.({ req, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, response: fetchedResponse, status, body, root });
+  hookResp = await context?.hooks?.onBodyReady?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus, body, root });
   if (hookResp) return hookResp;
 
   /**
@@ -238,7 +238,7 @@ export async function edgeApp<Req, Res>(
   });
 
   // Final hook (post-mutations) before sending back
-  hookResp = await context?.hooks?.onBeforeResponse?.({ req, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, response: fetchedResponse, status, body });
+  hookResp = await context?.hooks?.onBeforeResponse?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus, body });
   if (hookResp) return hookResp;
 
   /**

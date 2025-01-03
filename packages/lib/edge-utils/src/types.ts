@@ -99,26 +99,29 @@ export interface Helpers<Req, Res> {
   setCookie?: (res: Res, key: string, value: string) => void;
 }
 
-type BaseHookParams<Req> = {
+type BaseHookParams<Req, Res> = {
+  context: Context<Req, Res>;
   req: Req;
+  res?: Res;
+  next?: any;
   requestUrl: string;
   originUrl: string;
 };
-type OnRequestParams<Req> = BaseHookParams<Req> & {
+type OnRequestParams<Req, Res> = BaseHookParams<Req, Res> & {
   route: Route;
 };
-type OnUserAttributesParams<Req> = OnRequestParams<Req> & {
+type OnUserAttributesParams<Req, Res> = OnRequestParams<Req, Res> & {
   attributes: Attributes;
 };
-type OnGrowthBookInitParams<Req> = OnUserAttributesParams<Req> & {
+type OnGrowthBookInitParams<Req, Res> = OnUserAttributesParams<Req, Res> & {
   growthbook: GrowthBook;
 };
-type OnBeforeOriginFetchParams<Req> = OnGrowthBookInitParams<Req> & {
+type OnBeforeOriginFetchParams<Req, Res> = OnGrowthBookInitParams<Req, Res> & {
   redirectRequestUrl: string;
 };
-type OnOriginFetchParams<Req, Res> = OnBeforeOriginFetchParams<Req> & {
-  response: Res | undefined;
-  status: number;
+type OnOriginFetchParams<Req, Res> = OnBeforeOriginFetchParams<Req, Res> & {
+  originResponse: Res | undefined;
+  originStatus: number;
 };
 type OnBodyReadyParams<Req, Res> = OnOriginFetchParams<Req, Res> & {
   body: string;
@@ -127,11 +130,11 @@ type OnBodyReadyParams<Req, Res> = OnOriginFetchParams<Req, Res> & {
 type OnBeforeResponseParams<Req, Res> = Omit<OnBodyReadyParams<Req, Res>, "root">;
 
 export interface Hooks<Req, Res> {
-  onRequest?: (params: BaseHookParams<Req>) => Promise<Res | undefined>;
-  onRoute?: (params: OnRequestParams<Req>) => Promise<Res | undefined>;
-  onUserAttributes?: (params: OnUserAttributesParams<Req>) => Promise<Res | undefined>;
-  onGrowthbookInit?: (params: OnGrowthBookInitParams<Req> ) => Promise<Res | undefined>;
-  onBeforeOriginFetch?: (params: OnBeforeOriginFetchParams<Req>) => Promise<Res | undefined>;
+  onRequest?: (params: BaseHookParams<Req, Res>) => Promise<Res | undefined>;
+  onRoute?: (params: OnRequestParams<Req, Res>) => Promise<Res | undefined>;
+  onUserAttributes?: (params: OnUserAttributesParams<Req, Res>) => Promise<Res | undefined>;
+  onGrowthbookInit?: (params: OnGrowthBookInitParams<Req, Res> ) => Promise<Res | undefined>;
+  onBeforeOriginFetch?: (params: OnBeforeOriginFetchParams<Req, Res>) => Promise<Res | undefined>;
   onOriginFetch?: (params: OnOriginFetchParams<Req, Res>) => Promise<Res | undefined>;
   onBodyReady?: (params: OnBodyReadyParams<Req, Res>) => Promise<Res | undefined>;
   onBeforeResponse?: (params: OnBeforeResponseParams<Req, Res>) => Promise<Res | undefined>;
