@@ -2,7 +2,7 @@ import { GrowthBook } from "@growthbook/growthbook";
 import { Context } from "./types";
 import { getUserAttributes } from "./attributes";
 
-export default async function redirect({
+export default async function redirect<Req, Res>({
   context,
   req,
   setRespCookie,
@@ -11,8 +11,8 @@ export default async function redirect({
   resetDomChanges,
   setPreRedirectChangeIds,
 }: {
-  context: Context;
-  req: unknown;
+  context: Context<Req, Res>;
+  req: Req;
   setRespCookie: (key: string, value: string) => void;
   growthbook: GrowthBook;
   previousUrl: string;

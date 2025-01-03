@@ -31,7 +31,7 @@ export async function edgeApp<Req, Res>(
    * 1. Init app variables
    */
     // Request vars:
-  let requestUrl = context.helpers.getRequestURL?.(req) || "";
+  let requestUrl = context.helpers.getRequestURL(req);
   let originUrl = getOriginUrl(context, requestUrl);
   // Response vars:
   let originResponse: (OriginResponse & Res) | undefined = undefined;
@@ -58,16 +58,16 @@ export async function edgeApp<Req, Res>(
    * 2. Early exits based on method, routes, etc
    */
   // Non GET requests are proxied
-  if (context.helpers.getRequestMethod?.(req) !== "GET") {
-    return context.helpers.proxyRequest?.(context, req, res, next);
+  if (context.helpers.getRequestMethod(req) !== "GET") {
+    return context.helpers.proxyRequest(context, req, res, next);
   }
   // Check the url for routing rules (default behavior is intercept)
-  const route = getRoute(context as Context<unknown, unknown>, requestUrl);
+  const route = getRoute(context, requestUrl);
   if (route.behavior === "error") {
-    return context.helpers.sendResponse?.(context, res, {}, route.body || "", {}, route.statusCode);
+    return context.helpers.sendResponse(context, res, {}, route.body || "", {}, route.statusCode);
   }
   if (route.behavior === "proxy") {
-    return context.helpers.proxyRequest?.(context, req, res, next);
+    return context.helpers.proxyRequest(context, req, res, next);
   }
   // Custom route behavior via hook:
   hookResp = await context?.hooks?.onRoute?.({ context, req, res, next, requestUrl, originUrl, route });
@@ -98,7 +98,7 @@ export async function edgeApp<Req, Res>(
   if (context.config.enableStickyBucketing) {
     stickyBucketService =
       context.config.edgeStickyBucketService ??
-      new EdgeStickyBucketService<Req, Res>({
+      new EdgeStickyBucketService({
         context,
         prefix: context.config.stickyBucketPrefix,
         req,
@@ -142,7 +142,7 @@ export async function edgeApp<Req, Res>(
    * 5. Run URL redirect tests before fetching from origin
    */
   const redirectRequestUrl = await redirect({
-    context: context as Context<unknown, unknown>,
+    context,
     req,
     setRespCookie,
     growthbook,
@@ -150,7 +150,7 @@ export async function edgeApp<Req, Res>(
     resetDomChanges,
     setPreRedirectChangeIds: setPreRedirectChangeIds,
   });
-  originUrl = getOriginUrl(context as Context, redirectRequestUrl);
+  originUrl = getOriginUrl(context, redirectRequestUrl);
 
   // Pre-origin-fetch hook (after redirect logic):
   hookResp = await context?.hooks?.onBeforeOriginFetch?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook });
@@ -160,8 +160,8 @@ export async function edgeApp<Req, Res>(
    * 6. Fetch from origin, parse body / DOM
    */
   try {
-    originResponse = await context.helpers.fetch?.(
-      context as Context<Req, Res>,
+    originResponse = await context.helpers.fetch(
+      context,
       originUrl,
       req,
     ) as OriginResponse & Res;
@@ -177,7 +177,7 @@ export async function edgeApp<Req, Res>(
   // Standard error response handling
   if (originStatus >= 500 || !originResponse) {
     console.error("Fetch: 5xx status returned");
-    return context.helpers.sendResponse?.(context, res, {}, "Error fetching page", {}, 500);
+    return context.helpers.sendResponse(context, res, {}, "Error fetching page", {}, 500);
   }
   if (originStatus >= 400) {
     return originResponse;
@@ -195,10 +195,10 @@ export async function edgeApp<Req, Res>(
     respHeaders["Content-Type"] = "text/html";
   }
   if (context.config.processTextHtmlOnly && respHeaders["Content-Type"] !== "text/html") {
-    return context.helpers.proxyRequest?.(context, req, res, next);
+    return context.helpers.proxyRequest(context, req, res, next);
   }
 
-  const { csp, nonce } = getCspInfo(context as Context<unknown, unknown>);
+  const { csp, nonce } = getCspInfo(context);
   if (csp) {
     respHeaders["Content-Security-Policy"] = csp;
   }
@@ -232,7 +232,7 @@ export async function edgeApp<Req, Res>(
    * 8. Inject the client-facing GrowthBook SDK (auto-wrapper)
    */
   injectScript({
-    context: context as Context<unknown, unknown>,
+    context,
     body,
     setBody,
     nonce,
@@ -250,7 +250,7 @@ export async function edgeApp<Req, Res>(
   /**
    * 9. Send mutated response
    */
-  return context.helpers.sendResponse?.(context, res, respHeaders, body, respCookies);
+  return context.helpers.sendResponse(context, res, respHeaders, body, respCookies);
 }
 
 

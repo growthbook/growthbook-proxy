@@ -9,7 +9,7 @@ import {
 } from "@growthbook/growthbook";
 import { HTMLElement } from "node-html-parser";
 
-export interface Context<Req = unknown, Res = unknown> {
+export interface Context<Req, Res> {
   config: Config;
   helpers: Helpers<Req, Res>;
   hooks: Hooks<Req, Res>;
@@ -77,10 +77,10 @@ export type ExperimentRunEnvironment =
   | "skip";
 
 export interface Helpers<Req, Res> {
-  getRequestURL?: (req: Req) => string;
-  getRequestMethod?: (req: Req) => string;
+  getRequestURL: (req: Req) => string;
+  getRequestMethod: (req: Req) => string;
   getRequestHeader?: (req: Req, key: string) => string | undefined;
-  sendResponse?: (
+  sendResponse: (
     ctx: Context<Req, Res>,
     res?: Res,
     headers?: Record<string, any>,
@@ -88,8 +88,8 @@ export interface Helpers<Req, Res> {
     cookies?: Record<string, string>,
     status?: number,
   ) => unknown;
-  fetch?: (ctx: Context<Req, Res>, url: string, req: Req) => Promise<Res>;
-  proxyRequest?: (
+  fetch: (ctx: Context<Req, Res>, url: string, req: Req) => Promise<Res>;
+  proxyRequest: (
     ctx: Context<Req, Res>,
     req: Req,
     res?: Res,
