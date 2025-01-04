@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {
+  GrowthBook,
   Attributes,
-  FeatureApiResponse, GrowthBook,
+  FeatureApiResponse,
   LocalStorageCompat,
   StickyBucketService,
   TrackingCallback
@@ -99,7 +100,7 @@ export interface Helpers<Req, Res> {
   setCookie?: (res: Res, key: string, value: string) => void;
 }
 
-type BaseHookParams<Req, Res> = {
+export type BaseHookParams<Req, Res> = {
   context: Context<Req, Res>;
   req: Req;
   res?: Res;
@@ -107,38 +108,42 @@ type BaseHookParams<Req, Res> = {
   requestUrl: string;
   originUrl: string;
 };
-type OnRouteParams<Req, Res> = BaseHookParams<Req, Res> & {
+export type OnRouteParams<Req, Res> = BaseHookParams<Req, Res> & {
   route: Route;
 };
-type OnUserAttributesParams<Req, Res> = OnRouteParams<Req, Res> & {
+export type OnUserAttributesParams<Req, Res> = OnRouteParams<Req, Res> & {
   attributes: Attributes;
 };
-type OnGrowthBookInitParams<Req, Res> = OnUserAttributesParams<Req, Res> & {
+export type OnGrowthBookInitParams<Req, Res> = OnUserAttributesParams<Req, Res> & {
   growthbook: GrowthBook;
 };
-type OnBeforeOriginFetchParams<Req, Res> = OnGrowthBookInitParams<Req, Res> & {
+export type OnBeforeOriginFetchParams<Req, Res> = OnGrowthBookInitParams<Req, Res> & {
   redirectRequestUrl: string;
 };
-type OnOriginFetchParams<Req, Res> = OnBeforeOriginFetchParams<Req, Res> & {
+export type OnOriginFetchParams<Req, Res> = OnBeforeOriginFetchParams<Req, Res> & {
   originResponse: Res | undefined;
   originStatus: number;
 };
-type OnBodyReadyParams<Req, Res> = OnOriginFetchParams<Req, Res> & {
+export type OnBodyReadyParams<Req, Res> = OnOriginFetchParams<Req, Res> & {
+  originHeaders: Record<string, string | undefined>;
+  resHeaders: Record<string, string | undefined>;
   body: string;
   setBody: (s: string) => void;
   root?: HTMLElement;
 };
-type OnBeforeResponseParams<Req, Res> = Omit<OnBodyReadyParams<Req, Res>, "root">;
+export type OnBeforeResponseParams<Req, Res> = Omit<OnBodyReadyParams<Req, Res>, "root">;
+
+type HookReturn<Res> = Res | undefined | void;
 
 export interface Hooks<Req, Res> {
-  onRequest?: (params: BaseHookParams<Req, Res>) => Promise<Res | undefined>;
-  onRoute?: (params: OnRouteParams<Req, Res>) => Promise<Res | undefined>;
-  onUserAttributes?: (params: OnUserAttributesParams<Req, Res>) => Promise<Res | undefined>;
-  onGrowthbookInit?: (params: OnGrowthBookInitParams<Req, Res> ) => Promise<Res | undefined>;
-  onBeforeOriginFetch?: (params: OnBeforeOriginFetchParams<Req, Res>) => Promise<Res | undefined>;
-  onOriginFetch?: (params: OnOriginFetchParams<Req, Res>) => Promise<Res | undefined>;
-  onBodyReady?: (params: OnBodyReadyParams<Req, Res>) => Promise<Res | undefined>;
-  onBeforeResponse?: (params: OnBeforeResponseParams<Req, Res>) => Promise<Res | undefined>;
+  onRequest?: (params: BaseHookParams<Req, Res>) => Promise<HookReturn<Res>> | HookReturn<Res>;
+  onRoute?: (params: OnRouteParams<Req, Res>) => Promise<HookReturn<Res>> | HookReturn<Res>;
+  onUserAttributes?: (params: OnUserAttributesParams<Req, Res>) => Promise<HookReturn<Res>> | HookReturn<Res>;
+  onGrowthbookInit?: (params: OnGrowthBookInitParams<Req, Res> ) => Promise<HookReturn<Res>> | HookReturn<Res>;
+  onBeforeOriginFetch?: (params: OnBeforeOriginFetchParams<Req, Res>) => Promise<HookReturn<Res>> | HookReturn<Res>;
+  onOriginFetch?: (params: OnOriginFetchParams<Req, Res>) => Promise<HookReturn<Res>> | HookReturn<Res>;
+  onBodyReady?: (params: OnBodyReadyParams<Req, Res>) => Promise<HookReturn<Res>> | HookReturn<Res>;
+  onBeforeResponse?: (params: OnBeforeResponseParams<Req, Res>) => Promise<HookReturn<Res>> | HookReturn<Res>;
 }
 
 export type Route = {

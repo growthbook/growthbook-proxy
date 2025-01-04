@@ -3,7 +3,7 @@ import {
   defaultContext,
   getConfig,
   Config,
-  ConfigEnv,
+  ConfigEnv, Helpers, Hooks
 } from "@growthbook/edge-utils";
 import {
   getRequestURL,
@@ -27,6 +27,8 @@ export interface FastlyConfig extends Config {
 export async function init(
   env?: ConfigEnv,
   config?: Partial<FastlyConfig>,
+  helpers?: Helpers<Request, Response>,
+  hooks?: Hooks<Request, Response>,
 ): Promise<Context<Request, Response>> {
   const context = defaultContext as Context<Request, Response>;
   if (env) {
@@ -68,6 +70,14 @@ export async function init(
   context.helpers.proxyRequest = proxyRequest;
   context.helpers.getCookie = getCookie;
   context.helpers.setCookie = setCookie;
+
+  if (helpers) {
+    Object.assign(context.helpers, helpers);
+  }
+
+  if (hooks) {
+    context.hooks = hooks;
+  }
 
   return context;
 }

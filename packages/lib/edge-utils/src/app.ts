@@ -35,13 +35,13 @@ export async function edgeApp<Req, Res>(
   let originUrl = getOriginUrl(context, requestUrl);
   // Response vars:
   let originResponse: (OriginResponse & Res) | undefined = undefined;
-  let respHeaders: Record<string, string | undefined> = {};
+  let resHeaders: Record<string, string | undefined> = {};
   const respCookies: Record<string, string> = {};
   const setRespCookie = (key: string, value: string) => {
     respCookies[key] = value;
   };
   // Initial hook:
-  let hookResp: Res | undefined;
+  let hookResp: Res | undefined | void;
   hookResp = await context?.hooks?.onRequest?.({ context, req, res, next, requestUrl, originUrl });
   if (hookResp) return hookResp;
 
@@ -184,29 +184,35 @@ export async function edgeApp<Req, Res>(
   }
 
   // Got a valid response, begin processing
-  const fetchedHeaders = originResponse.headers || {};
+  const originHeaders = headersToObject(originResponse.headers);
   if (context.config.forwardProxyHeaders) {
-    respHeaders = { ...fetchedHeaders, ...respHeaders };
+    resHeaders = { ...originHeaders, ...resHeaders };
   }
   // At minimum, the content-type is forwarded
-  respHeaders["Content-Type"] = fetchedHeaders?.["Content-Type"];
+  resHeaders["content-type"] = originHeaders?.["content-type"];
 
-  if (context.config.useDefaultContentType && !respHeaders["Content-Type"]) {
-    respHeaders["Content-Type"] = "text/html";
+  if (context.config.useDefaultContentType && !resHeaders["content-type"]) {
+    resHeaders["content-type"] = "text/html";
   }
-  if (context.config.processTextHtmlOnly && respHeaders["Content-Type"] !== "text/html") {
+  if (context.config.processTextHtmlOnly && !(resHeaders["content-type"] ?? "").includes("text/html")) {
     return context.helpers.proxyRequest(context, req, res, next);
   }
 
   const { csp, nonce } = getCspInfo(context);
   if (csp) {
-    respHeaders["Content-Security-Policy"] = csp;
+    resHeaders["content-security-policy"] = csp;
   }
 
-  let body: string = await originResponse.text();
+  let body: string = "";
+  try {
+    body = await originResponse?.text() || "";
+  } catch(e) {
+    console.error(e);
+  }
   let setBody = (s: string) => {
     body = s;
   }
+  console.log({originResponse, body})
 
   let root: HTMLElement | undefined;
   if (context.config.alwaysParseDOM) {
@@ -214,7 +220,7 @@ export async function edgeApp<Req, Res>(
   }
 
   // Body ready hook (pre-DOM-mutations):
-  hookResp = await context?.hooks?.onBodyReady?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus, body, setBody, root });
+  hookResp = await context?.hooks?.onBodyReady?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus, originHeaders, resHeaders, body, setBody, root });
   if (hookResp) return hookResp;
 
   /**
@@ -244,13 +250,13 @@ export async function edgeApp<Req, Res>(
   });
 
   // Final hook (post-mutations) before sending back
-  hookResp = await context?.hooks?.onBeforeResponse?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus, body, setBody });
+  hookResp = await context?.hooks?.onBeforeResponse?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus, originHeaders, resHeaders, body, setBody });
   if (hookResp) return hookResp;
 
   /**
    * 9. Send mutated response
    */
-  return context.helpers.sendResponse(context, res, respHeaders, body, respCookies);
+  return context.helpers.sendResponse(context, res, resHeaders, body, respCookies);
 }
 
 
@@ -284,4 +290,11 @@ export function getOriginUrl<Req, Res>(context: Context<Req, Res>, currentURL: s
   }
 
   return newURL;
+}
+
+function headersToObject(headers: any) {
+  if (headers && typeof headers.entries === "function") {
+    return Object.fromEntries(headers.entries());
+  }
+  return headers || {};
 }
