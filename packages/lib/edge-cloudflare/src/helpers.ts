@@ -40,7 +40,7 @@ export function fetchFn(ctx: Context<Request, Response>, url: string, req: Reque
 
 export function proxyRequest(ctx: Context<Request, Response>, req: Request) {
   const originUrl = getOriginUrl(ctx as Context<unknown, unknown>, req.url);
-  return fetch(originUrl, { ...req, redirect: "manual" });
+  return fetchFn(ctx, originUrl, req);
 }
 
 export function getCookie(req: Request, key: string): string {

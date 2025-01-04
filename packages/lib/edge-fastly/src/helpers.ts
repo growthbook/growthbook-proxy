@@ -68,14 +68,7 @@ export async function fetchFn(ctx: Context<Request, Response>, url: string, req:
 
 export function proxyRequest(ctx: Context<Request, Response>, req: Request) {
   const originUrl = getOriginUrl(ctx as Context<unknown, unknown>, req.url);
-  const backend = getBackend(ctx, originUrl);
-  return fetch(originUrl, {
-    method: req.method,
-    headers: req.headers,
-    body: req.body,
-    // @ts-ignore
-    backend: backend,
-  });
+  return fetchFn(ctx, originUrl, req);
 }
 
 export function getCookie(req: Request, key: string): string {

@@ -90,11 +90,7 @@ export async function fetchFn(ctx: Context<Request, Response>, url: string, req:
 
 export async function proxyRequest(ctx: Context<Request, Response>, req: any) {
   const originUrl = getOriginUrl(ctx as Context<unknown, unknown>, req.url);
-  return fetch(originUrl, {
-    method: req.method,
-    headers: req.headers,
-    body: req.body,
-  });
+  return fetchFn(ctx, originUrl, req);
 }
 
 export function getCookie(req: any, key: string): string {
