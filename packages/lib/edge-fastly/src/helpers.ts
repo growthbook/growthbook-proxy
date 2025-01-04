@@ -32,22 +32,30 @@ export function sendResponse(
   return resp;
 }
 
-export async function fetchFn(ctx: Context<Request, Response>, url: string) {
+export async function fetchFn(ctx: Context<Request, Response>, url: string, req: Request) {
   const maxRedirects = 5;
 
   const backend = getBackend(ctx, url);
-  const init = { backend };
-  // @ts-ignore
-  let response = await fetch(url, init);
+  let response = await fetch(url, {
+    method: req.method,
+    headers: req.headers,
+    body: req.body,
+    // @ts-ignore
+    backend: backend,
+  });
   let location = response.headers.get('location');
 
   let redirectCount = 0;
   while (response.status >= 300 && response.status < 400 && location && redirectCount < maxRedirects) {
     if (location) {
       const backend = getBackend(ctx, url);
-      const init = { backend };
-      // @ts-ignore
-      response = await fetch(location, init);
+      response = await fetch(location, {
+        method: req.method,
+        headers: req.headers,
+        body: req.body,
+        // @ts-ignore
+        backend: backend,
+      });
       location = response.headers.get('location');
       redirectCount++;
     }

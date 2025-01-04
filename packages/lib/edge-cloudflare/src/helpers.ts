@@ -31,17 +31,13 @@ export function sendResponse(
   return resp;
 }
 
-export function fetchFn(_: Context<Request, Response>, url: string) {
-  return fetch(url);
+export function fetchFn(_: Context<Request, Response>, url: string, req: Request) {
+  return fetch(url, req);
 }
 
 export function proxyRequest(ctx: Context<Request, Response>, req: Request) {
   const originUrl = getOriginUrl(ctx as Context<unknown, unknown>, req.url);
-  return fetch(originUrl, {
-    method: req.method,
-    headers: req.headers,
-    body: req.body,
-  });
+  return fetch(originUrl, req);
 }
 
 export function getCookie(req: Request, key: string): string {

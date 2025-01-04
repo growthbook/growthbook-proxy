@@ -3,7 +3,7 @@ import {
   defaultContext,
   getConfig,
   ConfigEnv,
-  Config,
+  Config, Helpers, Hooks
 } from "@growthbook/edge-utils";
 import {
   buildGetRequestURL,
@@ -28,7 +28,9 @@ export interface Env extends ConfigEnv {
 export async function init(
   env?: ConfigEnv,
   config?: Partial<Config>,
-): Promise<Context> {
+  helpers?: Helpers<Request, Response>,
+  hooks?: Hooks<Request, Response>,
+): Promise<Context<Request, Response>> {
   const context = defaultContext;
   const configEnv = env || {};
   if (configEnv.STALE_TTL === undefined) {
@@ -54,6 +56,14 @@ export async function init(
   context.helpers.proxyRequest = proxyRequest;
   context.helpers.getCookie = getCookie;
   context.helpers.setCookie = setCookie;
+
+  if (helpers) {
+    Object.assign(context.helpers, helpers);
+  }
+
+  if (hooks) {
+    context.hooks = hooks;
+  }
 
   return context;
 }

@@ -34,7 +34,7 @@ export function getRequestHeader(req: any, key: string) {
 }
 
 export function sendResponse(
-  ctx: Context,
+  ctx: Context<Request, Response>,
   _?: any,
   headers?: Record<string, any>,
   body?: string,
@@ -60,12 +60,16 @@ export function sendResponse(
   return res;
 }
 
-export async function fetchFn(_: Context, url: string) {
+export async function fetchFn(_: Context<Request, Response>, url: string, req: any) {
   // @ts-ignore
-  return fetch(url);
+  return fetch(url, {
+    method: req.method,
+    headers: req.headers,
+    body: req.body,
+  });
 }
 
-export async function proxyRequest(ctx: Context, req: any) {
+export async function proxyRequest(ctx: Context<Request, Response>, req: any) {
   const originUrl = getOriginUrl(ctx as Context<unknown, unknown>, req.url);
   return fetch(originUrl, {
     method: req.method,

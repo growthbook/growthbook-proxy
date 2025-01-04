@@ -60,6 +60,8 @@ The GrowthBook Edge App supports a number of configuration options available via
 #### Proxy behavior
 - `PROXY_TARGET` - Non-edge url to your website
 - `FORWARD_PROXY_HEADERS` - "true" or "1" to preserve response headers from your server (default : `true`)
+- `USE_DEFAULT_CONTENT_TYPE` - "true" or "1" to assume a content-type of "text-html" if no "Content-Type" header was set (default `false`).
+- `PROCESS_TEXT_HTML_ONLY` - "true" or "1" to only process server responses with the `Content-Type: text/html` header set – others will be proxied through (default `true`).
 - `NODE_ENV` - default: `production`
 - `ROUTES` - JSON encoded array of Routes, rules for intercepting, proxy passing, or erroring based on request URL pattern matching
 
@@ -92,6 +94,9 @@ The GrowthBook Edge App supports a number of configuration options available via
 - `UUID_COOKIE_NAME` - Customize the cookie name for persisting the user's ID (default `gbuuid`)
 - `UUID_KEY` - Customize the user identifier name (default `id`)
 - `SKIP_AUTO_ATTRIBUTES` "true" or "1" to skip auto-generating targeting attributes (default `false`)
+
+#### Lifecycle hooks
+- `ALWAYS_PARSE_DOM` - Normally the worker will only build a virtual DOM if there are visual changes. Set to "true" or "1" to always build a virtual DOM so that you can access it in lifecycle hooks (ex: `onBodyReady`)
 
 #### Misc
 - `CONTENT_SECURITY_POLICY` - CSP header value

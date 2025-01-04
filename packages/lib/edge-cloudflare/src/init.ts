@@ -3,7 +3,7 @@ import {
   ConfigEnv,
   defaultContext,
   getConfig,
-  Config,
+  Config, Helpers, Hooks
 } from "@growthbook/edge-utils";
 import { FeatureApiResponse } from "@growthbook/growthbook";
 import {
@@ -25,6 +25,8 @@ export interface Env extends ConfigEnv {
 export async function init(
   env: Env,
   config?: Partial<Config>,
+  helpers?: Helpers<Request, Response>,
+  hooks?: Hooks<Request, Response>,
 ): Promise<Context<Request, Response>> {
   const context = defaultContext as Context<Request, Response>;
   context.config = getConfig(env);
@@ -48,6 +50,14 @@ export async function init(
   context.helpers.proxyRequest = proxyRequest;
   context.helpers.getCookie = getCookie;
   context.helpers.setCookie = setCookie;
+
+  if (helpers) {
+    Object.assign(context.helpers, helpers);
+  }
+
+  if (hooks) {
+    context.hooks = hooks;
+  }
 
   return context;
 }

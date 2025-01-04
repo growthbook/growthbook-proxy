@@ -10,9 +10,10 @@ import {
 import { sdkWrapper } from "./generated/sdkWrapper";
 import { Context } from "./types";
 
-export function injectScript({
+export function injectScript<Req, Res>({
   context,
   body,
+  setBody,
   nonce,
   growthbook,
   attributes,
@@ -20,8 +21,9 @@ export function injectScript({
   url,
   oldUrl,
 }: {
-  context: Context;
+  context: Context<Req, Res>;
   body: string;
+  setBody: (s: string) => void;
   nonce?: string;
   growthbook: GrowthBook;
   attributes: Attributes;
@@ -29,7 +31,7 @@ export function injectScript({
   url: string;
   oldUrl: string;
 }) {
-  if (context.config.disableInjections) return body;
+  if (context.config.disableInjections) return;
 
   const sdkPayload = growthbook.getPayload();
   const experiments = growthbook.getExperiments();
@@ -138,10 +140,11 @@ ${
     body += scriptTag;
   }
 
-  return body;
+  setBody(body);
+  return;
 }
 
-export function getCspInfo(context: Context): {
+export function getCspInfo<Req, Res>(context: Context<Req, Res>): {
   csp?: string;
   nonce?: string;
 } {
@@ -166,13 +169,13 @@ export function getCspInfo(context: Context): {
   return { csp, nonce };
 }
 
-function getBlockedExperiments({
+function getBlockedExperiments<Req, Res>({
   context,
   experiments,
   completedChangeIds,
   preRedirectChangeIds,
 }: {
-  context: Context;
+  context: Context<Req, Res>;
   experiments: AutoExperiment[];
   completedChangeIds: string[];
   preRedirectChangeIds: string[];
