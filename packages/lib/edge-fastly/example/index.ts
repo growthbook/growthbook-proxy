@@ -3,10 +3,8 @@ import { ConfigStore } from "fastly:config-store";
 import { KVStore } from "fastly:kv-store";
 import { FastlyConfig, gbHandleRequest, getConfigEnvFromStore } from "@growthbook/edge-fastly";
 import {
-  BaseHookParams,
   Hooks,
-  OnBeforeResponseParams, OnBodyReadyParams,
-  OnOriginFetchParams,
+  OnBeforeResponseParams,
   OnRouteParams
 } from "@growthbook/edge-utils";
 
@@ -28,16 +26,9 @@ async function handleRequest(event: FetchEvent) {
     onRoute: (params: OnRouteParams<Request, Response>) => {
       console.log("will route", params.route);
     },
-    onOriginFetch: async(params: OnOriginFetchParams<Request, Response>) => {
-      const resp = params.originResponse;
-      console.log("fetched...", {requestUrl: params.requestUrl, originUrl: params.originUrl})
-    },
-    onBodyReady: (params: OnBodyReadyParams<Request, Response>) => {
-      console.log("body ready", params.body, { OH: params.originHeaders, RH: params.resHeaders });
-    },
     onBeforeResponse: (params: OnBeforeResponseParams<Request, Response>) => {
       console.log("will send...")
-      params.setBody(params.body + `<script>console.log("WHOA BABY")</script>`)
+      params.setBody(params.body + `<script>console.log("manually injected content")</script>`)
     }
   }
 

@@ -13,11 +13,13 @@ import redirect from "./redirect";
 import { getRoute } from "./routing";
 import { EdgeStickyBucketService } from "./stickyBucketService";
 import { HTMLElement, parse } from "node-html-parser";
+import pako from "pako";
 
 interface OriginResponse {
   status: number;
   headers: Record<string, string | undefined>;
   text: () => Promise<string>;
+  arrayBuffer: () => Promise<ArrayBuffer>;
 }
 
 export async function edgeApp<Req, Res>(
@@ -205,14 +207,20 @@ export async function edgeApp<Req, Res>(
 
   let body: string = "";
   try {
-    body = await originResponse?.text() || "";
+    // Check if content-encoding is gzip
+    if (originHeaders["content-encoding"] === "gzip") {
+      const buffer = await originResponse.arrayBuffer();
+      body = pako.inflate(new Uint8Array(buffer), { to: "string" });
+      delete resHeaders["content-encoding"]; // do not forward this header since it's now unzipped
+    } else {
+      body = await originResponse?.text() ?? "";
+    }
   } catch(e) {
     console.error(e);
   }
   let setBody = (s: string) => {
     body = s;
   }
-  console.log({originResponse, body})
 
   let root: HTMLElement | undefined;
   if (context.config.alwaysParseDOM) {
