@@ -5,7 +5,7 @@ export async function gbHandleRequest(
   request: Request,
   env?: ConfigEnv,
   config?: Partial<FastlyConfig>,
-  helpers?: Helpers<Request, Response>,
+  helpers?: Partial<Helpers<Request, Response>>,
   hooks?: Hooks<Request, Response>,
 ) {
   const context = await init(env, config, helpers, hooks);

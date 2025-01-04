@@ -18,6 +18,7 @@ export interface Context<Req, Res> {
 
 export interface Config {
   proxyTarget: string;
+  followRedirects: boolean;
   forwardProxyHeaders: boolean;
   useDefaultContentType: boolean;
   processTextHtmlOnly: boolean;

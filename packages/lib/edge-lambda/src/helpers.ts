@@ -60,13 +60,32 @@ export function sendResponse(
   return res;
 }
 
-export async function fetchFn(_: Context<Request, Response>, url: string, req: any) {
-  // @ts-ignore
-  return fetch(url, {
+export async function fetchFn(ctx: Context<Request, Response>, url: string, req: any) {
+  const maxRedirects = 5;
+
+  let response = await fetch(url, {
     method: req.method,
     headers: req.headers,
     body: req.body,
   });
+  if (!ctx.config.followRedirects) {
+    return response;
+  }
+
+  let location = response.headers.get('location');
+  let redirectCount = 0;
+
+  while (response.status >= 300 && response.status < 400 && location && redirectCount < maxRedirects) {
+    response = await fetch(location, {
+      method: req.method,
+      headers: req.headers,
+      body: req.body,
+    });
+    location = response.headers.get('location');
+    redirectCount++;
+  }
+
+  return response;
 }
 
 export async function proxyRequest(ctx: Context<Request, Response>, req: any) {

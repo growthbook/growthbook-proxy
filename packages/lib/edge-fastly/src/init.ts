@@ -27,7 +27,7 @@ export interface FastlyConfig extends Config {
 export async function init(
   env?: ConfigEnv,
   config?: Partial<FastlyConfig>,
-  helpers?: Helpers<Request, Response>,
+  helpers?: Partial<Helpers<Request, Response>>,
   hooks?: Hooks<Request, Response>,
 ): Promise<Context<Request, Response>> {
   const context = defaultContext as Context<Request, Response>;

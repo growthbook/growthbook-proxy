@@ -31,13 +31,16 @@ export function sendResponse(
   return resp;
 }
 
-export function fetchFn(_: Context<Request, Response>, url: string, req: Request) {
+export function fetchFn(ctx: Context<Request, Response>, url: string, req: Request) {
+  if (ctx.config.followRedirects) {
+    return fetch(url, { ...req, redirect: "follow" });
+  }
   return fetch(url, req);
 }
 
 export function proxyRequest(ctx: Context<Request, Response>, req: Request) {
   const originUrl = getOriginUrl(ctx as Context<unknown, unknown>, req.url);
-  return fetch(originUrl, req);
+  return fetch(originUrl, { ...req, redirect: "manual" });
 }
 
 export function getCookie(req: Request, key: string): string {

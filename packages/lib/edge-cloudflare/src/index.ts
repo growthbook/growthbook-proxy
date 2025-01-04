@@ -5,7 +5,7 @@ export async function handleRequest(
   request: Request,
   env: Env,
   config?: Partial<Config>,
-  helpers?: Helpers<Request, Response>,
+  helpers?: Partial<Helpers<Request, Response>>,
   hooks?: Hooks<Request, Response>,
 ) {
   const context = await init(env, config, helpers, hooks);

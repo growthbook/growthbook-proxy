@@ -43,22 +43,24 @@ export async function fetchFn(ctx: Context<Request, Response>, url: string, req:
     // @ts-ignore
     backend: backend,
   });
-  let location = response.headers.get('location');
+  if (!ctx.config.followRedirects) {
+    return response;
+  }
 
+  let location = response.headers.get('location');
   let redirectCount = 0;
+
   while (response.status >= 300 && response.status < 400 && location && redirectCount < maxRedirects) {
-    if (location) {
-      const backend = getBackend(ctx, url);
-      response = await fetch(location, {
-        method: req.method,
-        headers: req.headers,
-        body: req.body,
-        // @ts-ignore
-        backend: backend,
-      });
-      location = response.headers.get('location');
-      redirectCount++;
-    }
+    const backend = getBackend(ctx, location);
+    response = await fetch(location, {
+      method: req.method,
+      headers: req.headers,
+      body: req.body,
+      // @ts-ignore
+      backend: backend,
+    });
+    location = response.headers.get('location');
+    redirectCount++;
   }
 
   return response;

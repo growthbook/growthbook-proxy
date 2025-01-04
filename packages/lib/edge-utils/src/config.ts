@@ -7,6 +7,7 @@ export const defaultContext: Context<Req, Res> = {
   config: {
     proxyTarget: "/",
     forwardProxyHeaders: true,
+    followRedirects: true,
     useDefaultContentType: false,
     processTextHtmlOnly: true,
     environment: "production",
@@ -53,6 +54,7 @@ export const defaultContext: Context<Req, Res> = {
 export interface ConfigEnv {
   PROXY_TARGET?: string;
   FORWARD_PROXY_HEADERS?: string;
+  FOLLOW_REDIRECTS?: string;
   USE_DEFAULT_CONTENT_TYPE?: string;
   PROCESS_TEXT_HTML_ONLY?: string;
   NODE_ENV?: string;
@@ -104,6 +106,9 @@ export function getConfig(env: ConfigEnv): Config {
   config.proxyTarget = env.PROXY_TARGET ?? defaultContext.config.proxyTarget;
   config.forwardProxyHeaders = ["true", "1"].includes(
     env.FORWARD_PROXY_HEADERS ?? "" + defaultContext.config.forwardProxyHeaders,
+  );
+  config.followRedirects = ["true", "1"].includes(
+    env.FOLLOW_REDIRECTS ?? "" + defaultContext.config.followRedirects,
   );
   config.useDefaultContentType = ["true", "1"].includes(
     env.USE_DEFAULT_CONTENT_TYPE ?? "" + defaultContext.config.useDefaultContentType,
