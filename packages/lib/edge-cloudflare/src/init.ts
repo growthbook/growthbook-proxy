@@ -25,8 +25,8 @@ export interface Env extends ConfigEnv {
 export async function init(
   env: Env,
   config?: Partial<Config>,
-  helpers?: Partial<Helpers<Request, Response>>,
   hooks?: Hooks<Request, Response>,
+  helpers?: Partial<Helpers<Request, Response>>,
 ): Promise<Context<Request, Response>> {
   const context = defaultContext as Context<Request, Response>;
   context.config = getConfig(env);

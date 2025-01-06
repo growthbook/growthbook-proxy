@@ -3,7 +3,9 @@ import {
   defaultContext,
   getConfig,
   Config,
-  ConfigEnv, Helpers, Hooks
+  ConfigEnv,
+  Helpers,
+  Hooks,
 } from "@growthbook/edge-utils";
 import {
   getRequestURL,
@@ -22,13 +24,14 @@ export interface FastlyConfig extends Config {
   backends?: Record<string, string>;
   gbCacheStore?: any;
   gbPayloadStore?: any;
+  fetchFeaturesCall?: Config['fetchFeaturesCall'];
 }
 
 export async function init(
   env?: ConfigEnv,
   config?: Partial<FastlyConfig>,
-  helpers?: Partial<Helpers<Request, Response>>,
   hooks?: Hooks<Request, Response>,
+  helpers?: Partial<Helpers<Request, Response>>,
 ): Promise<Context<Request, Response>> {
   const context = defaultContext as Context<Request, Response>;
   if (env) {

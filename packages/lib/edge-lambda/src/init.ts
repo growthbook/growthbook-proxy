@@ -28,8 +28,8 @@ export interface Env extends ConfigEnv {
 export async function init(
   env?: ConfigEnv,
   config?: Partial<Config>,
-  helpers?: Partial<Helpers<Request, Response>>,
   hooks?: Hooks<Request, Response>,
+  helpers?: Partial<Helpers<Request, Response>>,
 ): Promise<Context<Request, Response>> {
   const context = defaultContext;
   const configEnv = env || {};

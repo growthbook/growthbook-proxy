@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { edgeApp, Config, Helpers, Hooks } from "@growthbook/edge-utils";
+import { edgeApp, Config, Hooks, Helpers } from "@growthbook/edge-utils";
 import { init, Env } from "./init";
 
 export async function handleRequest(
@@ -12,7 +12,7 @@ export async function handleRequest(
   hooks?: Hooks<Request, Response>,
 ) {
   const request = event.Records[0].cf.request;
-  const context = await init(env, config, helpers, hooks);
+  const context = await init(env, config, hooks, helpers);
   const response = await edgeApp(context, request);
   if (env?.returnResponse) return response;
   callback(null, response);

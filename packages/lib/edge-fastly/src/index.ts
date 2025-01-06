@@ -1,4 +1,4 @@
-import { ConfigEnv, edgeApp, Helpers, Hooks } from "@growthbook/edge-utils";
+import { ConfigEnv, edgeApp, Hooks, Helpers } from "@growthbook/edge-utils";
 import { init, FastlyConfig } from "./init";
 
 export async function gbHandleRequest(
@@ -8,7 +8,7 @@ export async function gbHandleRequest(
   helpers?: Partial<Helpers<Request, Response>>,
   hooks?: Hooks<Request, Response>,
 ) {
-  const context = await init(env, config, helpers, hooks);
+  const context = await init(env, config, hooks, helpers);
   return (await edgeApp<Request, Response>(context, request)) as Response;
 }
 

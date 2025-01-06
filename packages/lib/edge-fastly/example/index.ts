@@ -32,5 +32,5 @@ async function handleRequest(event: FetchEvent) {
     }
   }
 
-  return await gbHandleRequest(event.request, env, config, undefined, hooks);
+  return await gbHandleRequest(event.request, env, config, hooks);
 }
