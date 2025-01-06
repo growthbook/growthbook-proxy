@@ -5,8 +5,8 @@ export async function gbHandleRequest(
   request: Request,
   env?: ConfigEnv,
   config?: Partial<FastlyConfig>,
-  helpers?: Partial<Helpers<Request, Response>>,
   hooks?: Hooks<Request, Response>,
+  helpers?: Partial<Helpers<Request, Response>>,
 ) {
   const context = await init(env, config, hooks, helpers);
   return (await edgeApp<Request, Response>(context, request)) as Response;

@@ -1,7 +1,7 @@
 {
   "name": "@growthbook/edge-fastly",
   "description": "GrowthBook edge app for Fastly Compute",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "dist/index.js",
   "license": "MIT",
   "repository": {
