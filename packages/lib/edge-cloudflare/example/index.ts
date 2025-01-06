@@ -29,6 +29,6 @@ export default {
     env: Env,
     _: ExecutionContext,
   ): Promise<Response> {
-    return await handleRequest(request, env, undefined, undefined, hooks);
+    return await handleRequest(request, env, undefined, hooks);
   },
 };

@@ -5,8 +5,8 @@ export async function handleRequest(
   request: Request,
   env: Env,
   config?: Partial<Config>,
-  helpers?: Partial<Helpers<Request, Response>>,
   hooks?: Hooks<Request, Response>,
+  helpers?: Partial<Helpers<Request, Response>>,
 ) {
   const context = await init(env, config, hooks, helpers);
   return (await edgeApp<Request, Response>(context, request)) as Response;
