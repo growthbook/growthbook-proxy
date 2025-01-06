@@ -8,8 +8,8 @@ export async function handleRequest(
   callback: any,
   env?: Env,
   config?: Partial<Config>,
-  helpers?: Partial<Helpers<Request, Response>>,
   hooks?: Hooks<Request, Response>,
+  helpers?: Partial<Helpers<Request, Response>>,
 ) {
   const request = event.Records[0].cf.request;
   const context = await init(env, config, hooks, helpers);
