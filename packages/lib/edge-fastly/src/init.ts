@@ -120,6 +120,7 @@ export function getConfigEnvFromStore(store: any): ConfigEnv {
   const fields = [
     "PROXY_TARGET",
     "FORWARD_PROXY_HEADERS",
+    "FOLLOW_REDIRECTS",
     "USE_DEFAULT_CONTENT_TYPE",
     "PROCESS_TEXT_HTML_ONLY",
     "NODE_ENV",
