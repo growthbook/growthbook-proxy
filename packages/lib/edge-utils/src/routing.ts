@@ -1,8 +1,14 @@
 import { isURLTargeted } from "@growthbook/growthbook";
 import { Context, Route } from "./types";
 
-export function getRoute(context: Context, url: string): Route {
-  const routes = context.config.routes || [];
+const defaultRoute: Route = {
+  pattern: "*",
+  type: "simple",
+  behavior: "intercept",
+};
+
+export function getRoute<Req, Res>(context: Context<Req, Res>, url: string): Route {
+  const routes = [...(context.config.routes || []), defaultRoute];
   for (const route of routes) {
     route.type = route.type ?? "simple";
     route.behavior = route.behavior ?? "intercept";
@@ -36,9 +42,5 @@ export function getRoute(context: Context, url: string): Route {
     }
   }
   // Default route is intercept & process
-  return {
-    pattern: "*",
-    type: "simple",
-    behavior: "intercept",
-  };
+  return defaultRoute;
 }

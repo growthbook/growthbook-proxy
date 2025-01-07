@@ -32,25 +32,35 @@ export function sendResponse(
   return resp;
 }
 
-export async function fetchFn(ctx: Context<Request, Response>, url: string) {
+export async function fetchFn(ctx: Context<Request, Response>, url: string, req: Request) {
   const maxRedirects = 5;
 
   const backend = getBackend(ctx, url);
-  const init = { backend };
-  // @ts-ignore
-  let response = await fetch(url, init);
-  let location = response.headers.get('location');
+  let response = await fetch(url, {
+    method: req.method,
+    headers: req.headers,
+    body: req.body,
+    // @ts-ignore
+    backend: backend,
+  });
+  if (!ctx.config.followRedirects) {
+    return response;
+  }
 
+  let location = response.headers.get('location');
   let redirectCount = 0;
+
   while (response.status >= 300 && response.status < 400 && location && redirectCount < maxRedirects) {
-    if (location) {
-      const backend = getBackend(ctx, url);
-      const init = { backend };
+    const backend = getBackend(ctx, location);
+    response = await fetch(location, {
+      method: req.method,
+      headers: req.headers,
+      body: req.body,
       // @ts-ignore
-      response = await fetch(location, init);
-      location = response.headers.get('location');
-      redirectCount++;
-    }
+      backend: backend,
+    });
+    location = response.headers.get('location');
+    redirectCount++;
   }
 
   return response;
@@ -58,14 +68,7 @@ export async function fetchFn(ctx: Context<Request, Response>, url: string) {
 
 export function proxyRequest(ctx: Context<Request, Response>, req: Request) {
   const originUrl = getOriginUrl(ctx as Context<unknown, unknown>, req.url);
-  const backend = getBackend(ctx, originUrl);
-  return fetch(originUrl, {
-    method: req.method,
-    headers: req.headers,
-    body: req.body,
-    // @ts-ignore
-    backend: backend,
-  });
+  return fetchFn(ctx, originUrl, req);
 }
 
 export function getCookie(req: Request, key: string): string {

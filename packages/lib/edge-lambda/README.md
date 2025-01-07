@@ -6,6 +6,7 @@ The **GrowthBook Edge App** provides turnkey Visual Editor and URL Redirect expe
 
 - Automatically run server-side or hybrid Visual Experiments without redraw flicker.
 - Automatically run server-side or hybrid URL Redirect Experiments without flicker or delay.
+- Perform custom feature flagging and experimentation logic.
 - Inject the JavaScript SDK with hydrated payload, allowing the front-end to pick up where the edge left off without any extra network requests.
 
 ### In this package

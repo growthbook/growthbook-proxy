@@ -2,10 +2,11 @@
 
 [GrowthBook](https://www.growthbook.io) is a modular Feature Flagging and Experimentation platform.
 
-The **GrowthBook Edge App** provides turnkey Visual Editor and URL Redirect experimentation on edge without any of the flicker associated with front-end experiments. It runs as a smart proxy layer between your application and your end users. It also can inject a fully-hydrated front-end SDK onto the rendered page, meaning no extra network requests needed.
+The **GrowthBook Edge App** provides turnkey Visual Editor and URL Redirect experimentation on edge without any of the flicker associated with front-end experiments while also supporting manual feature flagging and experimentation. It runs as a smart proxy layer between your application and your end users. It also can inject a fully-hydrated front-end SDK onto the rendered page, meaning no extra network requests needed.
 
 - Automatically run server-side or hybrid Visual Experiments without redraw flicker.
 - Automatically run server-side or hybrid URL Redirect Experiments without flicker or delay.
+- Perform custom feature flagging and experimentation logic using [lifecycle hooks](#lifecycle-hooks).
 - Inject the JavaScript SDK with hydrated payload, allowing the front-end to pick up where the edge left off without any extra network requests.
 
 > [!NOTE]
@@ -60,6 +61,9 @@ The GrowthBook Edge App supports a number of configuration options available via
 #### Proxy behavior
 - `PROXY_TARGET` - Non-edge url to your website
 - `FORWARD_PROXY_HEADERS` - "true" or "1" to preserve response headers from your server (default : `true`)
+- `FOLLOW_REDIRECTS` - "true" or "1" to follow redirects when processing an origin response (default : `true`)
+- `USE_DEFAULT_CONTENT_TYPE` - "true" or "1" to assume a content-type of "text-html" if no "Content-Type" header was set (default `false`).
+- `PROCESS_TEXT_HTML_ONLY` - "true" or "1" to only process server responses with the `Content-Type: text/html` header set – others will be proxied through (default `true`).
 - `NODE_ENV` - default: `production`
 - `ROUTES` - JSON encoded array of Routes, rules for intercepting, proxy passing, or erroring based on request URL pattern matching
 
@@ -93,8 +97,26 @@ The GrowthBook Edge App supports a number of configuration options available via
 - `UUID_KEY` - Customize the user identifier name (default `id`)
 - `SKIP_AUTO_ATTRIBUTES` "true" or "1" to skip auto-generating targeting attributes (default `false`)
 
+#### Lifecycle hooks
+- `ALWAYS_PARSE_DOM` - Normally the worker will only build a virtual DOM if there are visual changes. Set to "true" or "1" to always build a virtual DOM so that you can access it in lifecycle hooks (ex: `onBodyReady`)
+
 #### Misc
 - `CONTENT_SECURITY_POLICY` - CSP header value
+
+
+## Lifecycle hooks
+You can perform custom logic and optionally return a response at various stages in the Edge App's lifecycle. This allows for expressiveness of custom routing, user attribute mutation, header and body (DOM) mutation, and custom feature flag and experiment implementations – while preserving the ability to automatically run Visual and URL Redirect experiments and SDK hydration.
+
+With each hook, you may mutate any of the provided attributes *or* return an early response to halt the Edge App processing. The following hooks are available
+
+- `onRequest` - Fired on initial user request. Can exit early based on requested URL.
+- `onRoute` - Fired after standard routing has been processed. Can exit early (proxy) based on manual routing logic.
+- `onUserAttributes` - Fired after auto-attributes have been assigned to the user. Either enhance the provided `attributes` object or exit early if desired.
+- `onGrowthBookInit` - Fired after the Edge App's internal GrowthBook SDK has been initialized. Call SDK functions or exit early if desired.
+- `onBeforeOriginFetch` - Similar hook to the above; triggers after any URL Redirect experiments have run but before any origin requests have been made.
+- `onOriginFetch` - Fired immediately after the origin fetch has been made, but before the full response body has been captured. Useful for exiting early based on response status or headers.
+- `onBodyReadyParams` - Fired once the entire response body has been parsed. In addition to early exiting, you may begin to mutate the final response body via `resHeaders` and the `setBody()` method. The text `body` as well as the optional parsed virtual DOM `root` (disabled by default, use `ALWAYS_PARSE_DOM` to enable) are exposed. NOTE: If mutating the `root` DOM, it is your responsibility to `setBody()` with the latest changes before the response is returned.
+- `onBeforeResponse` - The final hook fired before the response is returned to the user, triggering after both visual editor changes and client SDK hydration have been injected. While the virtual DOM is no longer available, this hook can be used to apply any final changes the body via `setBody()`. 
 
 ## Further reading
 

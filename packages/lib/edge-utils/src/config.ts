@@ -1,13 +1,20 @@
 import { Config, Context, ExperimentRunEnvironment } from "./types";
 
-export const defaultContext: Context = {
+type Req = any; // placeholder
+type Res = any; // placeholder
+
+export const defaultContext: Context<Req, Res> = {
   config: {
     proxyTarget: "/",
     forwardProxyHeaders: true,
+    followRedirects: true,
+    useDefaultContentType: false,
+    processTextHtmlOnly: true,
     environment: "production",
     maxPayloadSize: "2mb",
     runVisualEditorExperiments: "everywhere",
     disableJsInjection: false,
+    alwaysParseDOM: false,
     runUrlRedirectExperiments: "browser",
     runCrossOriginUrlRedirectExperiments: "browser",
     injectRedirectUrlScript: true,
@@ -24,12 +31,32 @@ export const defaultContext: Context = {
     uuidKey: "id",
     skipAutoAttributes: false,
   },
-  helpers: {},
+  helpers: {
+    getRequestURL: function(req: Req): string {
+      throw new Error("getRequestURL not implemented");
+    },
+    getRequestMethod: function(req: Req): string {
+      throw new Error("getRequestMethod not implemented");
+    },
+    sendResponse: function(ctx: Context<Req, Res>, res?: any, headers?: Record<string, any> | undefined, body?: string | undefined, cookies?: Record<string, string> | undefined, status?: number | undefined): unknown {
+      throw new Error("sendResponse not implemented");
+    },
+    fetch: function(ctx: Context<Req, Res>, url: string, req: Req): Promise<Res> {
+      throw new Error("fetchFn not implemented");
+    },
+    proxyRequest: function(ctx: Context<Req, Res>, req: Req, res?: any, next?: any): Promise<unknown> {
+      throw new Error("proxyRequest not implemented");
+    }
+  },
+  hooks: {},
 };
 
 export interface ConfigEnv {
   PROXY_TARGET?: string;
   FORWARD_PROXY_HEADERS?: string;
+  FOLLOW_REDIRECTS?: string;
+  USE_DEFAULT_CONTENT_TYPE?: string;
+  PROCESS_TEXT_HTML_ONLY?: string;
   NODE_ENV?: string;
   MAX_PAYLOAD_SIZE?: string;
 
@@ -37,6 +64,7 @@ export interface ConfigEnv {
 
   RUN_VISUAL_EDITOR_EXPERIMENTS?: ExperimentRunEnvironment;
   DISABLE_JS_INJECTION?: string;
+  ALWAYS_PARSE_DOM?: string;
 
   RUN_URL_REDIRECT_EXPERIMENTS?: ExperimentRunEnvironment;
   RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS?: ExperimentRunEnvironment;
@@ -79,6 +107,15 @@ export function getConfig(env: ConfigEnv): Config {
   config.forwardProxyHeaders = ["true", "1"].includes(
     env.FORWARD_PROXY_HEADERS ?? "" + defaultContext.config.forwardProxyHeaders,
   );
+  config.followRedirects = ["true", "1"].includes(
+    env.FOLLOW_REDIRECTS ?? "" + defaultContext.config.followRedirects,
+  );
+  config.useDefaultContentType = ["true", "1"].includes(
+    env.USE_DEFAULT_CONTENT_TYPE ?? "" + defaultContext.config.useDefaultContentType,
+  );
+  config.processTextHtmlOnly = ["true", "1"].includes(
+    env.PROCESS_TEXT_HTML_ONLY ?? "" + defaultContext.config.processTextHtmlOnly,
+  );
   config.environment = env.NODE_ENV ?? defaultContext.config.environment;
   config.maxPayloadSize =
     env.MAX_PAYLOAD_SIZE ?? defaultContext.config.maxPayloadSize;
@@ -95,6 +132,9 @@ export function getConfig(env: ConfigEnv): Config {
       .runVisualEditorExperiments) as ExperimentRunEnvironment;
   config.disableJsInjection = ["true", "1"].includes(
     env.DISABLE_JS_INJECTION ?? "" + defaultContext.config.disableJsInjection,
+  );
+  config.alwaysParseDOM = ["true", "1"].includes(
+    env.ALWAYS_PARSE_DOM ?? "" + defaultContext.config.alwaysParseDOM,
   );
 
   config.runUrlRedirectExperiments = (env.RUN_URL_REDIRECT_EXPERIMENTS ??

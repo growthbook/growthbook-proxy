@@ -6,7 +6,7 @@ export function getUserAttributes<Req, Res>(
   ctx: Context<Req, Res>,
   req: Req,
   url: string,
-  setCookie: (key: string, value: string) => void,
+  setRespCookie: (key: string, value: string) => void,
 ): Attributes {
   const { config, helpers } = ctx;
 
@@ -20,7 +20,7 @@ export function getUserAttributes<Req, Res>(
     if (!helpers?.setCookie) {
       throw new Error("Missing required dependencies");
     }
-    setCookie(config.uuidCookieName, uuid);
+    setRespCookie(config.uuidCookieName, uuid);
   }
 
   const autoAttributes = getAutoAttributes(ctx, req, url);
@@ -34,7 +34,6 @@ export function getUUID<Req, Res>(ctx: Context<Req, Res>, req: Req) {
   const { config, helpers } = ctx;
 
   const crypto = config?.crypto || globalThis?.crypto;
-
   if (!crypto || !helpers?.getCookie) {
     throw new Error("Missing required dependencies");
   }

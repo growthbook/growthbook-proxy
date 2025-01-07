@@ -4,6 +4,8 @@ import {
   getConfig,
   Config,
   ConfigEnv,
+  Helpers,
+  Hooks,
 } from "@growthbook/edge-utils";
 import {
   getRequestURL,
@@ -22,11 +24,14 @@ export interface FastlyConfig extends Config {
   backends?: Record<string, string>;
   gbCacheStore?: any;
   gbPayloadStore?: any;
+  fetchFeaturesCall?: Config['fetchFeaturesCall'];
 }
 
 export async function init(
   env?: ConfigEnv,
   config?: Partial<FastlyConfig>,
+  hooks?: Hooks<Request, Response>,
+  helpers?: Partial<Helpers<Request, Response>>,
 ): Promise<Context<Request, Response>> {
   const context = defaultContext as Context<Request, Response>;
   if (env) {
@@ -69,6 +74,14 @@ export async function init(
   context.helpers.getCookie = getCookie;
   context.helpers.setCookie = setCookie;
 
+  if (helpers) {
+    Object.assign(context.helpers, helpers);
+  }
+
+  if (hooks) {
+    context.hooks = hooks;
+  }
+
   return context;
 }
 
@@ -107,11 +120,15 @@ export function getConfigEnvFromStore(store: any): ConfigEnv {
   const fields = [
     "PROXY_TARGET",
     "FORWARD_PROXY_HEADERS",
+    "FOLLOW_REDIRECTS",
+    "USE_DEFAULT_CONTENT_TYPE",
+    "PROCESS_TEXT_HTML_ONLY",
     "NODE_ENV",
     "MAX_PAYLOAD_SIZE",
     "ROUTES",
     "RUN_VISUAL_EDITOR_EXPERIMENTS",
     "DISABLE_JS_INJECTION",
+    "ALWAYS_PARSE_DOM",
     "RUN_URL_REDIRECT_EXPERIMENTS",
     "RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS",
     "INJECT_REDIRECT_URL_SCRIPT",

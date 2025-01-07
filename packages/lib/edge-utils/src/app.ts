@@ -12,6 +12,15 @@ import { applyDomMutations } from "./domMutations";
 import redirect from "./redirect";
 import { getRoute } from "./routing";
 import { EdgeStickyBucketService } from "./stickyBucketService";
+import { HTMLElement, parse } from "node-html-parser";
+import pako from "pako";
+
+interface OriginResponse {
+  status: number;
+  headers: Record<string, string | undefined>;
+  text: () => Promise<string>;
+  arrayBuffer: () => Promise<ArrayBuffer>;
+}
 
 export async function edgeApp<Req, Res>(
   context: Context<Req, Res>,
@@ -20,68 +29,78 @@ export async function edgeApp<Req, Res>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   next?: any,
 ) {
-  let url = context.helpers.getRequestURL?.(req) || "";
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let headers: Record<string, any> = {
-    "Content-Type": "text/html",
+  /**
+   * 1. Init app variables
+   */
+    // Request vars:
+  let requestUrl = context.helpers.getRequestURL(req);
+  let originUrl = getOriginUrl(context, requestUrl);
+  // Response vars:
+  let originResponse: (OriginResponse & Res) | undefined = undefined;
+  let resHeaders: Record<string, string | undefined> = {};
+  const respCookies: Record<string, string> = {};
+  const setRespCookie = (key: string, value: string) => {
+    respCookies[key] = value;
   };
-  const cookies: Record<string, string> = {};
-  const setCookie = (key: string, value: string) => {
-    cookies[key] = value;
-  };
-  const { csp, nonce } = getCspInfo(context as Context<unknown, unknown>);
-  if (csp) {
-    headers["Content-Security-Policy"] = csp;
-  }
-  let body = "";
+  // Initial hook:
+  let hookResp: Res | undefined | void;
+  hookResp = await context?.hooks?.onRequest?.({ context, req, res, next, requestUrl, originUrl });
+  if (hookResp) return hookResp;
 
-  // Non GET requests are proxied
-  if (context.helpers.getRequestMethod?.(req) !== "GET") {
-    return context.helpers.proxyRequest?.(context, req, res, next);
-  }
-  // Check the url for routing rules (default behavior is intercept)
-  const route = getRoute(context as Context<unknown, unknown>, url);
-  if (route.behavior === "error") {
-    return context.helpers.sendResponse?.(
-      context,
-      res,
-      headers,
-      route.body || "",
-      cookies,
-      route.statusCode,
-    );
-  }
-  if (route.behavior === "proxy") {
-    return context.helpers.proxyRequest?.(context, req, res, next);
-  }
-
-  const attributes = getUserAttributes(context, req, url, setCookie);
-
+  // DOM mutations
   let domChanges: AutoExperimentVariation[] = [];
   const resetDomChanges = () => (domChanges = []);
 
+  // Experiments that triggered prior to final redirect
   let preRedirectChangeIds: string[] = [];
   const setPreRedirectChangeIds = (changeIds: string[]) =>
     (preRedirectChangeIds = changeIds);
 
-  if (context.config.localStorage)
-    setPolyfills({ localStorage: context.config.localStorage });
-  if (context.config.crypto)
-    setPolyfills({ SubtleCrypto: context.config.crypto });
+  /**
+   * 2. Early exits based on method, routes, etc
+   */
+  // Non GET requests are proxied
+  if (context.helpers.getRequestMethod(req) !== "GET") {
+    return context.helpers.proxyRequest(context, req, res, next);
+  }
+  // Check the url for routing rules (default behavior is intercept)
+  const route = getRoute(context, requestUrl);
+  if (route.behavior === "error") {
+    return context.helpers.sendResponse(context, res, {}, route.body || "", {}, route.statusCode);
+  }
+  if (route.behavior === "proxy") {
+    return context.helpers.proxyRequest(context, req, res, next);
+  }
+  // Custom route behavior via hook:
+  hookResp = await context?.hooks?.onRoute?.({ context, req, res, next, requestUrl, originUrl, route });
+  if (hookResp) return hookResp;
+
+  /**
+   * 3. User attributes & uuid
+   */
+  const attributes = getUserAttributes(context, req, requestUrl, setRespCookie);
+
+  // Hook to allow enriching user attributes, etc
+  hookResp = await context?.hooks?.onUserAttributes?.({ context, req, res, next, requestUrl, originUrl, route, attributes });
+  if (hookResp) return hookResp;
+
+  /**
+   * 4. Init GrowthBook SDK
+   */
+  setPolyfills({
+    localStorage: context.config?.localStorage,
+    SubtleCrypto: context.config?.crypto,
+  });
   if (context.config.staleTTL !== undefined)
     configureCache({ staleTTL: context.config.staleTTL });
   if (context.config.fetchFeaturesCall)
     helpers.fetchFeaturesCall = context.config.fetchFeaturesCall;
 
-  let stickyBucketService:
-    | EdgeStickyBucketService<Req, Res>
-    | StickyBucketService
-    | undefined = undefined;
+  let stickyBucketService: EdgeStickyBucketService<Req, Res> | StickyBucketService | undefined;
   if (context.config.enableStickyBucketing) {
     stickyBucketService =
       context.config.edgeStickyBucketService ??
-      new EdgeStickyBucketService<Req, Res>({
+      new EdgeStickyBucketService({
         context,
         prefix: context.config.stickyBucketPrefix,
         req,
@@ -94,9 +113,10 @@ export async function edgeApp<Req, Res>(
     attributes,
     applyDomChangesCallback: (changes: AutoExperimentVariation) => {
       domChanges.push(changes);
-      return () => {};
+      return () => {
+      };
     },
-    url,
+    url: requestUrl,
     disableVisualExperiments: ["skip", "browser"].includes(
       context.config.runVisualEditorExperiments,
     ),
@@ -115,81 +135,140 @@ export async function edgeApp<Req, Res>(
     payload: context.config.payload,
   });
 
-  const oldUrl = url;
-  url = await redirect({
-    context: context as Context<unknown, unknown>,
+  // Hook to perform any custom logic given the initialized SDK
+  hookResp = await context?.hooks?.onGrowthbookInit?.({ context, req, res, next, requestUrl, originUrl, route, attributes, growthbook });
+  if (hookResp) return hookResp;
+
+
+  /**
+   * 5. Run URL redirect tests before fetching from origin
+   */
+  const redirectRequestUrl = await redirect({
+    context,
     req,
-    setCookie,
+    setRespCookie,
     growthbook,
-    previousUrl: url,
+    previousUrl: requestUrl,
     resetDomChanges,
     setPreRedirectChangeIds: setPreRedirectChangeIds,
   });
+  originUrl = getOriginUrl(context, redirectRequestUrl);
 
-  const originUrl = getOriginUrl(context as Context<unknown, unknown>, url);
+  // Pre-origin-fetch hook (after redirect logic):
+  hookResp = await context?.hooks?.onBeforeOriginFetch?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook });
+  if (hookResp) return hookResp;
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  let fetchedResponse:
-    | (Res & { status: number; headers: Record<string, any>; text: any })
-    | undefined = undefined;
+  /**
+   * 6. Fetch from origin, parse body / DOM
+   */
   try {
-    fetchedResponse = (await context.helpers.fetch?.(
-      context as Context<Req, Res>,
+    originResponse = await context.helpers.fetch(
+      context,
       originUrl,
-      /* eslint-disable @typescript-eslint/no-explicit-any */
-    )) as Res & { status: number; headers: Record<string, any>; text: any };
-    const status = parseInt(fetchedResponse.status ? fetchedResponse.status + "" : "400");
-    if (status >= 500) {
-      console.error("Fetch: 5xx status returned");
-      return context.helpers.sendResponse?.(
-        context,
-        res,
-        headers,
-        "Error fetching page",
-        cookies,
-        500,
-      );
-    }
-    if (status >= 400) {
-      return context.helpers.proxyRequest?.(context, req, res, next);
-    }
+      req,
+    ) as OriginResponse & Res;
   } catch (e) {
     console.error(e);
-    return context.helpers.sendResponse?.(
-      context,
-      res,
-      headers,
-      "Error fetching page",
-      cookies,
-      500,
-    );
   }
-  if (context.config.forwardProxyHeaders && fetchedResponse?.headers) {
-    headers = { ...fetchedResponse.headers, ...headers };
-  }
-  body = await fetchedResponse.text();
+  const originStatus = originResponse ? parseInt(originResponse.status ? originResponse.status + "" : "400") : 500;
 
-  body = await applyDomMutations({
+  // On fetch hook (for custom response processing, etc)
+  hookResp = await context?.hooks?.onOriginFetch?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus });
+  if (hookResp) return hookResp;
+
+  // Standard error response handling
+  if (originStatus >= 500 || !originResponse) {
+    console.error("Fetch: 5xx status returned");
+    return context.helpers.sendResponse(context, res, {}, "Error fetching page", {}, 500);
+  }
+  if (originStatus >= 400) {
+    return originResponse;
+  }
+
+  // Got a valid response, begin processing
+  const originHeaders = headersToObject(originResponse.headers);
+  if (context.config.forwardProxyHeaders) {
+    resHeaders = { ...originHeaders, ...resHeaders };
+  }
+  // At minimum, the content-type is forwarded
+  resHeaders["content-type"] = originHeaders?.["content-type"];
+
+  if (context.config.useDefaultContentType && !resHeaders["content-type"]) {
+    resHeaders["content-type"] = "text/html";
+  }
+  if (context.config.processTextHtmlOnly && !(resHeaders["content-type"] ?? "").includes("text/html")) {
+    return context.helpers.proxyRequest(context, req, res, next);
+  }
+
+  const { csp, nonce } = getCspInfo(context);
+  if (csp) {
+    resHeaders["content-security-policy"] = csp;
+  }
+
+  let body: string = "";
+  try {
+    // Check if content-encoding is gzip
+    if (originHeaders["content-encoding"] === "gzip") {
+      const buffer = await originResponse.arrayBuffer();
+      body = pako.inflate(new Uint8Array(buffer), { to: "string" });
+      delete resHeaders["content-encoding"]; // do not forward this header since it's now unzipped
+    } else {
+      body = await originResponse?.text() ?? "";
+    }
+  } catch(e) {
+    console.error(e);
+  }
+  let setBody = (s: string) => {
+    body = s;
+  }
+
+  let root: HTMLElement | undefined;
+  if (context.config.alwaysParseDOM) {
+    root = parse(body);
+  }
+
+  // Body ready hook (pre-DOM-mutations):
+  hookResp = await context?.hooks?.onBodyReady?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus, originHeaders, resHeaders, body, setBody, root });
+  if (hookResp) return hookResp;
+
+  /**
+   * 7. Apply visual editor DOM mutations
+   */
+  await applyDomMutations({
     body,
+    setBody,
+    root,
     nonce,
     domChanges,
   });
 
-  body = injectScript({
-    context: context as Context<unknown, unknown>,
+  /**
+   * 8. Inject the client-facing GrowthBook SDK (auto-wrapper)
+   */
+  injectScript({
+    context,
     body,
+    setBody,
     nonce,
     growthbook,
     attributes,
     preRedirectChangeIds,
-    url,
-    oldUrl,
+    url: redirectRequestUrl,
+    oldUrl: requestUrl,
   });
 
-  return context.helpers.sendResponse?.(context, res, headers, body, cookies);
+  // Final hook (post-mutations) before sending back
+  hookResp = await context?.hooks?.onBeforeResponse?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus, originHeaders, resHeaders, body, setBody });
+  if (hookResp) return hookResp;
+
+  /**
+   * 9. Send mutated response
+   */
+  return context.helpers.sendResponse(context, res, resHeaders, body, respCookies);
 }
 
-export function getOriginUrl(context: Context, currentURL: string): string {
+
+export function getOriginUrl<Req, Res>(context: Context<Req, Res>, currentURL: string): string {
   const proxyTarget = context.config.proxyTarget;
   const currentParsedURL = new URL(currentURL);
   const proxyParsedURL = new URL(proxyTarget);
@@ -219,4 +298,11 @@ export function getOriginUrl(context: Context, currentURL: string): string {
   }
 
   return newURL;
+}
+
+function headersToObject(headers: any) {
+  if (headers && typeof headers.entries === "function") {
+    return Object.fromEntries(headers.entries());
+  }
+  return headers || {};
 }
