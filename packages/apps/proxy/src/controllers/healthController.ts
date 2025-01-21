@@ -44,7 +44,7 @@ async function getChecks(ctx: Context) {
   return checks;
 }
 
-const getHealthCheck = async (req: Request, res: Response) => {
+const getHealthChecks = async (req: Request, res: Response) => {
   const ctx = req.app.locals?.ctx;
 
   const build = getBuild();
@@ -57,6 +57,16 @@ const getHealthCheck = async (req: Request, res: Response) => {
   });
 };
 
+const getHealth = async (req: Request, res: Response) => {
+  const build = getBuild();
+  res.status(200).json({
+    ok: true,
+    proxyVersion: version,
+    build,
+  });
+};
+
 export const healthRouter = express.Router();
 
-healthRouter.get("/", getHealthCheck);
+healthRouter.get("/", getHealth);
+healthRouter.get("/checks", getHealthChecks);
