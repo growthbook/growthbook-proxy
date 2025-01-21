@@ -36,7 +36,7 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 ### What's new
 
 **Version 1.2.1**
-- Move detailed healthcheck statuses to new /healthcheck/status endpoint
+- Move detailed healthcheck statuses to new /healthcheck/checks endpoint
 - Keep /healthcheck endpoint simple & synchronous
 - Add Zod validation and sanitization to remote eval endpoint
 
