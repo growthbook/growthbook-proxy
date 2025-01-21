@@ -13,6 +13,7 @@ import logger from "../services/logger";
 import { fetchFeatures } from "../services/features";
 import { Context } from "../types";
 import { MAX_PAYLOAD_SIZE } from "../init";
+import { z } from "zod";
 
 const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   if (!registrar?.growthbookApiHost) {
@@ -71,6 +72,13 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   featuresCache && logger.debug("cache HIT");
   return res.status(200).json(payload);
 };
+
+const bodySchema = z.object({
+  attributes: z.record(z.any()).optional(),
+  forcedVariations: z.record(z.number()).optional(),
+  forcedFeatures: z.array(z.tuple([z.string(), z.any()])).optional(),
+  url: z.string().optional(),
+});
 
 const getEvaluatedFeatures = async (req: Request, res: Response) => {
   if (!registrar?.growthbookApiHost) {
@@ -134,22 +142,40 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
 
   featuresCache && logger.debug("cache HIT");
 
-  // Evaluate features using provided attributes
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const attributes: Record<string, any> = req.body?.attributes || {};
-  const forcedVariations: Record<string, number> =
-    req.body?.forcedVariations || {};
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const forcedFeatures: Map<string, any> = new Map(
-    req.body.forcedFeatures || [],
-  );
-  const url = req.body?.url;
+
+  const parsedBody = bodySchema.safeParse(req.body);
+  if (!parsedBody.success) {
+    return res.status(400).json({
+      status: 400,
+      error: "Invalid input",
+    });
+  }
+  const { attributes = {}, forcedVariations = {}, forcedFeatures = [], url = "" } = parsedBody.data;
+  let forcedFeaturesMap: Map<string, any> = new Map();
+  try {
+    if (Object.keys(attributes).length > 1000) {
+      throw new Error("Max attribute keys");
+    }
+    if (Object.keys(forcedVariations).length > 1000) {
+      throw new Error("Max forcedVariations keys");
+    }
+    if (forcedFeatures.length > 1000) {
+      throw new Error("Max forcedFeatures keys");
+    }
+    forcedFeaturesMap = new Map(forcedFeatures);
+  } catch (e) {
+    logger.error(e, "getEvaluatedFeatures input error");
+    return res.status(400).json({
+      status: 400,
+      error: "Invalid input",
+    });
+  }
 
   payload = await evaluateFeatures({
     payload,
     attributes,
     forcedVariations,
-    forcedFeatures,
+    forcedFeatures: forcedFeaturesMap,
     url,
     stickyBucketService,
     ctx: req.app.locals?.ctx,
