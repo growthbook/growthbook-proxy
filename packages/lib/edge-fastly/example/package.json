@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@fastly/js-compute": "^3.24.3",
-    "@growthbook/edge-fastly": "^0.2.0"
+    "@growthbook/edge-fastly": "^0.2.1"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

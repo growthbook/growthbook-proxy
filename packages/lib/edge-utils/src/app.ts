@@ -139,7 +139,6 @@ export async function edgeApp<Req, Res>(
   hookResp = await context?.hooks?.onGrowthbookInit?.({ context, req, res, next, requestUrl, originUrl, route, attributes, growthbook });
   if (hookResp) return hookResp;
 
-
   /**
    * 5. Run URL redirect tests before fetching from origin
    */
@@ -152,7 +151,7 @@ export async function edgeApp<Req, Res>(
     resetDomChanges,
     setPreRedirectChangeIds: setPreRedirectChangeIds,
   });
-  originUrl = getOriginUrl(context, redirectRequestUrl);
+  originUrl = getOriginUrl(context, redirectRequestUrl, redirectRequestUrl !== requestUrl);
 
   // Pre-origin-fetch hook (after redirect logic):
   hookResp = await context?.hooks?.onBeforeOriginFetch?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook });
@@ -268,10 +267,12 @@ export async function edgeApp<Req, Res>(
 }
 
 
-export function getOriginUrl<Req, Res>(context: Context<Req, Res>, currentURL: string): string {
+export function getOriginUrl<Req, Res>(context: Context<Req, Res>, currentURL: string, wasRedirected?: boolean): string {
   const proxyTarget = context.config.proxyTarget;
   const currentParsedURL = new URL(currentURL);
-  const proxyParsedURL = new URL(proxyTarget);
+  const proxyParsedURL = wasRedirected && ["edge", "everywhere"].includes(context.config.runCrossOriginUrlRedirectExperiments)
+    ? new URL(currentURL)
+    : new URL(proxyTarget);
 
   const protocol = proxyParsedURL.protocol
     ? proxyParsedURL.protocol
