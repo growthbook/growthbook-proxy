@@ -488,6 +488,13 @@
   dependencies:
     dom-mutator "^0.6.0"
 
+"@growthbook/growthbook@^1.4.1":
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/@growthbook/growthbook/-/growthbook-1.4.1.tgz#db1d5c270c7450ae131455dfb26acb69114a8abe"
+  integrity sha512-Cl+q1SPwTYHvV2mcsjDcAuT4ezzpA6pOJr7nGCKiPaIZ4BN+pNt2kQM/dtCiwwse7vFz26S1/UJ+mb6qSSW8sQ==
+  dependencies:
+    dom-mutator "^0.6.0"
+
 "@grpc/grpc-js@^1.7.1":
   version "1.11.1"
   resolved "https://registry.yarnpkg.com/@grpc/grpc-js/-/grpc-js-1.11.1.tgz#a92f33e98f1959feffcd1b25a33b113d2c977b70"
@@ -6246,6 +6253,11 @@ typescript@^5.7.2:
   version "5.7.2"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.7.2.tgz#3169cf8c4c8a828cde53ba9ecb3d2b1d5dd67be6"
   integrity sha512-i5t66RHxDvVN40HfDd1PsEThGNnlMCMT3jMUuoh9/0TaqWevNontacunWyN02LA9/fIbEWlcHZcgTKb9QoaLfg==
+
+typescript@^5.8.2:
+  version "5.8.2"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.8.2.tgz#8170b3702f74b79db2e5a96207c15e65807999e4"
+  integrity sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==
 
 ufo@^1.5.4:
   version "1.5.4"
