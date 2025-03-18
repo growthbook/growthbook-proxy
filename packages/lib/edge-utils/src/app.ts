@@ -204,18 +204,18 @@ export async function edgeApp<Req, Res>(
     resHeaders["content-security-policy"] = csp;
   }
 
-  let body: string = "";
-  try {
-    // Check if content-encoding is gzip
-    if (originHeaders["content-encoding"] === "gzip") {
-      const buffer = await originResponse.arrayBuffer();
-      body = pako.inflate(new Uint8Array(buffer), { to: "string" });
-      delete resHeaders["content-encoding"]; // do not forward this header since it's now unzipped
-    } else {
-      body = await originResponse?.text() ?? "";
+  let body = await originResponse.text() ?? "";
+  // Check if content-encoding is gzip
+  if (originHeaders["content-encoding"] === "gzip") {
+    delete resHeaders["content-encoding"]; // do not forward this header since it's now unzipped
+    if (!body) {
+      try {
+        const buffer = await originResponse.arrayBuffer();
+        body = pako.inflate(new Uint8Array(buffer), { to: "string" });
+      } catch (e) {
+        console.error(e);
+      }
     }
-  } catch(e) {
-    console.error(e);
   }
   let setBody = (s: string) => {
     body = s;

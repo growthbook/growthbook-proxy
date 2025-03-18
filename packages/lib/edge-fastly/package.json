@@ -1,7 +1,7 @@
 {
   "name": "@growthbook/edge-fastly",
   "description": "GrowthBook edge app for Fastly Compute",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "main": "dist/index.js",
   "license": "MIT",
   "repository": {
@@ -16,7 +16,7 @@
     "type-check": "tsc --pretty --noEmit"
   },
   "dependencies": {
-    "@growthbook/edge-utils": "^0.2.2",
+    "@growthbook/edge-utils": "^0.2.4",
     "cookie": "^1.0.2"
   },
   "devDependencies": {
