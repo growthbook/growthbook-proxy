@@ -32,10 +32,13 @@ export function sendResponse(
 }
 
 export function fetchFn(ctx: Context<Request, Response>, url: string, req: Request) {
-  if (ctx.config.followRedirects) {
-    return fetch(url, { ...req, redirect: "follow" });
-  }
-  return fetch(url, req);
+  const newRequest = new Request(url, {
+    method: req.method,
+    headers: req.headers,
+    body: req.body,
+    redirect: ctx.config.followRedirects ? "follow" : "manual",
+  });
+  return fetch(newRequest);
 }
 
 export function proxyRequest(ctx: Context<Request, Response>, req: Request) {
