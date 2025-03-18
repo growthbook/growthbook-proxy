@@ -1,5 +1,5 @@
 # Build the GrowthBook Proxy app
-FROM node:18-slim
+FROM node:20-slim
 WORKDIR /usr/local/src/app
 
 # Install ca-certificates
