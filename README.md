@@ -35,6 +35,10 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ### What's new
 
+**Version 1.2.3**
+- Update SDK version
+- Minimum supported Node.js version is now 20.0.0.
+
 **Version 1.2.1**
 - Move detailed healthcheck statuses to new /healthcheck/checks endpoint
 - Keep /healthcheck endpoint simple & synchronous
