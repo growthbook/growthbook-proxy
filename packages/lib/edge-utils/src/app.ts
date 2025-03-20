@@ -177,7 +177,6 @@ export async function edgeApp<Req, Res>(
 
   // Standard error response handling
   if (originStatus >= 500 || !originResponse) {
-    console.error("Fetch: 5xx status returned");
     return context.helpers.sendResponse(context, res, {}, "Error fetching page", {}, 500);
   }
   if (originStatus >= 400) {
@@ -204,18 +203,29 @@ export async function edgeApp<Req, Res>(
     resHeaders["content-security-policy"] = csp;
   }
 
-  let body = await originResponse.text() ?? "";
-  // Check if content-encoding is gzip
-  if (originHeaders["content-encoding"] === "gzip") {
-    delete resHeaders["content-encoding"]; // do not forward this header since it's now unzipped
-    if (!body) {
-      try {
-        const buffer = await originResponse.arrayBuffer();
+  const autoInflate = context.config.autoInflate; // fastly only!!!
+  let body = "";
+  const isGzipped = originHeaders["content-encoding"] === "gzip";
+  try {
+    const buffer = await originResponse.arrayBuffer();
+    try {
+      if (isGzipped && autoInflate) {
         body = pako.inflate(new Uint8Array(buffer), { to: "string" });
-      } catch (e) {
-        console.error(e);
+      } else {
+        body = new TextDecoder().decode(buffer);
+      }
+    } catch {
+      if (isGzipped) {
+        body = pako.inflate(new Uint8Array(buffer), { to: "string" });
+      } else {
+        throw new Error("Failed to decode response as text.");
       }
     }
+    if (isGzipped) {
+      delete resHeaders["content-encoding"]; // Remove to prevent double decompression
+    }
+  } catch (e) {
+    console.error("Response decoding error", e);
   }
   let setBody = (s: string) => {
     body = s;

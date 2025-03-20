@@ -22,7 +22,7 @@
     "dev:example": "concurrently 'tsc --watch -p example' 'nodemon -q example/dist/index.js'"
   },
   "dependencies": {
-    "@growthbook/edge-utils": "^0.2.4",
+    "@growthbook/edge-utils": "^0.2.5",
     "@growthbook/growthbook": "^1.4.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

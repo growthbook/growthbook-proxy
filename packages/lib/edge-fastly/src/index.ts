@@ -8,7 +8,12 @@ export async function gbHandleRequest(
   hooks?: Hooks<Request, Response>,
   helpers?: Partial<Helpers<Request, Response>>,
 ) {
-  const context = await init(env, config, hooks, helpers);
+  const fastlyConfig = {
+    autoInflate: true, // Fastly requires manually inflating gzipped content
+    nocacheOrigin: true, // Fastly does not hydrate response body for 304 origin statuses. Send nocache header
+    ...config,
+  };
+  const context = await init(env, fastlyConfig, hooks, helpers);
   return (await edgeApp<Request, Response>(context, request)) as Response;
 }
 

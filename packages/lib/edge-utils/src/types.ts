@@ -22,6 +22,8 @@ export interface Config {
   forwardProxyHeaders: boolean;
   useDefaultContentType: boolean;
   processTextHtmlOnly: boolean;
+  autoInflate: boolean;
+  nocacheOrigin: boolean;
   environment: string;
   maxPayloadSize?: string;
   routes?: Route[];

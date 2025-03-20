@@ -35,10 +35,16 @@ export function sendResponse(
 export async function fetchFn(ctx: Context<Request, Response>, url: string, req: Request) {
   const maxRedirects = 5;
 
+  const newHeaders = new Headers(req.headers);
+  if (ctx.config.nocacheOrigin) {
+    // try to prevent 304s:
+    newHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  }
+
   const backend = getBackend(ctx, url);
   let response = await fetch(url, {
     method: req.method,
-    headers: req.headers,
+    headers: newHeaders,
     body: req.body,
     // @ts-ignore
     backend: backend,
@@ -54,7 +60,7 @@ export async function fetchFn(ctx: Context<Request, Response>, url: string, req:
     const backend = getBackend(ctx, location);
     response = await fetch(location, {
       method: req.method,
-      headers: req.headers,
+      headers: newHeaders,
       body: req.body,
       // @ts-ignore
       backend: backend,

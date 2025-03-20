@@ -59,11 +59,13 @@ Set up an edge key-val store and optionally use a GrowthBook SDK Webhook to keep
 The GrowthBook Edge App supports a number of configuration options available via environment variables:
 
 #### Proxy behavior
-- `PROXY_TARGET` - Non-edge url to your website
-- `FORWARD_PROXY_HEADERS` - "true" or "1" to preserve response headers from your server (default : `true`)
-- `FOLLOW_REDIRECTS` - "true" or "1" to follow redirects when processing an origin response (default : `true`)
+- `PROXY_TARGET` - Origin (non-edge) base URL to your website
+- `FORWARD_PROXY_HEADERS` - "true" or "1" to preserve response headers from your server (default `true`)
+- `FOLLOW_REDIRECTS` - "true" or "1" to follow redirects when processing an origin response (default `true`)
 - `USE_DEFAULT_CONTENT_TYPE` - "true" or "1" to assume a content-type of "text-html" if no "Content-Type" header was set (default `false`).
 - `PROCESS_TEXT_HTML_ONLY` - "true" or "1" to only process server responses with the `Content-Type: text/html` header set – others will be proxied through (default `true`).
+- `AUTO_INFLATE` - "true" or "1" to automatically unzip gzipped content. Not needed for most vendors (default: `false`).
+- `NOCACHE_ORIGIN` - "true" or "1" to send "nocache" headers on origin requests. Not needed for most vendors (default: `false`).
 - `NODE_ENV` - default: `production`
 - `ROUTES` - JSON encoded array of Routes, rules for intercepting, proxy passing, or erroring based on request URL pattern matching
 

@@ -10,6 +10,8 @@ export const defaultContext: Context<Req, Res> = {
     followRedirects: true,
     useDefaultContentType: false,
     processTextHtmlOnly: true,
+    autoInflate: false,
+    nocacheOrigin: false,
     environment: "production",
     maxPayloadSize: "2mb",
     runVisualEditorExperiments: "everywhere",
@@ -57,6 +59,8 @@ export interface ConfigEnv {
   FOLLOW_REDIRECTS?: string;
   USE_DEFAULT_CONTENT_TYPE?: string;
   PROCESS_TEXT_HTML_ONLY?: string;
+  AUTO_INFLATE?: string;
+  NOCACHE_ORIGIN?: string;
   NODE_ENV?: string;
   MAX_PAYLOAD_SIZE?: string;
 
@@ -115,6 +119,12 @@ export function getConfig(env: ConfigEnv): Config {
   );
   config.processTextHtmlOnly = ["true", "1"].includes(
     env.PROCESS_TEXT_HTML_ONLY ?? "" + defaultContext.config.processTextHtmlOnly,
+  );
+  config.autoInflate = ["true", "1"].includes(
+    env.AUTO_INFLATE ?? "" + defaultContext.config.autoInflate,
+  );
+  config.nocacheOrigin = ["true", "1"].includes(
+    env.NOCACHE_ORIGIN ?? "" + defaultContext.config.nocacheOrigin,
   );
   config.environment = env.NODE_ENV ?? defaultContext.config.environment;
   config.maxPayloadSize =

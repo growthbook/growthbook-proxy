@@ -63,9 +63,14 @@ export function sendResponse(
 export async function fetchFn(ctx: Context<Request, Response>, url: string, req: any) {
   const maxRedirects = 5;
 
+  const newHeaders = new Headers(req.headers);
+  if (ctx.config.nocacheOrigin) {
+    // try to prevent 304s:
+    newHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  }
   let response = await fetch(url, {
     method: req.method,
-    headers: req.headers,
+    headers: newHeaders,
     body: req.body,
   });
   if (!ctx.config.followRedirects) {
@@ -78,7 +83,7 @@ export async function fetchFn(ctx: Context<Request, Response>, url: string, req:
   while (response.status >= 300 && response.status < 400 && location && redirectCount < maxRedirects) {
     response = await fetch(location, {
       method: req.method,
-      headers: req.headers,
+      headers: newHeaders,
       body: req.body,
     });
     location = response.headers.get('location');
