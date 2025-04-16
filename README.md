@@ -35,6 +35,9 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ### What's new
 
+**Version 1.2.4**
+- Support expiring sticky buckets in Redis remote eval sticky bucket service
+
 **Version 1.2.3**
 - Update SDK version
 - Minimum supported Node.js version is now 20.0.0.

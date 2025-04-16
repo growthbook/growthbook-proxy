@@ -17,6 +17,7 @@ export interface StickyBucketSettings {
   useCluster?: boolean; // for RedisCache
   clusterRootNodesJSON?: ClusterNode[]; // for RedisCache
   clusterOptionsJSON?: ClusterOptions; // for RedisCache
+  ttl?: number;
 }
 
 export const initializeStickyBucketService = async (context: Context) => {

@@ -1,18 +1,7 @@
 import Redis, { Cluster, ClusterNode, ClusterOptions } from "ioredis";
-
-import { StickyBucketService } from "@growthbook/growthbook";
+import { StickyAssignmentsDocument, StickyAttributeKey, StickyBucketService } from "@growthbook/growthbook";
 import logger from "../logger";
 import { StickyBucketSettings } from "./index";
-
-// from JS SDK (todo: export from sdk):
-export type StickyAttributeKey = string; // `${attributeName}||${attributeValue}`
-export type StickyExperimentKey = string; // `${experimentId}__{version}`
-export type StickyAssignments = Record<StickyExperimentKey, string>;
-export interface StickyAssignmentsDocument {
-  attributeName: string;
-  attributeValue: string;
-  assignments: StickyAssignments;
-}
 
 // Mostly taken from the JS SDK, with write buffer for when remote eval finishes
 
@@ -22,6 +11,7 @@ export class RedisStickyBucketService extends StickyBucketService {
   private readonly useCluster: boolean;
   private readonly clusterRootNodesJSON?: ClusterNode[];
   private readonly clusterOptions?: ClusterOptions;
+  private readonly ttl?: number;
 
   private writeBuffer: Record<string, string> = {};
 
@@ -30,12 +20,14 @@ export class RedisStickyBucketService extends StickyBucketService {
     useCluster = false,
     clusterRootNodesJSON,
     clusterOptionsJSON,
+    ttl,
   }: StickyBucketSettings = {}) {
     super();
     this.connectionUrl = connectionUrl;
     this.useCluster = useCluster;
     this.clusterRootNodesJSON = clusterRootNodesJSON;
     this.clusterOptions = clusterOptionsJSON;
+    this.ttl = ttl;
   }
 
   public async connect() {
@@ -94,7 +86,22 @@ export class RedisStickyBucketService extends StickyBucketService {
   public async onEvaluate() {
     if (!this.client) return;
     if (Object.keys(this.writeBuffer).length === 0) return;
-    this.client.mset(this.writeBuffer);
+    if (this.ttl !== undefined) {
+      await this.client
+        .multi(
+          Object.entries(this.writeBuffer).map(([key, value]) => [
+            "set",
+            key,
+            value,
+            "ex",
+            this.ttl,
+          ]),
+        )
+        .exec();
+    } else {
+      this.client.mset(this.writeBuffer);
+    }
+
     this.writeBuffer = {};
   }
 
