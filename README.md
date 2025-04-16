@@ -35,6 +35,9 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ### What's new
 
+**Version 1.2.5**
+- Fix bugs parsing sticky bucket settings, allow for separate redis configs for proxy cache & sticky bucket service
+
 **Version 1.2.4**
 - Support expiring sticky buckets in Redis remote eval sticky bucket service
 
