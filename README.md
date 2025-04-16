@@ -197,6 +197,7 @@ The standard [OTEL\_\* Environment Variables](https://opentelemetry.io/docs/conc
   - `STICKY_BUCKET_USE_CLUSTER` - "true" or "1" to enable Redis cluster mode (default: `false`)
   - `STICKY_BUCKET_CLUSTER_ROOT_NODES_JSON` - JSON array of ClusterNode objects (ioredis)
   - `STICKY_BUCKET_CLUSTER_OPTIONS_JSON` - JSON object of ClusterOptions (ioredis)
+  - `STICKY_BUCKET_TTL` - Number of seconds before a sticky bucket document expires in Redis (default: `0` = never)
 
 **Misc**
 - `MAX_PAYLOAD_SIZE` - The maximum size of a request body (default: `"2mb"`)
