@@ -1,37 +1,34 @@
 import { handleRequest, Env } from "@growthbook/edge-cloudflare";
-import { Hooks, OnBeforeResponseParams } from "@growthbook/edge-utils";
+import {
+  Hooks,
+  OnBeforeOriginFetchParams,
+  OnBeforeResponseParams,
+  OnOriginFetchParams,
+  OnRouteParams
+} from "@growthbook/edge-utils";
 
-// TODO: Remove once you're able to implement the worker on all routes
 const hooks: Hooks<Request, Response> = {
+  onRoute: (params: OnRouteParams<Request, Response>) => {
+    console.log("will route", params.route);
+  },
+  onBeforeOriginFetch: (params: OnBeforeOriginFetchParams<Request, Response >) => {
+    console.log("before origin fetch", params.redirectRequestUrl)
+  },
+  onOriginFetch: (params: OnOriginFetchParams<Request, Response>) => {
+    console.log("origin fetch", params.originStatus)
+  },
   onBeforeResponse: (params: OnBeforeResponseParams<Request, Response>) => {
-    const injection = `
-<script>
-  const gbTrackingCalls = ${JSON.stringify(params?.growthbook?.getDeferredTrackingCalls?.() || [])};
-  window.dataLayer = window.dataLayer || [];
-  gbTrackingCalls.forEach((trackingData) => {
-    window.dataLayer.push({
-      event: "experiment_viewed",
-      experiment_id: trackingData.experiment.key,
-      variation_id: trackingData.result.key,
-    });
-  });
-  
-${params.redirectRequestUrl !== params.requestUrl
-  ? `  window.history.replaceState(undefined, undefined, ${JSON.stringify(
-    params.redirectRequestUrl,
-  )});`
-: ""}
-</script>
-    `;
-    params.setBody(params.body + injection);
+    console.log("will send...")
+    params.setBody(params.body + `<script>console.log("manually injected content")</script>`)
   }
 }
 
 export default {
-  fetch: async function (request: Request, env: Env): Promise<Response> {
-    // TODO: Remove once you're able to implement the worker on all routes
-    env.DISABLE_INJECTIONS = "true";
-
+  fetch: async function (
+    request: Request,
+    env: Env,
+    _: ExecutionContext,
+  ): Promise<Response> {
     return await handleRequest(request, env, undefined, hooks);
   },
 };
