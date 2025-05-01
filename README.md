@@ -35,6 +35,9 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ### What's new
 
+**Version 1.2.5**
+- Fix bugs parsing sticky bucket settings, allow for separate redis configs for proxy cache & sticky bucket service
+
 **Version 1.2.4**
 - Support expiring sticky buckets in Redis remote eval sticky bucket service
 
@@ -194,6 +197,7 @@ The standard [OTEL\_\* Environment Variables](https://opentelemetry.io/docs/conc
   - `STICKY_BUCKET_USE_CLUSTER` - "true" or "1" to enable Redis cluster mode (default: `false`)
   - `STICKY_BUCKET_CLUSTER_ROOT_NODES_JSON` - JSON array of ClusterNode objects (ioredis)
   - `STICKY_BUCKET_CLUSTER_OPTIONS_JSON` - JSON object of ClusterOptions (ioredis)
+  - `STICKY_BUCKET_TTL` - Number of seconds before a sticky bucket document expires in Redis (default: `0` = never)
 
 **Misc**
 - `MAX_PAYLOAD_SIZE` - The maximum size of a request body (default: `"2mb"`)

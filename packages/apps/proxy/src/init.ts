@@ -90,6 +90,9 @@ export default async () => {
       clusterOptionsJSON: process.env.STICKY_BUCKET_CLUSTER_OPTIONS_JSON
         ? JSON.parse(process.env.STICKY_BUCKET_CLUSTER_OPTIONS_JSON)
         : undefined,
+      ttl: process.env.STICKY_BUCKET_TTL
+        ? parseInt(process.env.STICKY_BUCKET_TTL)
+        : undefined,
     },
   };
 
