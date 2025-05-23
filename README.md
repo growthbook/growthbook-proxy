@@ -151,6 +151,16 @@ _(Note that CACHE_CONNECTION_URL is ignored when using cluster mode)_
 - `CLUSTER_ROOT_NODES_JSON` - JSON array of ClusterNode objects (ioredis)
 - `CLUSTER_OPTIONS_JSON` - JSON object of ClusterOptions (ioredis)
 
+#### Redis Sentinel
+
+Redis-specific options for sentinel mode:<br />
+_(Note that CACHE_CONNECTION_URL is ignored when using sentinel mode)_
+Sentinel mode is only available if `USE_CLUSTER` is `false`
+
+- `USE_SENTINEL` - "true" or "1" to enable (default: `false`)
+- `SENTINEL_CONNECTION_OPTIONS_JSON` - JSON object of SentinelConnectionOptions (ioredis)
+  - Example: `{"sentinels": [{ "host": "localhost" , "port": 26379 }], "sentinelPassword": "password123", "password": "password123", "name": "mycache"}`
+
 #### MongoDB
 
 Mongo-specific options:

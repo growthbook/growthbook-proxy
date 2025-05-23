@@ -54,6 +54,11 @@ export default async () => {
       clusterOptionsJSON: process.env.CLUSTER_OPTIONS_JSON
         ? JSON.parse(process.env.CLUSTER_OPTIONS_JSON)
         : undefined,
+      // Redis only - sentinel:
+      useSentinel: ["true", "1"].includes(process.env.USE_SENTINEL ?? "0"),
+      sentinelConnectionOptionsJSON: process.env.SENTINEL_CONNECTION_OPTIONS_JSON
+        ? JSON.parse(process.env.SENTINEL_CONNECTION_OPTIONS_JSON)
+        : undefined,
     },
     // SSE settings:
     enableEventStream: ["true", "1"].includes(

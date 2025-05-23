@@ -1,4 +1,9 @@
-import Redis, { Cluster, ClusterNode, ClusterOptions } from "ioredis";
+import Redis, {
+  Cluster,
+  ClusterNode,
+  ClusterOptions,
+  SentinelConnectionOptions,
+} from "ioredis";
 
 import { v4 as uuidv4 } from "uuid";
 import logger from "../logger";
@@ -25,6 +30,9 @@ export class RedisCache {
   private readonly clusterRootNodesJSON?: ClusterNode[];
   private readonly clusterOptions?: ClusterOptions;
 
+  private readonly useSentinel: boolean;
+  private readonly sentinelConnectionOptions?: SentinelConnectionOptions;
+
   private readonly appContext?: Context;
 
   public constructor(
@@ -38,6 +46,8 @@ export class RedisCache {
       useCluster = false,
       clusterRootNodesJSON,
       clusterOptionsJSON,
+      useSentinel = false,
+      sentinelConnectionOptionsJSON,
     }: CacheSettings = {},
     appContext?: Context,
   ) {
@@ -49,6 +59,8 @@ export class RedisCache {
     this.useCluster = useCluster;
     this.clusterRootNodesJSON = clusterRootNodesJSON;
     this.clusterOptions = clusterOptionsJSON;
+    this.useSentinel = useSentinel;
+    this.sentinelConnectionOptions = sentinelConnectionOptionsJSON;
 
     this.appContext = appContext;
 
@@ -62,11 +74,7 @@ export class RedisCache {
   }
 
   public async connect() {
-    if (!this.useCluster) {
-      this.client = this.connectionUrl
-        ? new Redis(this.connectionUrl)
-        : new Redis();
-    } else {
+    if (this.useCluster) {
       if (this.clusterRootNodesJSON) {
         this.client = new Redis.Cluster(
           this.clusterRootNodesJSON,
@@ -75,6 +83,12 @@ export class RedisCache {
       } else {
         throw new Error("No cluster root nodes");
       }
+    } else if (this.useSentinel && this.sentinelConnectionOptions) {
+      this.client = new Redis(this.sentinelConnectionOptions);
+    } else {
+      this.client = this.connectionUrl
+        ? new Redis(this.connectionUrl)
+        : new Redis();
     }
 
     await this.subscribe();
