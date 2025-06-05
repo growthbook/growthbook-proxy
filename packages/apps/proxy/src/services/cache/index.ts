@@ -1,4 +1,4 @@
-import { ClusterNode, ClusterOptions } from "ioredis";
+import { ClusterNode, ClusterOptions, SentinelConnectionOptions } from "ioredis";
 
 import { Context } from "../../types";
 import logger from "../logger";
@@ -24,6 +24,8 @@ export interface CacheSettings {
   useCluster?: boolean; // for RedisCache
   clusterRootNodesJSON?: ClusterNode[]; // for RedisCache
   clusterOptionsJSON?: ClusterOptions; // for RedisCache
+  useSentinel?: boolean; // for RedisCache
+  sentinelConnectionOptionsJSON?: SentinelConnectionOptions; // for RedisCache
 }
 
 export type FeaturesCache = MemoryCache | RedisCache | MongoCache | null;
