@@ -1,4 +1,4 @@
-import { Context, getOriginUrl } from "@growthbook/edge-utils";
+import { Context, FetchOptions, getOriginUrl } from "@growthbook/edge-utils";
 import { parse } from "cookie";
 import { FastlyConfig } from "./init";
 
@@ -32,13 +32,23 @@ export function sendResponse(
   return resp;
 }
 
-export async function fetchFn(ctx: Context<Request, Response>, url: string, req: Request) {
+export async function fetchFn(
+  ctx: Context<Request, Response>,
+  url: string,
+  req: Request,
+  options?: FetchOptions,
+) {
   const maxRedirects = 5;
 
   const newHeaders = new Headers(req.headers);
   if (ctx.config.nocacheOrigin) {
     // try to prevent 304s:
     newHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  }
+  if (options?.additionalHeaders && typeof options.additionalHeaders === "object") {
+    Object.keys(options.additionalHeaders).forEach((key) => {
+      newHeaders.set(key, options?.additionalHeaders?.[key]);
+    });
   }
 
   const backend = getBackend(ctx, url);

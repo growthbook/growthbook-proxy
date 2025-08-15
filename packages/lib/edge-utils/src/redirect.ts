@@ -41,7 +41,7 @@ export default async function redirect<Req, Res>({
 
     // update attributes and change the URL to trigger the experiment
     await growthbook.setAttributes(
-      getUserAttributes(context, req, newUrl, setRespCookie),
+      getUserAttributes(context, req, newUrl, setRespCookie, true),
     );
     await growthbook.setURL(newUrl);
 

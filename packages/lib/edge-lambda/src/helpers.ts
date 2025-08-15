@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Context, getOriginUrl } from "@growthbook/edge-utils";
+import { Context, FetchOptions, getOriginUrl } from "@growthbook/edge-utils";
 import cookie from "cookie";
 import { Env } from "./init";
 
@@ -60,7 +60,12 @@ export function sendResponse(
   return res;
 }
 
-export async function fetchFn(ctx: Context<Request, Response>, url: string, req: any) {
+export async function fetchFn(
+  ctx: Context<Request, Response>,
+  url: string,
+  req: any,
+  options?: FetchOptions,
+) {
   const maxRedirects = 5;
 
   const newHeaders = new Headers(req.headers);
@@ -68,6 +73,12 @@ export async function fetchFn(ctx: Context<Request, Response>, url: string, req:
     // try to prevent 304s:
     newHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
   }
+  if (options?.additionalHeaders && typeof options.additionalHeaders === "object") {
+    Object.keys(options.additionalHeaders).forEach((key) => {
+      newHeaders.set(key, options?.additionalHeaders?.[key]);
+    });
+  }
+
   let response = await fetch(url, {
     method: req.method,
     headers: newHeaders,

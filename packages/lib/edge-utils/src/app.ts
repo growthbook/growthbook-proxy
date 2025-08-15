@@ -42,6 +42,16 @@ export async function edgeApp<Req, Res>(
   const setRespCookie = (key: string, value: string) => {
     respCookies[key] = value;
   };
+
+  // Loop check
+  const requestCount = parseInt(context.helpers?.getRequestHeader?.(req, "x-gb-request-count") || "0") + 1;
+  if (requestCount > 1) {
+    console.error("Edge request loop detected. Count: " + requestCount, requestUrl);
+  }
+  if (requestCount >= context.config.maxRedirects) {
+    throw new Error("Edge request loop: max requests reached: " + requestCount);
+  }
+
   // Initial hook:
   let hookResp: Res | undefined | void;
   hookResp = await context?.hooks?.onRequest?.({ context, req, res, next, requestUrl, originUrl });
@@ -116,7 +126,7 @@ export async function edgeApp<Req, Res>(
       return () => {
       };
     },
-    url: requestUrl,
+    url: context.config.experimentUrlTargeting === "origin" ? originUrl: requestUrl,
     disableVisualExperiments: ["skip", "browser"].includes(
       context.config.runVisualEditorExperiments,
     ),
@@ -147,7 +157,7 @@ export async function edgeApp<Req, Res>(
     req,
     setRespCookie,
     growthbook,
-    previousUrl: requestUrl,
+    previousUrl: context.config.experimentUrlTargeting === "origin" ? originUrl : requestUrl,
     resetDomChanges,
     setPreRedirectChangeIds: setPreRedirectChangeIds,
   });
@@ -165,6 +175,12 @@ export async function edgeApp<Req, Res>(
       context,
       originUrl,
       req,
+      context.config.emitTraceHeaders ? {
+        additionalHeaders: {
+          "x-gb-request-count": ("" + requestCount),
+          "x-gbuuid": growthbook.getAttributes()?.[context.config.uuidKey],
+        }
+      } : undefined,
     ) as OriginResponse & Res;
   } catch (e) {
     console.error(e);
