@@ -48,7 +48,7 @@ export async function edgeApp<Req, Res>(
   if (requestCount > 1) {
     console.error("Edge request loop detected. Count: " + requestCount, requestUrl);
   }
-  if (requestCount >= context.config.maxRedirects) {
+  if (requestCount > context.config.maxRedirects) {
     throw new Error("Edge request loop: max requests reached: " + requestCount);
   }
 
