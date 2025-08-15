@@ -141,6 +141,7 @@ export function getConfigEnvFromStore(store: any): ConfigEnv {
     "STICKY_BUCKET_PREFIX",
     "CONTENT_SECURITY_POLICY",
     "NONCE",
+    "EMIT_TRACE_HEADERS",
     "GROWTHBOOK_API_HOST",
     "GROWTHBOOK_CLIENT_KEY",
     "GROWTHBOOK_DECRYPTION_KEY",
