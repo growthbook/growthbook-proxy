@@ -20,7 +20,10 @@ export async function evaluateFeatures({
   forcedFeatures?: Map<string, any>;
   url?: string;
   stickyBucketService?:
-    | (StickyBucketService & { onEvaluate?: () => Promise<void> })
+    | (StickyBucketService & {
+        connect: () => Promise<void>;
+        onEvaluate?: () => Promise<void>;
+      })
     | null;
   ctx?: any;
 }) {
