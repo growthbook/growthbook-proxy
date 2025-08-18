@@ -13,6 +13,7 @@ export {
   OnBeforeResponseParams,
   ExperimentRunEnvironment,
   Route,
+  FetchOptions,
 } from "./types";
 export { ConfigEnv, defaultContext, getConfig } from "./config";
 

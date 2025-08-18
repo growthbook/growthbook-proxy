@@ -7,6 +7,7 @@ export function getUserAttributes<Req, Res>(
   req: Req,
   url: string,
   setRespCookie: (key: string, value: string) => void,
+  skipUuid: boolean = false,
 ): Attributes {
   const { config, helpers } = ctx;
 
@@ -14,16 +15,18 @@ export function getUserAttributes<Req, Res>(
   if (config.skipAutoAttributes) {
     return providedAttributes;
   }
-  // get any saved attributes from the cookie
-  const uuid = getUUID(ctx, req);
-  if (config.persistUuid && !config.noAutoCookies) {
-    if (!helpers?.setCookie) {
-      throw new Error("Missing required dependencies");
+  if (!skipUuid) {
+    // get any saved attributes from the cookie
+    const uuid = getUUID(ctx, req);
+    if (config.persistUuid && !config.noAutoCookies) {
+      if (!helpers?.setCookie) {
+        throw new Error("Missing required dependencies");
+      }
+      setRespCookie(config.uuidCookieName, uuid);
     }
-    setRespCookie(config.uuidCookieName, uuid);
   }
 
-  const autoAttributes = getAutoAttributes(ctx, req, url);
+  const autoAttributes = getAutoAttributes(ctx, req, url, skipUuid);
   return { ...autoAttributes, ...providedAttributes };
 }
 
@@ -50,7 +53,9 @@ export function getUUID<Req, Res>(ctx: Context<Req, Res>, req: Req) {
   };
 
   // get the existing UUID from cookie if set, otherwise create one
-  return helpers.getCookie(req, config.uuidCookieName) || genUUID();
+  return helpers.getCookie(req, config.uuidCookieName)
+    || helpers?.getRequestHeader?.(req, "x-gbuuid")
+    || genUUID();
 }
 
 // Infer attributes from the request
@@ -60,14 +65,17 @@ export function getAutoAttributes<Req, Res>(
   ctx: Context<Req, Res>,
   req: Req,
   url: string,
+  skipUuid: boolean = false,
 ): Attributes {
   const { config, helpers } = ctx;
 
   const getHeader = helpers?.getRequestHeader;
 
-  let autoAttributes: Attributes = {
-    [config.uuidKey]: getUUID(ctx, req),
-  };
+  let autoAttributes: Attributes = skipUuid
+    ? {}
+    : {
+      [config.uuidKey]: getUUID(ctx, req),
+    };
 
   const ua = getHeader?.(req, "user-agent") || "";
   autoAttributes.browser = ua.match(/Edg/)

@@ -37,6 +37,8 @@ export interface Config {
   injectRedirectUrlScript: boolean;
   maxRedirects: number;
 
+  experimentUrlTargeting?: ExperimentUrlTargeting; // default: request (edge worker url)
+
   scriptInjectionPattern: string;
   disableInjections: boolean;
 
@@ -55,6 +57,7 @@ export interface Config {
     clientKey: string;
     headers?: Record<string, string>;
   }) => Promise<any>;
+  emitTraceHeaders?: boolean;
 
   // growthbook
   apiHost: string;
@@ -80,6 +83,15 @@ export type ExperimentRunEnvironment =
   | "browser"
   | "skip";
 
+// whether to use the `requestUrl` or `originUrl` when triggering url-based experiments
+export type ExperimentUrlTargeting =
+  | "request"
+  | "origin";
+
+export type FetchOptions = {
+  additionalHeaders?: Record<string, any>;
+}
+
 export interface Helpers<Req, Res> {
   getRequestURL: (req: Req) => string;
   getRequestMethod: (req: Req) => string;
@@ -92,7 +104,12 @@ export interface Helpers<Req, Res> {
     cookies?: Record<string, string>,
     status?: number,
   ) => unknown;
-  fetch: (ctx: Context<Req, Res>, url: string, req: Req) => Promise<Res>;
+  fetch: (
+    ctx: Context<Req, Res>,
+    url: string,
+    req: Req,
+    options?: FetchOptions,
+  ) => Promise<Res>;
   proxyRequest: (
     ctx: Context<Req, Res>,
     req: Req,
@@ -110,6 +127,7 @@ export type BaseHookParams<Req, Res> = {
   next?: any;
   requestUrl: string;
   originUrl: string;
+  requestCount: number;
 };
 export type OnRouteParams<Req, Res> = BaseHookParams<Req, Res> & {
   route: Route;

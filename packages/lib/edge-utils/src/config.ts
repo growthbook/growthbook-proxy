@@ -1,4 +1,4 @@
-import { Config, Context, ExperimentRunEnvironment } from "./types";
+import { Config, Context, ExperimentRunEnvironment, ExperimentUrlTargeting } from "./types";
 
 type Req = any; // placeholder
 type Res = any; // placeholder
@@ -21,10 +21,12 @@ export const defaultContext: Context<Req, Res> = {
     runCrossOriginUrlRedirectExperiments: "browser",
     injectRedirectUrlScript: true,
     maxRedirects: 5,
+    experimentUrlTargeting: "request",
     scriptInjectionPattern: "</head>",
     disableInjections: false,
     enableStreaming: false,
     enableStickyBucketing: false,
+    emitTraceHeaders: true,
     apiHost: "",
     clientKey: "",
     persistUuid: false,
@@ -75,6 +77,8 @@ export interface ConfigEnv {
   INJECT_REDIRECT_URL_SCRIPT?: string;
   MAX_REDIRECTS?: string;
 
+  EXPERIMENT_URL_TARGETING?: ExperimentUrlTargeting;
+
   SCRIPT_INJECTION_PATTERN?: string;
   DISABLE_INJECTIONS?: string;
 
@@ -84,6 +88,7 @@ export interface ConfigEnv {
 
   CONTENT_SECURITY_POLICY?: string;
   NONCE?: string;
+  EMIT_TRACE_HEADERS?: string;
 
   GROWTHBOOK_API_HOST?: string;
   GROWTHBOOK_CLIENT_KEY?: string;
@@ -162,6 +167,10 @@ export function getConfig(env: ConfigEnv): Config {
     env.MAX_REDIRECTS || "" + defaultContext.config.maxRedirects,
   );
 
+  config.experimentUrlTargeting = (env.EXPERIMENT_URL_TARGETING ??
+    defaultContext.config
+      .experimentUrlTargeting) as ExperimentUrlTargeting;
+
   config.scriptInjectionPattern =
     env.SCRIPT_INJECTION_PATTERN ||
     defaultContext.config.scriptInjectionPattern;
@@ -184,6 +193,10 @@ export function getConfig(env: ConfigEnv): Config {
   config.nonce = env.NONCE || undefined;
 
   config.crypto = crypto;
+
+  config.emitTraceHeaders = ["true", "1"].includes(
+    env.EMIT_TRACE_HEADERS ?? "" + defaultContext.config.emitTraceHeaders,
+  );
 
   // growthbook
   config.apiHost = (env.GROWTHBOOK_API_HOST ?? "").replace(/\/*$/, "");
