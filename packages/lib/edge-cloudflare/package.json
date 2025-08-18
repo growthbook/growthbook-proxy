@@ -1,7 +1,7 @@
 {
   "name": "@growthbook/edge-cloudflare",
   "description": "GrowthBook edge app for Cloudflare Workers",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "main": "dist/index.js",
   "license": "MIT",
   "repository": {
@@ -18,12 +18,12 @@
     "dev": "wrangler dev"
   },
   "dependencies": {
-    "@growthbook/edge-utils": "^0.2.5",
+    "@growthbook/edge-utils": "^0.2.6",
     "cookie": "^1.0.2"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20241230.0",
-    "@growthbook/growthbook": "^1.4.1",
+    "@cloudflare/workers-types": "^4.20250816.0",
+    "@growthbook/growthbook": "^1.6.1",
     "typescript": "^5.7.2",
     "wrangler": "^3.99.0"
   }

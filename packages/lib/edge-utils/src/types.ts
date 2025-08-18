@@ -127,6 +127,7 @@ export type BaseHookParams<Req, Res> = {
   next?: any;
   requestUrl: string;
   originUrl: string;
+  requestCount: number;
 };
 export type OnRouteParams<Req, Res> = BaseHookParams<Req, Res> & {
   route: Route;
