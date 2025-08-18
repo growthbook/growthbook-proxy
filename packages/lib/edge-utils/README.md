@@ -76,6 +76,7 @@ The GrowthBook Edge App supports a number of configuration options available via
 - `RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS` - One of `everywhere`, `edge`, `browser`, or `skip` (default `browser`)
 - `INJECT_REDIRECT_URL_SCRIPT` - "true" or "1" to mutate browser URL via window.history.replaceState() to reflect the redirected URL (default `true`)
 - `MAX_REDIRECTS` - Number of on-edge redirects calculated before bailing out. Only the final redirect is fetched from your origin. (default `5`)
+- `EXPERIMENT_URL_TARGETING` - URL targeting for visual editor and redirect experiments: `request` targets using the edge worker URL; `origin` uses the origin server URL. (default `request`)
 
 #### Front-end SDK hydration
 - `SCRIPT_INJECTION_PATTERN` - Inject the GrowthBook SDK before this token (default `</head>`)
@@ -104,6 +105,7 @@ The GrowthBook Edge App supports a number of configuration options available via
 
 #### Misc
 - `CONTENT_SECURITY_POLICY` - CSP header value
+- `EMIT_TRACE_HEADERS` - "true" or "1" to set extra headers to detect edge redirect loops and stabilize gbuuid generation (default `true`).
 
 
 ## Lifecycle hooks
