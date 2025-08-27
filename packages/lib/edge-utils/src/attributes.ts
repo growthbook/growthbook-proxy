@@ -109,7 +109,7 @@ function getUtmAttributes(urlObj: URL) {
   let utms: Record<string, string> = {};
 
   // Add utm params from querystring
-  if (location.search) {
+  if (urlObj.search) {
     const params = new URLSearchParams(urlObj.search);
     ["source", "medium", "campaign", "term", "content"].forEach((k) => {
       // Querystring is in snake_case
