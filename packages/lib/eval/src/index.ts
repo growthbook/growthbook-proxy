@@ -68,7 +68,7 @@ export async function evaluateFeatures({
     const gbFeatures = gb.getFeatures();
     for (const key in gbFeatures) {
       const result = gb.evalFeature(key);
-      if (result.on || result.experiment) {
+      if ((result.on || result.experiment) || (result.value === 0 || result.value === false)) {
         // reduced feature definition
         evaluatedFeatures[key] = {
           defaultValue: result.value,
