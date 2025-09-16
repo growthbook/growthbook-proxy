@@ -4,7 +4,7 @@
     "node": ">=18"
   },
   "description": "GrowthBook proxy server for caching, realtime updates, telemetry, etc",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "main": "dist/app.js",
   "license": "MIT",
   "repository": {
@@ -34,7 +34,7 @@
     "uuid": "^10.0.0",
     "zod": "^3.24.1",
     "@growthbook/growthbook": "^1.6.1",
-    "@growthbook/proxy-eval": "^1.0.8",
+    "@growthbook/proxy-eval": "^1.1.0",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.48.0",
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.52.1",
