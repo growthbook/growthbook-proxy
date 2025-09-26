@@ -22,9 +22,9 @@
     "cookie": "^1.0.2"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250816.0",
+    "@cloudflare/workers-types": "^4.20250926.0",
     "@growthbook/growthbook": "^1.6.1",
     "typescript": "^5.7.2",
-    "wrangler": "^3.99.0"
+    "wrangler": "^4.40.1"
   }
 }

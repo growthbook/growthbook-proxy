@@ -1,0 +1,19 @@
+{
+  "name": "growthbook-edge-eval-cloudflare",
+  "version": "0.1.0",
+  "description": "GrowthBook edge evaluation for Cloudflare Workers",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "wrangler build"
+  },
+  "dependencies": {
+    "@growthbook/proxy-eval": "^1.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250926.0",
+    "typescript": "^5.8.2",
+    "wrangler": "^4.40.1"
+  }
+}
