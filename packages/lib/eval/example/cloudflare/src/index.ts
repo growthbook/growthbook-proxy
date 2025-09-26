@@ -3,8 +3,10 @@ import { StickyBucketService } from "@growthbook/growthbook";
 
 interface Env {
   ENVIRONMENT: string;
-  // KV Binding
+
   KV_GB_PAYLOAD: KVNamespace;
+  // NOTE: Be sure to connect a GrowthBook SDK Webhook to your KV store.
+  // Use the webhook type "Cloudflare KV" in the SDK webhook settings.
 }
 
 interface PostBody {
@@ -13,14 +15,16 @@ interface PostBody {
   forcedVariations?: Record<string, number>;
   forcedFeatures?: Map<string, any>;
   url?: string;
-  // note: For advanced experimentation, you may want to connect a KV or cookie Sticky Bucket service
+  // NOTE: For advanced experimentation, you may want to connect a KV or cookie Sticky Bucket service
   stickyBucketService?:
     | (StickyBucketService & {
+    // For cookie-based service, should be a no-op:
     connect: () => Promise<void>;
+    // For write-buffer flushes (ex: GB Proxy's implementation of RedisStickyBucketService):
     onEvaluate?: () => Promise<void>;
   })
     | null;
-  ctx?: any;
+  ctx?: { verboseDebugging?: boolean };
 }
 
 const KV_KEY = "gb_payload";
@@ -76,6 +80,7 @@ export default {
         forcedVariations,
         forcedFeatures: forcedFeaturesMap,
         url,
+        // stickyBucketService,
       });
 
       // Return success response
