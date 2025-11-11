@@ -35,6 +35,9 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ### What's new
 
+**Version 1.2.9**
+- Additional support for hydrating SDK connections from environment variables.
+
 **Version 1.2.8**
 - Fix bugs related to remote evaluation. Fixes prerequisite tracking calls, improperly omitted features with falsey results, and the result object's format.
 
