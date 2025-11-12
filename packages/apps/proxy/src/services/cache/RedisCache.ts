@@ -12,6 +12,7 @@ import { Context } from "../../types";
 import { registrar } from "../registrar";
 import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, CacheSettings } from "./index";
+import { truncatePayloadForLogging } from "../utils/utils";
 
 export class RedisCache {
   private client: Redis | Cluster | undefined;
@@ -237,14 +238,14 @@ export class RedisCache {
 
             this.appContext?.verboseDebugging &&
               logger.info(
-                { payload },
+                { payload: truncatePayloadForLogging(payload) },
                 "RedisCache.subscribe: got 'set' message",
               );
 
             // 1. emit SSE to SDK clients
             if (this.appContext?.enableEventStream && eventStreamManager) {
               this.appContext?.verboseDebugging &&
-                logger.info({ payload }, "RedisCache.subscribe: publish SSE");
+                logger.info({ payload: truncatePayloadForLogging(payload) }, "RedisCache.subscribe: publish SSE");
 
               const remoteEvalEnabled =
                 !!registrar.getConnection(key)?.remoteEvalEnabled;

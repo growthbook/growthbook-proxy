@@ -84,6 +84,7 @@ export async function fetchFeatures({
   let promise = activeFetches[url];
 
   if (!promise) {
+    ctx?.verboseDebugging && logger.info({ url }, "activeFetches debounce miss, creating new fetch");
     const headers = buildRequestHeaders(remoteEvalEnabled, ctx, organization);
     const fetchOptions = buildFetchOptions(headers);
 

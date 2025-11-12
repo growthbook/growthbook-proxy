@@ -72,6 +72,8 @@ class WorkerPool {
         if (result.success && result.data !== undefined) {
           resolve(result.data);
         } else {
+          const size = buffer.byteLength;
+          logger.error({ size, error: result.error }, "Worker thread JSON parse failed");
           reject(new Error(result.error || "Worker parsing failed"));
         }
         this.processQueue();
@@ -80,6 +82,8 @@ class WorkerPool {
       workerObj.worker.once("message", handler);
       workerObj.worker.once("error", (error) => {
         workerObj.busy = false;
+        const size = buffer.byteLength;
+        logger.error({ size, error }, "Worker thread error during JSON parse");
         reject(error);
         this.processQueue();
       });

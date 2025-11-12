@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import logger from "../logger";
 import { Context } from "../../types";
 import { SSEChannel } from "./ssePubsub";
+import { truncatePayloadForLogging } from "../utils/utils";
 
 interface ScopedChannel {
   apiKey: string;
@@ -80,7 +81,7 @@ export class SSEManager {
   }) {
     this.appContext?.verboseDebugging &&
       logger.info(
-        { apiKey, event, payload, oldPayload },
+        { apiKey, event, payload: truncatePayloadForLogging(payload), oldPayload: truncatePayloadForLogging(oldPayload) },
         "EventStreamManager.publish",
       );
     const scopedChannel = this.getScopedChannel(apiKey);
@@ -90,10 +91,19 @@ export class SSEManager {
       return;
     }
 
-    const hasChanges = JSON.stringify(payload) !== JSON.stringify(oldPayload);
+    const stringifyStartTime = Date.now();
+    const payloadString = JSON.stringify(payload);
+    const oldPayloadString = oldPayload ? JSON.stringify(oldPayload) : undefined;
+    const hasChanges = payloadString !== oldPayloadString;
+    const stringifyDuration = Date.now() - stringifyStartTime;
+    this.appContext?.verboseDebugging &&
+      logger.info(
+        { duration: stringifyDuration, payloadSize: payloadString.length, oldPayloadSize: oldPayloadString?.length || 0 },
+        "JSON.stringify comparison completed"
+      );
     if (!hasChanges) {
       this.appContext?.verboseDebugging &&
-        logger.info({ payload, event }, "skipping SSE publish, no changes");
+        logger.info({ payload: truncatePayloadForLogging(payload), event }, "skipping SSE publish, no changes");
       return;
     }
 
