@@ -9,9 +9,49 @@ import { featuresCache } from "../../services/cache";
 import logger from "../../services/logger";
 import { eventStreamManager } from "../../services/eventStreamManager";
 import { registrar } from "../../services/registrar";
+import { parseJsonSafely } from "../../services/utils/jsonParser";
 
 const scopedMiddlewares: Record<string, RequestHandler> = {};
 const errorCounts: Record<string, number> = {};
+
+function bufferToArrayBuffer(buffer: Buffer): ArrayBuffer {
+  if (buffer.buffer instanceof ArrayBuffer) {
+    return buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength
+    );
+  }
+  return new Uint8Array(buffer).buffer;
+}
+
+async function processCacheUpdate(
+  apiKey: string,
+  responseJson: unknown,
+): Promise<void> {
+  if (!featuresCache) {
+    throw new Error("Features cache not available");
+  }
+
+  try {
+    const oldEntry = await featuresCache.get(apiKey);
+    await featuresCache.set(apiKey, responseJson);
+
+    const connection = registrar.getConnection(apiKey);
+    const remoteEvalEnabled = !!connection?.remoteEvalEnabled;
+
+    if (eventStreamManager) {
+      eventStreamManager.publish({
+        apiKey,
+        event: remoteEvalEnabled ? "features-updated" : "features",
+        payload: responseJson,
+        oldPayload: oldEntry?.payload,
+      });
+    }
+  } catch (error) {
+    logger.error({ error, apiKey }, "Failed to update features cache");
+    throw error;
+  }
+}
 
 const interceptor = (proxyTarget: string) =>
   responseInterceptor(
@@ -21,41 +61,32 @@ const interceptor = (proxyTarget: string) =>
       req: IncomingMessage,
       res: ServerResponse,
     ) => {
-      // got response, reset error count
       errorCounts[proxyTarget] = 0;
 
-      const response = responseBuffer.toString("utf-8");
       if (!featuresCache || !eventStreamManager) {
-        return response;
+        return responseBuffer.toString("utf-8");
       }
 
       if (res.statusCode === 200) {
-        logger.debug("cache MISS, setting cache...");
-
-        // refresh the cache
         try {
           const apiKey = (res as Response).locals.apiKey;
-          const responseJson = JSON.parse(response);
-          const oldEntry = await featuresCache.get(apiKey);
+          if (!apiKey) {
+            logger.warn("Missing API key in response locals");
+            return responseBuffer.toString("utf-8");
+          }
 
-          featuresCache
-            .set(apiKey, responseJson)
-            .catch((e) => logger.error(e, "Unable to set cache"));
+          logger.debug({ apiKey }, "Cache miss, updating cache");
 
-          const remoteEvalEnabled =
-            !!registrar.getConnection(apiKey)?.remoteEvalEnabled;
+          const arrayBuffer = bufferToArrayBuffer(responseBuffer);
+          const responseJson = await parseJsonSafely(arrayBuffer);
 
-          eventStreamManager.publish({
-            apiKey,
-            event: remoteEvalEnabled ? "features-updated" : "features",
-            payload: responseJson,
-            oldPayload: oldEntry?.payload,
-          });
-        } catch (e) {
-          logger.error(e, "Unable to parse response");
+          await processCacheUpdate(apiKey, responseJson);
+        } catch (error) {
+          logger.error({ error }, "Failed to process cache update");
         }
       }
-      return response;
+
+      return responseBuffer.toString("utf-8");
     },
   );
 
