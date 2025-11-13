@@ -3,6 +3,7 @@ import { registrar } from "../registrar";
 import { featuresCache } from "./index";
 import { fetchFeatures } from "../features";
 import logger from "../logger";
+import { CacheRefreshStrategy } from "../../types";
 
 export class CacheRefreshScheduler {
   private intervalId: NodeJS.Timeout | null = null;
@@ -13,35 +14,33 @@ export class CacheRefreshScheduler {
     this.ctx = ctx;
     this.staleTTL = (ctx.cacheSettings?.staleTTL || 60) * 1000;
 
-    const strategy = ctx.cacheSettings?.cacheRefreshStrategy || "stale-while-revalidate";
+    const strategy: CacheRefreshStrategy = ctx.cacheSettings?.cacheRefreshStrategy || "stale-while-revalidate";
     
-    if (strategy === "none") {
+    if (strategy === "none" || strategy === "schedule") {
       // Single fetch on bootup if stale, then never refresh again
       const connections = registrar.getAllConnections();
       for (const apiKey in connections) {
         const connection = connections[apiKey];
         this.maybeFetch(apiKey, connection);
       }
-      return;
+      if (strategy === "none") return;
     }
 
     // "schedule" strategy - periodic refreshes
-    this.intervalId = setInterval(() => {
+    if (strategy === "schedule") {
+      this.intervalId = setInterval(() => {
       const connections = registrar.getAllConnections();
       for (const apiKey in connections) {
         const connection = connections[apiKey];
-        const jitter = Math.min(this.staleTTL * 0.1, 10000) * Math.random(); // 0 to min(10%, 10sec)
-        setTimeout(() => {
-          this.maybeFetch(apiKey, connection);
-        }, jitter);
+        const jitter = Math.min(this.staleTTL * 0.2, 30000) * Math.random(); // 0 to min(20%, 30sec)
+        setTimeout(() => this.maybeFetch(apiKey, connection), jitter);
       }
-    }, this.staleTTL);
+      }, this.staleTTL);
+    }
   }
 
   private async maybeFetch(apiKey: string, connection: any) {
-    if (!featuresCache) {
-      return;
-    }
+    if (!featuresCache) return;
 
     try {
       const entry = await featuresCache.get(apiKey);
