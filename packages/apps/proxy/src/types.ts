@@ -4,12 +4,14 @@ import { Connection, Registrar } from "./services/registrar";
 import { EventStreamManager } from "./services/eventStreamManager";
 import { FeaturesCache, CacheSettings } from "./services/cache";
 import { StickyBucketSettings } from "./services/stickyBucket";
+import { CacheRefreshScheduler } from "./services/cache/scheduler";
 
 export interface GrowthBookProxy {
   app: Express;
   context: Context;
   services: {
     featuresCache: FeaturesCache;
+    cacheRefreshScheduler?: CacheRefreshScheduler;
     registrar: Registrar;
     eventStreamManager: EventStreamManager;
     logger: HttpLogger["logger"];
@@ -50,3 +52,4 @@ export interface Context {
 
 export type CacheEngine = "memory" | "redis" | "mongo";
 export type StickyBucketEngine = "redis" | "none";
+export type CacheRefreshStrategy = "stale-while-revalidate" | "schedule" | "none";

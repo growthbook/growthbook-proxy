@@ -33,6 +33,7 @@ export async function fetchFeatures({
   let promise = activeFetches[url];
 
   if (!promise) {
+    logger.debug("fetching features from GrowthBook API");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const headers: any = {
       "User-Agent": `GrowthBook Proxy`,

@@ -1,7 +1,7 @@
 import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
-import { CacheEngine, Context, StickyBucketEngine } from "./types";
+import { CacheEngine, Context, StickyBucketEngine, CacheRefreshStrategy } from "./types";
 dotenv.config({ path: "./.env.local" });
 
 export const MAX_PAYLOAD_SIZE = "2mb";
@@ -37,6 +37,8 @@ export default async () => {
       staleTTL: parseInt(process.env.CACHE_STALE_TTL || "60"),
       expiresTTL: parseInt(process.env.CACHE_EXPIRES_TTL || "3600"),
       allowStale: ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? "1"),
+      cacheRefreshStrategy: (process.env.CACHE_REFRESH_STRATEGY ||
+        "stale-while-revalidate") as CacheRefreshStrategy,
       connectionUrl: process.env.CACHE_CONNECTION_URL,
       useAdditionalMemoryCache: true,
       // Mongo only:

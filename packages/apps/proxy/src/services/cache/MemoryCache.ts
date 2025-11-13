@@ -1,20 +1,24 @@
 import { CacheEntry, CacheSettings } from "./index";
+import { CacheRefreshStrategy } from "../../types";
 
 export class MemoryCache {
   private readonly store: Map<string, CacheEntry>;
   private readonly staleTTL: number;
   private readonly expiresTTL: number;
   public readonly allowStale: boolean;
+  public readonly cacheRefreshStrategy: CacheRefreshStrategy;
 
   public constructor({
     staleTTL = 60, // 1 minute
     expiresTTL = 10 * 60, // 10 minutes
     allowStale = true,
+    cacheRefreshStrategy,
   }: CacheSettings = {}) {
     this.store = new Map();
     this.staleTTL = staleTTL * 1000;
     this.expiresTTL = expiresTTL * 1000;
     this.allowStale = allowStale;
+    this.cacheRefreshStrategy = cacheRefreshStrategy!;
   }
 
   public async get(key: string): Promise<CacheEntry | undefined> {

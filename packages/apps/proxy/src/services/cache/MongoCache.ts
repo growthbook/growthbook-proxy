@@ -2,6 +2,7 @@ import { Collection, Db, MongoClient } from "mongodb";
 import logger from "../logger";
 import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, CacheSettings } from "./index";
+import { CacheRefreshStrategy } from "../../types";
 
 export class MongoCache {
   private client: MongoClient | undefined;
@@ -14,11 +15,13 @@ export class MongoCache {
   private readonly staleTTL: number;
   private readonly expiresTTL: number;
   public readonly allowStale: boolean;
+  public readonly cacheRefreshStrategy: CacheRefreshStrategy;
 
   public constructor({
     staleTTL = 60, //         1 minute
     expiresTTL = 10 * 60, //  10 minutes
     allowStale = true,
+    cacheRefreshStrategy,
     connectionUrl,
     databaseName = "proxy",
     collectionName = "cache",
@@ -30,12 +33,14 @@ export class MongoCache {
     this.staleTTL = staleTTL * 1000;
     this.expiresTTL = expiresTTL * 1000;
     this.allowStale = allowStale;
+    this.cacheRefreshStrategy = cacheRefreshStrategy!;
 
     // wrap the RedisCache in a MemoryCache to avoid hitting Redis on every request
     if (useAdditionalMemoryCache) {
       this.memoryCacheClient = new MemoryCache({
         expiresTTL: 1, //  1 second,
         allowStale: false,
+        cacheRefreshStrategy: this.cacheRefreshStrategy,
       });
     }
   }

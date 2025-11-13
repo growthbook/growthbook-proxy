@@ -4,7 +4,7 @@ import { adminRouter } from "./controllers/adminController";
 import { eventStreamRouter } from "./controllers/eventStreamController";
 import { featuresRouter } from "./controllers/featuresController";
 import proxyMiddleware from "./middleware/proxyMiddleware";
-import { featuresCache, initializeCache } from "./services/cache";
+import { featuresCache, initializeCache, cacheRefreshScheduler } from "./services/cache";
 import { initializeRegistrar, registrar } from "./services/registrar";
 import {
   eventStreamManager,
@@ -77,6 +77,7 @@ export const growthBookProxy = async (
     context: ctx,
     services: {
       featuresCache,
+      cacheRefreshScheduler,
       registrar,
       eventStreamManager,
       logger,

@@ -12,6 +12,7 @@ import { Context } from "../../types";
 import { registrar } from "../registrar";
 import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, CacheSettings } from "./index";
+import { CacheRefreshStrategy } from "../../types";
 
 export class RedisCache {
   private client: Redis | Cluster | undefined;
@@ -25,6 +26,7 @@ export class RedisCache {
   private readonly staleTTL: number;
   private readonly expiresTTL: number;
   public readonly allowStale: boolean;
+  public readonly cacheRefreshStrategy: CacheRefreshStrategy;
 
   private readonly useCluster: boolean;
   private readonly clusterRootNodesJSON?: ClusterNode[];
@@ -40,6 +42,7 @@ export class RedisCache {
       staleTTL = 60, //         1 minute
       expiresTTL = 10 * 60, //  10 minutes
       allowStale = true,
+      cacheRefreshStrategy,
       connectionUrl,
       useAdditionalMemoryCache,
       publishPayloadToChannel = false,
@@ -55,6 +58,7 @@ export class RedisCache {
     this.staleTTL = staleTTL * 1000;
     this.expiresTTL = expiresTTL * 1000;
     this.allowStale = allowStale;
+    this.cacheRefreshStrategy = cacheRefreshStrategy!;
     this.publishPayloadToChannel = publishPayloadToChannel;
     this.useCluster = useCluster;
     this.clusterRootNodesJSON = clusterRootNodesJSON;
@@ -69,6 +73,7 @@ export class RedisCache {
       this.memoryCacheClient = new MemoryCache({
         expiresTTL: 1, //  1 second,
         allowStale: false,
+        cacheRefreshStrategy: this.cacheRefreshStrategy,
       });
     }
   }

@@ -1,10 +1,11 @@
 import { ClusterNode, ClusterOptions, SentinelConnectionOptions } from "ioredis";
 
-import { Context } from "../../types";
+import { Context, CacheRefreshStrategy } from "../../types";
 import logger from "../logger";
 import type { MemoryCache } from "./MemoryCache";
 import type { RedisCache } from "./RedisCache";
 import type { MongoCache } from "./MongoCache";
+import { CacheRefreshScheduler } from "./scheduler";
 
 export interface CacheEntry {
   payload: unknown;
@@ -16,6 +17,7 @@ export interface CacheSettings {
   staleTTL?: number;
   expiresTTL?: number;
   allowStale?: boolean;
+  cacheRefreshStrategy?: CacheRefreshStrategy;
   connectionUrl?: string; // for MongoCache and RedisCache
   databaseName?: string; // for MongoCache
   collectionName?: string; // for MongoCache
@@ -31,6 +33,7 @@ export interface CacheSettings {
 export type FeaturesCache = MemoryCache | RedisCache | MongoCache | null;
 
 export let featuresCache: FeaturesCache = null;
+export let cacheRefreshScheduler: CacheRefreshScheduler | undefined = undefined;
 
 export const initializeCache = async (context: Context) => {
   if (context.enableCache && context.cacheSettings) {
@@ -51,4 +54,13 @@ export const initializeCache = async (context: Context) => {
     }
   }
   Object.freeze(featuresCache);
+
+  if (!context.enableCache || !context.cacheSettings) {
+    return;
+  }
+
+  const strategy = context.cacheSettings.cacheRefreshStrategy || "stale-while-revalidate";
+  if (["schedule", "none"].includes(strategy)) {
+    cacheRefreshScheduler = new CacheRefreshScheduler(context);
+  }
 };
