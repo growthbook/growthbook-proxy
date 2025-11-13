@@ -151,6 +151,10 @@ By default, features are cached in memory in the GrowthBook Proxy; you may provi
 - `CACHE_CONNECTION_URL` - The URL of your Redis or Mongo Database
 - `CACHE_STALE_TTL` - Number of seconds until a cache entry is considered stale (default: `60` = 1 minute)
 - `CACHE_EXPIRES_TTL` - Number of seconds until a cache entry is expired (default: `3600` = 1 hour)
+- `CACHE_REFRESH_STRATEGY` - Controls how and when the cache is refreshed:
+  - `stale-while-revalidate` (default) - Serves stale cache while refreshing in the background when cache becomes stale. Background refreshes are triggered by user requests.
+  - `schedule` - Automatically refreshes stale cache entries on a schedule based on `CACHE_STALE_TTL` with random jitter. In a pod, we recommend designating a single proxy as the scheduler and others as "none".
+  - `none` - Performs a single fetch on bootup if cache is stale, then never refreshes again. Cache entries will remain until they expire.
 
 #### Redis Cluster
 
