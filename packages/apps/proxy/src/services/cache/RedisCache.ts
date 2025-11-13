@@ -6,7 +6,7 @@ import Redis, {
 } from "ioredis";
 
 import { v4 as uuidv4 } from "uuid";
-import logger from "../logger";
+import logger, { truncatePayloadForLogging } from "../logger";
 import { eventStreamManager } from "../eventStreamManager";
 import { Context } from "../../types";
 import { registrar } from "../registrar";
@@ -182,7 +182,7 @@ export class RedisCache {
       if (hasChanges) {
         if (this.appContext?.verboseDebugging) {
           logger.info(
-            { payload },
+            { payload: truncatePayloadForLogging(payload) },
             "RedisCache.set: publish to Redis subscribers",
           );
         }
@@ -200,7 +200,7 @@ export class RedisCache {
 
       if (this.appContext?.verboseDebugging) {
         logger.info(
-          { payload, oldPayload: oldEntry?.payload },
+          { payload: truncatePayloadForLogging(payload), oldPayload: truncatePayloadForLogging(oldEntry?.payload) },
           "RedisCache.set: do not publish to Redis subscribers (no changes)",
         );
       }
@@ -242,14 +242,14 @@ export class RedisCache {
 
             this.appContext?.verboseDebugging &&
               logger.info(
-                { payload },
+                { payload: truncatePayloadForLogging(payload) },
                 "RedisCache.subscribe: got 'set' message",
               );
 
             // 1. emit SSE to SDK clients
             if (this.appContext?.enableEventStream && eventStreamManager) {
               this.appContext?.verboseDebugging &&
-                logger.info({ payload }, "RedisCache.subscribe: publish SSE");
+                logger.info({ payload: truncatePayloadForLogging(payload) }, "RedisCache.subscribe: publish SSE");
 
               const remoteEvalEnabled =
                 !!registrar.getConnection(key)?.remoteEvalEnabled;

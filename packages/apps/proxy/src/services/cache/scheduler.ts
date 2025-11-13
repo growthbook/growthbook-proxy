@@ -6,7 +6,7 @@ import logger from "../logger";
 import { CacheRefreshStrategy } from "../../types";
 
 export class CacheRefreshScheduler {
-  private intervalId: NodeJS.Timeout | null = null;
+  private timeoutId: NodeJS.Timeout | null = null;
   private readonly ctx: Context;
   private readonly staleTTL: number;
 
@@ -28,15 +28,21 @@ export class CacheRefreshScheduler {
 
     // "schedule" strategy - periodic refreshes
     if (strategy === "schedule") {
-      this.intervalId = setInterval(() => {
+      this.scheduleNextRefresh();
+    }
+  }
+
+  private scheduleNextRefresh() {
+    this.timeoutId = setTimeout(() => {
       const connections = registrar.getAllConnections();
       for (const apiKey in connections) {
         const connection = connections[apiKey];
         const jitter = Math.min(this.staleTTL * 0.2, 30000) * Math.random(); // 0 to min(20%, 30sec)
         setTimeout(() => this.maybeFetch(apiKey, connection), jitter);
       }
-      }, this.staleTTL);
-    }
+      // Schedule the next refresh
+      this.scheduleNextRefresh();
+    }, this.staleTTL);
   }
 
   private async maybeFetch(apiKey: string, connection: any) {
@@ -60,9 +66,9 @@ export class CacheRefreshScheduler {
   }
 
   public stop() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
     }
   }
 }
