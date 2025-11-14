@@ -6,12 +6,13 @@ import Redis, {
 } from "ioredis";
 
 import { v4 as uuidv4 } from "uuid";
-import logger from "../logger";
+import logger, { truncatePayloadForLogging } from "../logger";
 import { eventStreamManager } from "../eventStreamManager";
 import { Context } from "../../types";
 import { registrar } from "../registrar";
 import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, CacheSettings } from "./index";
+import { CacheRefreshStrategy } from "../../types";
 
 export class RedisCache {
   private client: Redis | Cluster | undefined;
@@ -23,8 +24,9 @@ export class RedisCache {
   private readonly memoryCacheClient: MemoryCache | undefined;
   private readonly connectionUrl: string | undefined;
   private readonly staleTTL: number;
-  private readonly expiresTTL: number;
+  private readonly expiresTTL: number | "never";
   public readonly allowStale: boolean;
+  public readonly cacheRefreshStrategy: CacheRefreshStrategy;
 
   private readonly useCluster: boolean;
   private readonly clusterRootNodesJSON?: ClusterNode[];
@@ -40,6 +42,7 @@ export class RedisCache {
       staleTTL = 60, //         1 minute
       expiresTTL = 10 * 60, //  10 minutes
       allowStale = true,
+      cacheRefreshStrategy,
       connectionUrl,
       useAdditionalMemoryCache,
       publishPayloadToChannel = false,
@@ -53,8 +56,9 @@ export class RedisCache {
   ) {
     this.connectionUrl = connectionUrl;
     this.staleTTL = staleTTL * 1000;
-    this.expiresTTL = expiresTTL * 1000;
+    this.expiresTTL = expiresTTL === "never" ? "never" : expiresTTL * 1000;
     this.allowStale = allowStale;
+    this.cacheRefreshStrategy = cacheRefreshStrategy!;
     this.publishPayloadToChannel = publishPayloadToChannel;
     this.useCluster = useCluster;
     this.clusterRootNodesJSON = clusterRootNodesJSON;
@@ -69,6 +73,7 @@ export class RedisCache {
       this.memoryCacheClient = new MemoryCache({
         expiresTTL: 1, //  1 second,
         allowStale: false,
+        cacheRefreshStrategy: this.cacheRefreshStrategy,
       });
     }
   }
@@ -103,7 +108,7 @@ export class RedisCache {
     // try fetching from MemoryCache first
     if (this.memoryCacheClient) {
       const memoryCacheEntry = await this.memoryCacheClient.get(key);
-      if (memoryCacheEntry && memoryCacheEntry.expiresOn > new Date()) {
+      if (memoryCacheEntry && (!memoryCacheEntry.expiresOn || memoryCacheEntry.expiresOn > new Date())) {
         entry = memoryCacheEntry.payload as CacheEntry;
       }
     }
@@ -127,12 +132,24 @@ export class RedisCache {
     }
 
     entry.staleOn = new Date(entry.staleOn);
-    entry.expiresOn = new Date(entry.expiresOn);
+    if (entry.expiresOn) {
+      entry.expiresOn = new Date(entry.expiresOn);
+    }
 
-    if (!this.allowStale && entry.staleOn < new Date()) {
+    // With "none" strategy, never eject based on staleness or expiration
+    if (this.cacheRefreshStrategy === "none") {
+      // refresh MemoryCache
+      if (this.memoryCacheClient) {
+        await this.memoryCacheClient.set(key, entry);
+      }
+      return entry;
+    }
+
+    // With "stale-while-revalidate" strategy, allowStale controls whether we return stale but not-yet-expired entries
+    if (this.cacheRefreshStrategy === "stale-while-revalidate" && !this.allowStale && entry.staleOn < new Date()) {
       return undefined;
     }
-    if (entry.expiresOn < new Date()) {
+    if (entry.expiresOn && entry.expiresOn < new Date()) {
       return undefined;
     }
 
@@ -150,17 +167,23 @@ export class RedisCache {
 
     const oldEntry = await this.get(key);
 
-    const entry = {
+    const entry: CacheEntry = {
       payload,
       staleOn: new Date(Date.now() + this.staleTTL),
-      expiresOn: new Date(Date.now() + this.expiresTTL),
+      expiresOn: this.expiresTTL === "never" 
+        ? undefined 
+        : new Date(Date.now() + this.expiresTTL),
     };
-    await this.client.set(
-      key,
-      JSON.stringify(entry),
-      "EX",
-      this.expiresTTL / 1000,
-    );
+    if (this.expiresTTL === "never") {
+      await this.client.set(key, JSON.stringify(entry));
+    } else {
+      await this.client.set(
+        key,
+        JSON.stringify(entry),
+        "EX",
+        this.expiresTTL / 1000,
+      );
+    }
 
     // refresh MemoryCache
     if (this.memoryCacheClient) {
@@ -177,7 +200,7 @@ export class RedisCache {
       if (hasChanges) {
         if (this.appContext?.verboseDebugging) {
           logger.info(
-            { payload },
+            { payload: truncatePayloadForLogging(payload) },
             "RedisCache.set: publish to Redis subscribers",
           );
         }
@@ -195,7 +218,7 @@ export class RedisCache {
 
       if (this.appContext?.verboseDebugging) {
         logger.info(
-          { payload, oldPayload: oldEntry?.payload },
+          { payload: truncatePayloadForLogging(payload), oldPayload: truncatePayloadForLogging(oldEntry?.payload) },
           "RedisCache.set: do not publish to Redis subscribers (no changes)",
         );
       }
@@ -237,14 +260,14 @@ export class RedisCache {
 
             this.appContext?.verboseDebugging &&
               logger.info(
-                { payload },
+                { payload: truncatePayloadForLogging(payload) },
                 "RedisCache.subscribe: got 'set' message",
               );
 
             // 1. emit SSE to SDK clients
             if (this.appContext?.enableEventStream && eventStreamManager) {
               this.appContext?.verboseDebugging &&
-                logger.info({ payload }, "RedisCache.subscribe: publish SSE");
+                logger.info({ payload: truncatePayloadForLogging(payload) }, "RedisCache.subscribe: publish SSE");
 
               const remoteEvalEnabled =
                 !!registrar.getConnection(key)?.remoteEvalEnabled;
@@ -258,10 +281,12 @@ export class RedisCache {
 
             // 2. update MemoryCache
             if (this.memoryCacheClient) {
-              const entry = {
+              const entry: CacheEntry = {
                 payload,
                 staleOn: new Date(Date.now() + this.staleTTL),
-                expiresOn: new Date(Date.now() + this.expiresTTL),
+                expiresOn: this.expiresTTL === "never" 
+                  ? undefined 
+                  : new Date(Date.now() + this.expiresTTL),
               };
               await this.memoryCacheClient.set(key, entry);
             }

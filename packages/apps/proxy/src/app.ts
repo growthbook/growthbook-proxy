@@ -4,7 +4,7 @@ import { adminRouter } from "./controllers/adminController";
 import { eventStreamRouter } from "./controllers/eventStreamController";
 import { featuresRouter } from "./controllers/featuresController";
 import proxyMiddleware from "./middleware/proxyMiddleware";
-import { featuresCache, initializeCache } from "./services/cache";
+import { featuresCache, initializeCache, cacheRefreshScheduler } from "./services/cache";
 import { initializeRegistrar, registrar } from "./services/registrar";
 import {
   eventStreamManager,
@@ -29,9 +29,10 @@ const defaultContext: Context = {
   enableCache: true,
   cacheSettings: {
     cacheEngine: "memory",
-    staleTTL: 60, //        1 min,
-    expiresTTL: 10 * 60, // 10 min,
+    staleTTL: 60, //        1 min
+    expiresTTL: 3600, //    1 hour
     allowStale: true,
+    cacheRefreshStrategy: "schedule",
   },
   enableHealthCheck: true,
   enableCors: true,
@@ -77,6 +78,7 @@ export const growthBookProxy = async (
     context: ctx,
     services: {
       featuresCache,
+      cacheRefreshScheduler,
       registrar,
       eventStreamManager,
       logger,

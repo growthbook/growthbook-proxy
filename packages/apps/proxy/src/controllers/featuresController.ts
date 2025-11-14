@@ -57,6 +57,7 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
 
   if (
     featuresCache?.allowStale &&
+    featuresCache.cacheRefreshStrategy === "stale-while-revalidate" &&
     entry?.staleOn &&
     entry.staleOn < new Date()
   ) {
@@ -126,6 +127,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
 
   if (
     featuresCache?.allowStale &&
+    featuresCache.cacheRefreshStrategy === "stale-while-revalidate" &&
     oldEntry?.staleOn &&
     oldEntry.staleOn < new Date()
   ) {
