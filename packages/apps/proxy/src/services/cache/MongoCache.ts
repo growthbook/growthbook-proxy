@@ -13,7 +13,7 @@ export class MongoCache {
   private readonly databaseName: string | undefined;
   private readonly collectionName: string | undefined;
   private readonly staleTTL: number;
-  private readonly expiresTTL: number;
+  private readonly expiresTTL: number | "never";
   public readonly allowStale: boolean;
   public readonly cacheRefreshStrategy: CacheRefreshStrategy;
 
@@ -31,7 +31,7 @@ export class MongoCache {
     this.databaseName = databaseName;
     this.collectionName = collectionName;
     this.staleTTL = staleTTL * 1000;
-    this.expiresTTL = expiresTTL * 1000;
+    this.expiresTTL = expiresTTL === "never" ? "never" : expiresTTL * 1000;
     this.allowStale = allowStale;
     this.cacheRefreshStrategy = cacheRefreshStrategy!;
 
@@ -58,10 +58,12 @@ export class MongoCache {
       this.db = this.client.db(this.databaseName);
       this.collection = this.db.collection(this.collectionName);
       await this.collection.createIndex({ key: 1 }, { unique: true });
-      await this.collection.createIndex(
-        { "entry.expiresOn": 1 },
-        { expireAfterSeconds: this.expiresTTL / 1000 },
-      );
+      if (this.expiresTTL !== "never") {
+        await this.collection.createIndex(
+          { "entry.expiresOn": 1 },
+          { expireAfterSeconds: this.expiresTTL / 1000 },
+        );
+      }
     }
   }
 
@@ -74,7 +76,7 @@ export class MongoCache {
     // try fetching from MemoryCache first
     if (this.memoryCacheClient) {
       const memoryCacheEntry = await this.memoryCacheClient.get(key);
-      if (memoryCacheEntry && memoryCacheEntry.expiresOn > new Date()) {
+      if (memoryCacheEntry && (!memoryCacheEntry.expiresOn || memoryCacheEntry.expiresOn > new Date())) {
         entry = memoryCacheEntry.payload as CacheEntry;
       }
     }
@@ -101,10 +103,25 @@ export class MongoCache {
     if (!entry) {
       return undefined;
     }
-    if (!this.allowStale && entry.staleOn < new Date()) {
+    entry.staleOn = new Date(entry.staleOn);
+    if (entry.expiresOn) {
+      entry.expiresOn = new Date(entry.expiresOn);
+    }
+
+    // With "none" strategy, never eject based on staleness or expiration
+    if (this.cacheRefreshStrategy === "none") {
+      // refresh MemoryCache
+      if (this.memoryCacheClient) {
+        await this.memoryCacheClient.set(key, entry);
+      }
+      return entry;
+    }
+
+    // With "stale-while-revalidate" strategy, allowStale controls whether we return stale but not-yet-expired entries
+    if (this.cacheRefreshStrategy === "stale-while-revalidate" && !this.allowStale && entry.staleOn < new Date()) {
       return undefined;
     }
-    if (entry.expiresOn < new Date()) {
+    if (entry.expiresOn && entry.expiresOn < new Date()) {
       return undefined;
     }
 
@@ -119,10 +136,12 @@ export class MongoCache {
     if (!this.collection) {
       throw new Error("No mongo client");
     }
-    const entry = {
+    const entry: CacheEntry = {
       payload,
       staleOn: new Date(Date.now() + this.staleTTL),
-      expiresOn: new Date(Date.now() + this.expiresTTL),
+      expiresOn: this.expiresTTL === "never" 
+        ? undefined 
+        : new Date(Date.now() + this.expiresTTL),
     };
     const docEntry = { ...entry };
     docEntry.payload = JSON.stringify(docEntry.payload) as string;

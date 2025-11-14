@@ -10,12 +10,12 @@ import { CacheRefreshScheduler } from "./scheduler";
 export interface CacheEntry {
   payload: unknown;
   staleOn: Date;
-  expiresOn: Date;
+  expiresOn?: Date; // undefined when expiresTTL is "never"
 }
 
 export interface CacheSettings {
   staleTTL?: number;
-  expiresTTL?: number;
+  expiresTTL?: number | "never";
   allowStale?: boolean;
   cacheRefreshStrategy?: CacheRefreshStrategy;
   connectionUrl?: string; // for MongoCache and RedisCache

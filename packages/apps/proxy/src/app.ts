@@ -29,9 +29,10 @@ const defaultContext: Context = {
   enableCache: true,
   cacheSettings: {
     cacheEngine: "memory",
-    staleTTL: 60, //        1 min,
-    expiresTTL: 10 * 60, // 10 min,
+    staleTTL: 60, //        1 min
+    expiresTTL: 3600, //    1 hour
     allowStale: true,
+    cacheRefreshStrategy: "schedule",
   },
   enableHealthCheck: true,
   enableCors: true,

@@ -35,10 +35,12 @@ export default async () => {
     cacheSettings: {
       cacheEngine: (process.env.CACHE_ENGINE || "memory") as CacheEngine,
       staleTTL: parseInt(process.env.CACHE_STALE_TTL || "60"),
-      expiresTTL: parseInt(process.env.CACHE_EXPIRES_TTL || "3600"),
+      expiresTTL: process.env.CACHE_EXPIRES_TTL === "never" 
+        ? "never" 
+        : parseInt(process.env.CACHE_EXPIRES_TTL || "3600"),
       allowStale: ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? "1"),
       cacheRefreshStrategy: (process.env.CACHE_REFRESH_STRATEGY ||
-        "stale-while-revalidate") as CacheRefreshStrategy,
+        "schedule") as CacheRefreshStrategy,
       connectionUrl: process.env.CACHE_CONNECTION_URL,
       useAdditionalMemoryCache: true,
       // Mongo only:
