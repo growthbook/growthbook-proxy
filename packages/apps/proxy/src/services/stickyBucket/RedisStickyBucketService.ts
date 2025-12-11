@@ -66,7 +66,10 @@ export class RedisStickyBucketService extends StickyBucketService {
             docs[key] = data;
           }
         } catch (e) {
-          logger.error("unable to parse sticky bucket json");
+          logger.error(
+            { err: e, rawValue: raw },
+            "unable to parse sticky bucket json"
+          );
         }
       });
     } catch (e) {
