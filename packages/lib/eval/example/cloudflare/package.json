@@ -9,7 +9,7 @@
     "build": "wrangler build"
   },
   "dependencies": {
-    "@growthbook/proxy-eval": "^1.1.0"
+    "@growthbook/proxy-eval": "^1.1.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250926.0",

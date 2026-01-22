@@ -20,7 +20,7 @@
     "cookie": "^1.0.2"
   },
   "devDependencies": {
-    "@growthbook/growthbook": "^1.6.1",
+    "@growthbook/growthbook": "^1.6.3",
     "typescript": "^5.7.2"
   }
 }
