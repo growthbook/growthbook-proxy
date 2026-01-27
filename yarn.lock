@@ -518,10 +518,10 @@
     magic-string "^0.30.12"
     regexpu-core "^6.1.1"
 
-"@growthbook/growthbook@^1.6.3":
-  version "1.6.3"
-  resolved "https://registry.yarnpkg.com/@growthbook/growthbook/-/growthbook-1.6.3.tgz#bb6934dc8c92d3fa7a7761deaf8f48d00ba1ee23"
-  integrity sha512-9G8ERv4oW5klFwyJUYs5c+TkTNKUL7/DkgjjvR2dKavj9lGpHSQI6XHKzfZxC7BrnHsOiEGpdCWlNplKQ7iBcw==
+"@growthbook/growthbook@^1.6.4":
+  version "1.6.4"
+  resolved "https://registry.yarnpkg.com/@growthbook/growthbook/-/growthbook-1.6.4.tgz#8bc8398343aa448d08dc4d24e171b157f3219f33"
+  integrity sha512-EID0PBixS9PyWLVEDT0FLGWSQ4kSaGo1kFOTFgIYxwI7/SRqesbYOt2Bc+79vb6HcQANzRhdmtz/9rZ3JsOVYA==
   dependencies:
     dom-mutator "^0.6.0"
 

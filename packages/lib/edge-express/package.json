@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@growthbook/edge-utils": "^0.2.5",
-    "@growthbook/growthbook": "^1.6.3",
+    "@growthbook/growthbook": "^1.6.4",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "express": "^4.21.1",
