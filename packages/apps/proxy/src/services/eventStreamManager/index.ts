@@ -46,7 +46,7 @@ export class SSEManager {
         logger.error({ apiKey }, "Unable to get SSE channel");
       }
     }
-  }
+  } 
 
   public getSubscriberCount(apiKey: string): number | null {
     const scopedChannel = this.getScopedChannel(apiKey);
