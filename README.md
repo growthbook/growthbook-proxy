@@ -29,7 +29,7 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ### What's new
 
-**Version 1.3.2**
+**Version 1.3.3**
 - Fix Redis sticky bucket mget call when attributes are empty
 - Improve logging context
 - Minimum supported Node.js version is now 22.0.0

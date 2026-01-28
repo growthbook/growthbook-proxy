@@ -201,7 +201,7 @@ export const featuresRouter = (ctx: Context) => {
 
   // proxy clients' "get features" endpoint call to GrowthBook, with cache layer
   router.get(
-    "/api/features/*",
+    "/api/features/*path",
     apiKeyMiddleware,
     sseSupportMiddleware,
     getFeatures,
@@ -210,7 +210,7 @@ export const featuresRouter = (ctx: Context) => {
   // get evaluated features for user, with cache layer for raw feature definitions. Uses a POST to encode attributes
   if (ctx.enableRemoteEval) {
     router.post(
-      "/api/eval/*",
+      "/api/eval/*path",
       apiKeyMiddleware,
       express.json({
         limit: process.env.MAX_PAYLOAD_SIZE ?? MAX_PAYLOAD_SIZE,

@@ -4,7 +4,7 @@
     "node": ">=22.0.0"
   },
   "description": "GrowthBook proxy server for caching, realtime updates, remote evaluation, etc",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "main": "dist/app.js",
   "license": "MIT",
   "repository": {
