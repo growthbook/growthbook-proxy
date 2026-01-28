@@ -14,7 +14,7 @@ export default (req: Request, res: Response, next: NextFunction) => {
 
   const connection = registrar.getConnection(res.locals.apiKey);
   if (!connection?.signingKey) {
-    ctx?.verboseDebugging && logger.warn("Missing signing key");
+    ctx?.verboseDebugging && logger.warn({ apiKey: res.locals.apiKey, hasConnection: !!connection }, "Missing signing key");
     return res.status(400).json({ message: "Missing signing key" });
   }
   const sig = req.get("x-growthbook-signature") || "";

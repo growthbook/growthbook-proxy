@@ -40,7 +40,7 @@ const interceptor = (proxyTarget: string) =>
 
           featuresCache
             .set(apiKey, responseJson)
-            .catch((e) => logger.error(e, "Unable to set cache"));
+            .catch((e) => logger.error({ err: e }, "Unable to set cache"));
 
           const remoteEvalEnabled =
             !!registrar.getConnection(apiKey)?.remoteEvalEnabled;
@@ -52,7 +52,7 @@ const interceptor = (proxyTarget: string) =>
             oldPayload: oldEntry?.payload,
           });
         } catch (e) {
-          logger.error(e, "Unable to parse response");
+          logger.error({ err: e }, "Unable to parse response");
         }
       }
       return response;
@@ -78,7 +78,7 @@ export default async ({ proxyTarget }: { proxyTarget: string }) => {
       on: {
         proxyRes: interceptor(proxyTarget),
         error: (err, req, res) => {
-          logger.error(err, "proxy error");
+          logger.error({ err }, "proxy error");
           errorCounts[proxyTarget] = (errorCounts[proxyTarget] || 0) + 1;
           if ((res as ServerResponse)?.writeHead && !(res as ServerResponse).headersSent) {
             (res as ServerResponse)?.writeHead(500, { 'Content-Type': 'application/json' });

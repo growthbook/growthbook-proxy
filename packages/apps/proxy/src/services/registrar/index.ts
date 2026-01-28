@@ -138,26 +138,25 @@ export class Registrar {
       try {
         const resp = await fetch(url, fetchOptions);
         if (!resp.ok) {
-          logger.error(`connection polling error: status code is ${resp.status}`);
           const text = await resp.text();
-          logger.error(text);
+          logger.error({ status: resp.status, body: text }, "connection polling error");
           this.status = "disconnected";
           return;
         }
         data = await resp.json();
 
-      } catch(e) {
-        logger.error(`connection polling error: API server unreachable`);
+      } catch (e) {
+        logger.error({ err: e }, "connection polling error: API server unreachable");
         this.status = "disconnected";
       }
 
       if (!data?.connections) {
-        logger.error("connection polling error: no data");
+        logger.error({ url, hasData: !!data, hasConnections: !!data?.connections }, "connection polling error: no data");
         this.status = "disconnected";
         return;
       }
       if (Object.keys(data.connections).length === 0) {
-        logger.warn("connection polling: no connections found");
+        logger.warn({ url, connectionCount: 0 }, "connection polling: no connections found");
         this.status = "unknown";
         return;
       }
@@ -201,7 +200,8 @@ export class Registrar {
       JSON.stringify(newConnections) !== JSON.stringify(oldConnections);
     if (hasChanges) {
       logger.info(
-        `SDK connections count: ${Object.keys(newConnections).length}`,
+        { count: Object.keys(newConnections).length },
+        "SDK connections count",
       );
     }
     this.status = "connected";

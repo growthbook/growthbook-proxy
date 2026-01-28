@@ -12,7 +12,7 @@ const postConnection = (req: Request, res: Response) => {
   try {
     registrar.setConnection(apiKey, req.body);
   } catch (e) {
-    logger.error(e);
+    logger.error({ err: e }, "Malformed payload");
     return res.status(400).json({ message: "Malformed payload" });
   }
   return res.status(200).json({ message: "Success" });

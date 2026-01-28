@@ -56,7 +56,7 @@ export class RedisStickyBucketService extends StickyBucketService {
         `${attributeName}||${attributeValue}`,
     );
     if (!this.client || keys.length === 0) return docs;
-      
+
     try {
       const values = await this.client.mget(...keys);
       values.forEach((raw) => {

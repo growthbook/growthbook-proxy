@@ -66,7 +66,7 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
       apiKey: res.locals.apiKey,
       ctx: req.app.locals?.ctx,
     }).catch((e) => {
-      logger.error(e, "Unable to refresh stale cache");
+      logger.error({ err: e }, "Unable to refresh stale cache");
     });
   }
 
@@ -138,7 +138,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
       remoteEvalEnabled: true,
       organization: connection?.organization,
     }).catch((e) => {
-      logger.error(e, "Unable to refresh stale cache");
+      logger.error({ err: e }, "Unable to refresh stale cache");
     });
   }
 
@@ -166,7 +166,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
     }
     forcedFeaturesMap = new Map(forcedFeatures);
   } catch (e) {
-    logger.error(e, "getEvaluatedFeatures input error");
+    logger.error({ err: e }, "getEvaluatedFeatures input error");
     return res.status(400).json({
       status: 400,
       error: "Invalid input",
@@ -190,7 +190,7 @@ const postFeatures = async (req: Request, res: Response) => {
   try {
     await featuresCache?.set(res.locals.apiKey, req.body);
   } catch (e) {
-    logger.error(e, "Unable to update features");
+    logger.error({ err: e }, "Unable to update features");
     return res.status(500).json({ message: "Unable to update features" });
   }
   return res.status(200).json({ message: "Success" });

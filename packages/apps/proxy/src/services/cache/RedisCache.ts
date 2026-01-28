@@ -122,7 +122,7 @@ export class RedisCache {
       try {
         entry = JSON.parse(entryRaw);
       } catch (e) {
-        logger.error("unable to parse cache json");
+        logger.error({ err: e }, "unable to parse cache json");
         return undefined;
       }
     }
@@ -241,7 +241,7 @@ export class RedisCache {
     // 2. update its MemoryCache
     this.subscriberClient.subscribe("set", (err) => {
       if (err) {
-        logger.error(err, "RedisCache.subscribe: error subscribing to 'set'");
+        logger.error({ err }, "RedisCache.subscribe: error subscribing to 'set'");
       } else {
         this.appContext?.verboseDebugging &&
           logger.info("RedisCache.subscribe: subscribed to 'set' channel");
@@ -291,7 +291,7 @@ export class RedisCache {
               await this.memoryCacheClient.set(key, entry);
             }
           } catch (e) {
-            logger.error(e, "Error parsing message from Redis pub/sub");
+            logger.error({ err: e }, "Error parsing message from Redis pub/sub");
           }
         }
       },

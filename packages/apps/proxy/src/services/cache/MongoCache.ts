@@ -52,7 +52,7 @@ export class MongoCache {
     this.client = new MongoClient(this.connectionUrl ?? "");
     if (this.client) {
       this.client.on("error", (e: Error) => {
-        logger.error(e, "Error connecting to mongo client");
+        logger.error({ err: e }, "Error connecting to mongo client");
       });
       await this.client.connect();
       this.db = this.client.db(this.databaseName);
@@ -88,7 +88,7 @@ export class MongoCache {
         return undefined;
       }
       if (!doc.entry) {
-        logger.error("MongoCache: unable to parse doc");
+        logger.error({ key, hasDoc: !!doc }, "MongoCache: unable to parse doc");
         return undefined;
       }
       try {
@@ -96,7 +96,7 @@ export class MongoCache {
         docEntry.payload = JSON.parse(docEntry.payload as string);
         entry = docEntry;
       } catch (e) {
-        logger.error("MongoCache: unable to parse doc entry payload");
+        logger.error({ err: e }, "MongoCache: unable to parse doc entry payload");
       }
     }
 
@@ -168,7 +168,7 @@ export class MongoCache {
       const stats = await this.db.stats({ maxTimeMS: 1000 });
       return stats?.ok === 1 ? "up" : "down"
     } catch (e) {
-      logger.error("Mongo getStatus", e);
+      logger.error({ err: e }, "Mongo getStatus");
       return "down";
     }
   }
