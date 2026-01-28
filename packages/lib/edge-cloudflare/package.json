@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250926.0",
-    "@growthbook/growthbook": "^1.6.1",
+    "@growthbook/growthbook": "^1.6.4",
     "typescript": "^5.7.2",
     "wrangler": "^4.40.1"
   }

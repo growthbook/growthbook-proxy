@@ -3,9 +3,6 @@
   "version": "0.0.1",
   "license": "MIT",
   "type": "module",
-  "engines": {
-    "node": "^16 || >=18"
-  },
   "scripts": {
     "prebuild": "tsc",
     "build": "js-compute-runtime build/index.js bin/main.wasm",

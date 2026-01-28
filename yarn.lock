@@ -518,17 +518,10 @@
     magic-string "^0.30.12"
     regexpu-core "^6.1.1"
 
-"@growthbook/growthbook@^1.4.1":
-  version "1.4.1"
-  resolved "https://registry.yarnpkg.com/@growthbook/growthbook/-/growthbook-1.4.1.tgz#db1d5c270c7450ae131455dfb26acb69114a8abe"
-  integrity sha512-Cl+q1SPwTYHvV2mcsjDcAuT4ezzpA6pOJr7nGCKiPaIZ4BN+pNt2kQM/dtCiwwse7vFz26S1/UJ+mb6qSSW8sQ==
-  dependencies:
-    dom-mutator "^0.6.0"
-
-"@growthbook/growthbook@^1.6.1":
-  version "1.6.1"
-  resolved "https://registry.yarnpkg.com/@growthbook/growthbook/-/growthbook-1.6.1.tgz#4135c680397af3e5de8d2ab92defe2c6ed697fc5"
-  integrity sha512-GSvb7bNaBTfH54AZ0oQdnoyV/ZxN9NhDEIHOsRUiM+CSOPiodz0i8/+1O6Wg0wFEVgBxS5CGWffyd74fym43Xw==
+"@growthbook/growthbook@^1.6.4":
+  version "1.6.4"
+  resolved "https://registry.yarnpkg.com/@growthbook/growthbook/-/growthbook-1.6.4.tgz#8bc8398343aa448d08dc4d24e171b157f3219f33"
+  integrity sha512-EID0PBixS9PyWLVEDT0FLGWSQ4kSaGo1kFOTFgIYxwI7/SRqesbYOt2Bc+79vb6HcQANzRhdmtz/9rZ3JsOVYA==
   dependencies:
     dom-mutator "^0.6.0"
 
@@ -1850,10 +1843,12 @@
   dependencies:
     undici-types "~5.26.4"
 
-"@types/node@^20.8.2":
-  version "20.8.2"
-  resolved "https://registry.npmjs.org/@types/node/-/node-20.8.2.tgz"
-  integrity sha512-Vvycsc9FQdwhxE3y3DzeIxuEJbWGDsnrxvMADzTDF/lcdR9/K+AQIeAghTQsHtotg/q0j3WEOYS/jQgSdWue3w==
+"@types/node@^22.0.0":
+  version "22.19.7"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.19.7.tgz#434094ee1731ae76c16083008590a5835a8c39c1"
+  integrity sha512-MciR4AKGHWl7xwxkBa6xUGxQJ4VBOmPTF7sL+iGzuahOFaO0jHCsuEfS80pan1ef4gWId1oWOweIhrDEYLuaOw==
+  dependencies:
+    undici-types "~6.21.0"
 
 "@types/node@^22.10.4":
   version "22.10.4"
@@ -6517,6 +6512,11 @@ undici-types@~6.20.0:
   version "6.20.0"
   resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-6.20.0.tgz#8171bf22c1f588d1554d55bf204bc624af388433"
   integrity sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==
+
+undici-types@~6.21.0:
+  version "6.21.0"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-6.21.0.tgz#691d00af3909be93a7faa13be61b3a5b50ef12cb"
+  integrity sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==
 
 undici@7.14.0:
   version "7.14.0"
