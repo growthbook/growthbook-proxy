@@ -4,7 +4,7 @@
     "node": ">=22.0.0"
   },
   "description": "GrowthBook proxy server for caching, realtime updates, remote evaluation, etc",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "main": "dist/app.js",
   "license": "MIT",
   "repository": {
@@ -25,7 +25,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.21.1",
+    "express": "^5.2.1",
     "http-proxy-middleware": "^3.0.5",
     "ioredis": "^5.4.1",
     "mongodb": "^6.9.0",
@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
+    "@types/express": "^5.0.6",
     "@types/node": "^22.0.0",
     "@types/pino": "^7.0.5",
     "@types/spdy": "^3.4.9",
