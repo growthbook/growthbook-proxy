@@ -29,13 +29,18 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ### What's new
 
+**Version 1.3.1**
+- Fix Redis sticky bucket mget call when attributes are empty
+- Improve logging context
+- Minimum supported Node.js version is now 22.0.0
+
 **Version 1.3.0**
 - Added configurable cache refresh strategies, including a new background scheduled refresh option, for better control over when and how cache entries are refreshed
 - Added support for disabling cache expiration
 - Improved cache stampede protection by fixing race conditions in concurrent fetch operations
 
 **Version 1.2.9**
-- Additional support for hydrating SDK connections from environment variables.
+- Additional support for hydrating SDK connections from environment variables
 
 **Version 1.2.8**
 - Fix bugs related to remote evaluation. Fixes prerequisite tracking calls, improperly omitted features with falsey results, and the result object's format.
