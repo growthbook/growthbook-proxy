@@ -28,7 +28,7 @@ export class SSEManager {
       try {
         scopedChannel = this.getScopedChannel(apiKey);
       } catch (e) {
-        logger.error(e, "Unable to get SSE channel");
+        logger.error({ err: e }, "Unable to get SSE channel");
       }
       if (scopedChannel) {
         try {
@@ -40,10 +40,10 @@ export class SSEManager {
               `EventSource subscriber counts`,
             );
         } catch (e) {
-          logger.error(e, "Unable to subscribe to SSE channel");
+          logger.error({ err: e }, "Unable to subscribe to SSE channel");
         }
       } else {
-        logger.error("Unable to get SSE channel");
+        logger.error({ apiKey }, "Unable to get SSE channel");
       }
     }
   }

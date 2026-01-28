@@ -20,10 +20,10 @@ export const apiKeyMiddleware = (
     req.headers?.["x-growthbook-api-key"] ||
     req.originalUrl.match(RE_API_KEY)?.[1];
   if (!apiKey) {
-    ctx?.verboseDebugging && logger.warn("API key required");
+    ctx?.verboseDebugging && logger.warn({ path: req.originalUrl }, "API key required");
     return res.status(401).json({ message: "API key required" });
   }
-  ctx?.verboseDebugging && logger.info({ apiKey });
+  ctx?.verboseDebugging && logger.info({ apiKey }, "API key extracted");
   res.locals.apiKey = apiKey;
   next();
 };

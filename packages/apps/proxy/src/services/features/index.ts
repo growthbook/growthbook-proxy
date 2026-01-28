@@ -77,12 +77,12 @@ export async function fetchFeatures({
 
         return { payload, oldEntry };
       } else {
-        logger.error("Unable to parse response");
+        logger.error({ apiKey, url }, "Unable to parse response");
         throw new Error("Unable to parse response");
       }
     })()
       .catch((e) => {
-        logger.error(e, "Refresh stale cache error");
+        logger.error({ err: e }, "Refresh stale cache error");
         return Promise.reject(e);
       })
       .finally(() => delete activeFetches[url]);

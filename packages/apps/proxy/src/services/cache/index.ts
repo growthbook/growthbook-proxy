@@ -60,7 +60,7 @@ export const initializeCache = async (context: Context) => {
   }
 
   const strategy = context.cacheSettings.cacheRefreshStrategy || "stale-while-revalidate";
-  logger.info("cache refresh strategy: "+ strategy);
+  logger.info({ strategy }, "cache refresh strategy");
   if (["schedule", "none"].includes(strategy)) {
     cacheRefreshScheduler = new CacheRefreshScheduler(context);
   }

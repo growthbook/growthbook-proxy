@@ -79,7 +79,7 @@ export class SSEChannel {
         "ssePubsub.subscribe: publish",
       );
     if (!this.active) {
-      logger.warn("ssePubsub.publish: Channel closed");
+      logger.warn({ active: this.active, clients: this.clients.size }, "ssePubsub.publish: Channel closed");
     }
     let output = "";
     let id;
@@ -128,7 +128,7 @@ export class SSEChannel {
     this.appContext?.verboseDebugging &&
       logger.info("ssePubsub.subscribe: subscribe");
     if (!this.active) {
-      logger.warn("ssePubsub.subscribe: Channel closed");
+      logger.warn({ active: this.active, clients: this.clients.size }, "ssePubsub.subscribe: Channel closed");
     }
     const c: Connection = { req, res, events };
     c.res.writeHead(200, {
@@ -177,7 +177,7 @@ export class SSEChannel {
 
     c.res.on("error", (err) => {
       this.appContext?.verboseDebugging &&
-        logger.warn(err, "ssePubsub.subscribe: response error");
+        logger.warn({ err }, "ssePubsub.subscribe: response error");
     });
 
     c.res.on("finish", () => {

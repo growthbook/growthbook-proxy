@@ -65,7 +65,7 @@ export const growthBookProxy = async (
   // set up handlers
   ctx.enableCors && app.use(cors());
   ctx.enableHealthCheck && app.use("/healthcheck", healthRouter);
-  ctx.enableAdmin && logger.warn("Admin API is enabled");
+  ctx.enableAdmin && logger.warn({ enableAdmin: ctx.enableAdmin }, "Admin API is enabled");
   ctx.enableAdmin && app.use("/admin", adminRouter);
 
   ctx.enableEventStream && app.use("/sub", eventStreamRouter);
