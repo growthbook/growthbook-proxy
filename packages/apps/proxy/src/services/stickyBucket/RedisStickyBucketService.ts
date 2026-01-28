@@ -56,7 +56,9 @@ export class RedisStickyBucketService extends StickyBucketService {
         `${attributeName}||${attributeValue}`,
     );
     if (!this.client || keys.length === 0) return docs;
-    await this.client.mget(...keys).then((values) => {
+      
+    try {
+      const values = await this.client.mget(...keys);
       values.forEach((raw) => {
         try {
           const data = JSON.parse(raw || "{}");
@@ -65,10 +67,15 @@ export class RedisStickyBucketService extends StickyBucketService {
             docs[key] = data;
           }
         } catch (e) {
-          logger.error("unable to parse sticky bucket json");
+          logger.error(
+            { err: e, rawValue: raw },
+            "unable to parse sticky bucket json"
+          );
         }
       });
-    });
+    } catch (e) {
+      logger.warn({ err: e }, "unable to load sticky buckets");
+    }
     return docs;
   }
 
