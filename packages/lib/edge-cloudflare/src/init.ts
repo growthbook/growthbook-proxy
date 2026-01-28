@@ -82,11 +82,11 @@ export async function getPayloadFromKV(
 ) {
   if (env?.[namespace]) {
     const KV: KVNamespace = env[namespace];
-    const value = (await KV.get(key)) || undefined;
+    const value = (await KV.get(key, {type: "json"})) || undefined;
     let payload = undefined;
-    if (value) {
+    if (value && value?.data?.payload) {
       try {
-        payload = JSON.parse(value) as FeatureApiResponse;
+        payload = JSON.parse(value.data.payload) as FeatureApiResponse;
       } catch (e) {
         console.warn("Unable to parse payload", e);
       }
