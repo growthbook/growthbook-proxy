@@ -265,7 +265,7 @@ export async function edgeApp<Req, Res>(
 
   let root: HTMLElement | undefined;
   if (context.config.alwaysParseDOM) {
-    root = parse(body);
+    root = parse(body, { comment: context.config.preserveHtmlComments });
   }
 
   // Body ready hook (pre-DOM-mutations):
@@ -282,6 +282,7 @@ export async function edgeApp<Req, Res>(
     root,
     nonce,
     domChanges,
+    preserveHtmlComments: context.config.preserveHtmlComments,
   });
 
   /**
