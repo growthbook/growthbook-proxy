@@ -17,6 +17,7 @@ export const defaultContext: Context<Req, Res> = {
     runVisualEditorExperiments: "everywhere",
     disableJsInjection: false,
     alwaysParseDOM: false,
+    preserveHtmlComments: false,
     runUrlRedirectExperiments: "browser",
     runCrossOriginUrlRedirectExperiments: "browser",
     injectRedirectUrlScript: true,
@@ -71,6 +72,7 @@ export interface ConfigEnv {
   RUN_VISUAL_EDITOR_EXPERIMENTS?: ExperimentRunEnvironment;
   DISABLE_JS_INJECTION?: string;
   ALWAYS_PARSE_DOM?: string;
+  PRESERVE_HTML_COMMENTS?: string;
 
   RUN_URL_REDIRECT_EXPERIMENTS?: ExperimentRunEnvironment;
   RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS?: ExperimentRunEnvironment;
@@ -150,6 +152,9 @@ export function getConfig(env: ConfigEnv): Config {
   );
   config.alwaysParseDOM = ["true", "1"].includes(
     env.ALWAYS_PARSE_DOM ?? "" + defaultContext.config.alwaysParseDOM,
+  );
+  config.preserveHtmlComments = ["true", "1"].includes(
+    env.PRESERVE_HTML_COMMENTS ?? "" + defaultContext.config.preserveHtmlComments,
   );
 
   config.runUrlRedirectExperiments = (env.RUN_URL_REDIRECT_EXPERIMENTS ??
