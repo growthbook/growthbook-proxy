@@ -31,7 +31,6 @@ export interface Config {
   runVisualEditorExperiments: ExperimentRunEnvironment; // default: everywhere
   disableJsInjection: boolean;
   alwaysParseDOM: boolean;
-  preserveHtmlComments: boolean; // default: false (set to true for Next.js SSR)
 
   runUrlRedirectExperiments: ExperimentRunEnvironment; // default: browser
   runCrossOriginUrlRedirectExperiments: ExperimentRunEnvironment; // default: browser

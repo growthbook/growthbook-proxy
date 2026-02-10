@@ -17,7 +17,7 @@ export async function applyDomMutations({
   preserveHtmlComments?: boolean;
 }) {
   if (!domChanges.length) return;
-  root = root ?? parse(body, { comment: preserveHtmlComments });
+  root = root ?? parse(body, { comment: true });
   if (!root) return;
 
   const headEl = root.querySelector("head");
