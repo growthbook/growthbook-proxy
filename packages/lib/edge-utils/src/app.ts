@@ -265,7 +265,7 @@ export async function edgeApp<Req, Res>(
 
   let root: HTMLElement | undefined;
   if (context.config.alwaysParseDOM) {
-    root = parse(body);
+    root = parse(body, { comment: true });
   }
 
   // Body ready hook (pre-DOM-mutations):

@@ -15,7 +15,7 @@ export async function applyDomMutations({
   domChanges: AutoExperimentVariation[];
 }) {
   if (!domChanges.length) return;
-  root = root ?? parse(body);
+  root = root ?? parse(body, { comment: true });
   if (!root) return;
 
   const headEl = root.querySelector("head");
