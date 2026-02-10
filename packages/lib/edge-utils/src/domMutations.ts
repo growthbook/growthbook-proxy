@@ -7,14 +7,12 @@ export async function applyDomMutations({
   root,
   nonce,
   domChanges,
-  preserveHtmlComments = false,
 }: {
   body: string;
   setBody: (s: string) => void;
   root?: HTMLElement;
   nonce?: string;
   domChanges: AutoExperimentVariation[];
-  preserveHtmlComments?: boolean;
 }) {
   if (!domChanges.length) return;
   root = root ?? parse(body, { comment: true });

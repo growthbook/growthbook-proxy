@@ -151,6 +151,7 @@ export function getConfig(env: ConfigEnv): Config {
   config.alwaysParseDOM = ["true", "1"].includes(
     env.ALWAYS_PARSE_DOM ?? "" + defaultContext.config.alwaysParseDOM,
   );
+  
   config.runUrlRedirectExperiments = (env.RUN_URL_REDIRECT_EXPERIMENTS ??
     defaultContext.config
       .runUrlRedirectExperiments) as ExperimentRunEnvironment;
