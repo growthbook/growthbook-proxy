@@ -71,7 +71,6 @@ export interface ConfigEnv {
   RUN_VISUAL_EDITOR_EXPERIMENTS?: ExperimentRunEnvironment;
   DISABLE_JS_INJECTION?: string;
   ALWAYS_PARSE_DOM?: string;
-  PRESERVE_HTML_COMMENTS?: string;
 
   RUN_URL_REDIRECT_EXPERIMENTS?: ExperimentRunEnvironment;
   RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS?: ExperimentRunEnvironment;
