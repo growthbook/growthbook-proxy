@@ -1,5 +1,8 @@
 {
   "name": "@growthbook/edge-express",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "description": "GrowthBook edge app for Express",
   "version": "0.1.0",
   "main": "dist/index.js",
@@ -22,18 +25,17 @@
     "dev:example": "concurrently 'tsc --watch -p example' 'nodemon -q example/dist/index.js'"
   },
   "dependencies": {
-    "@growthbook/edge-utils": "^0.2.5",
+    "@growthbook/edge-utils": "^0.2.7",
     "@growthbook/growthbook": "^1.6.4",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "express": "^5.2.1",
-    "express-http-proxy": "^2.1.1"
+    "http-proxy-middleware": "^3.0.5"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.6",
-    "@types/express-http-proxy": "^1.6.6",
     "@types/node": "^22.10.4",
     "concurrently": "^9.1.2",
     "rimraf": "^6.0.1",

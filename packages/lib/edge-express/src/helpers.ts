@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { Context } from "@growthbook/edge-utils";
-import proxy from "express-http-proxy";
+import { createProxyMiddleware } from "http-proxy-middleware";
 
 export function getRequestURL(req: Request) {
   return req.protocol + "://" + req.get("host") + req.originalUrl;
@@ -45,17 +45,20 @@ export async function fetchFn(ctx: Context<Request, Response>, url: string, req:
 }
 
 // cache proxy function
-let proxyFn: ReturnType<typeof proxy> | undefined = undefined;
+let proxyFn: ReturnType<typeof createProxyMiddleware> | undefined = undefined;
 export async function proxyRequest(
   ctx: Context<Request, Response>,
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
-  if (!proxyFn)
-    proxyFn = proxy(ctx.config.proxyTarget, {
-      limit: ctx.config.maxPayloadSize,
+  if (!proxyFn) {
+    proxyFn = createProxyMiddleware({
+      target: ctx.config.proxyTarget,
+      changeOrigin: true,
+      followRedirects: ctx.config.followRedirects,
     });
+  }
   return proxyFn(req, res, next);
 }
 
