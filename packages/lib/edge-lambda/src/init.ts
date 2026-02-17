@@ -37,7 +37,7 @@ export async function init(
   }
   const baseConfig = getConfig(configEnv);
   const context = {
-    config: config ? { ...baseConfig, ...config } : { ...baseConfig },
+    config: config ? { ...baseConfig, ...config } : baseConfig,
     helpers: {
       ...defaultContext.helpers,
       getRequestURL: buildGetRequestURL(configEnv),

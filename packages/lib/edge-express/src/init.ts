@@ -22,7 +22,7 @@ export async function init(
 ): Promise<Context<Request, Response>> {
   const baseConfig = getConfig(env);
   return {
-    config: { ...baseConfig },
+    config: baseConfig,
     helpers: {
       ...defaultContext.helpers,
       getRequestURL,
