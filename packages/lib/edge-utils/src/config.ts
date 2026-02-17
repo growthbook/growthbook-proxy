@@ -110,7 +110,7 @@ export interface ConfigEnv {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getConfig(env: ConfigEnv): Config {
-  const config = defaultContext.config;
+  const config = { ...defaultContext.config };
 
   config.proxyTarget = env.PROXY_TARGET ?? defaultContext.config.proxyTarget;
   config.forwardProxyHeaders = ["true", "1"].includes(

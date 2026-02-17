@@ -2,7 +2,9 @@
 
 import { edgeApp, Config, Hooks, Helpers } from "@growthbook/edge-utils";
 import { init, Env } from "./init";
+import { responseToCloudFrontFormat } from "./helpers";
 
+// Viewer_request handler. CloudFront expects { status, headers?, body }; convert Fetch Response when needed.
 export async function handleRequest(
   event: any,
   callback: any,
@@ -13,9 +15,16 @@ export async function handleRequest(
 ) {
   const request = event.Records[0].cf.request;
   const context = await init(env, config, hooks, helpers);
-  const response = await edgeApp(context, request);
+  let response = await edgeApp(context, request);
+
+  if (response instanceof Response) {
+    response = await responseToCloudFrontFormat(response);
+  }
+
   if (env?.returnResponse) return response;
-  callback(null, response);
+  if (typeof callback === "function") {
+    callback(null, response);
+  }
 }
 
 export type { Env } from "./init";

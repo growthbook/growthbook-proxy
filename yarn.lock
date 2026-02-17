@@ -1841,6 +1841,11 @@
   resolved "https://registry.yarnpkg.com/@types/aws-lambda/-/aws-lambda-8.10.122.tgz#206c8d71b09325d26a458dba27db842afdc54df1"
   integrity sha512-vBkIh9AY22kVOCEKo5CJlyCgmSWvasC+SWUxL/x/vOwRobMpI/HG1xp/Ae3AqmSiZeLUbOhW0FCD3ZjqqUxmXw==
 
+"@types/aws-lambda@^8.10.160":
+  version "8.10.160"
+  resolved "https://registry.yarnpkg.com/@types/aws-lambda/-/aws-lambda-8.10.160.tgz#7a3afdd919d730e4e2be7239d0af5f36a8b0ce1e"
+  integrity sha512-uoO4QVQNWFPJMh26pXtmtrRfGshPUSpMZGUyUQY20FhfHEElEBOPKgVmFs1z+kbpyBsRs2JnoOPT7++Z4GA9pA==
+
 "@types/body-parser@*":
   version "1.19.6"
   resolved "https://registry.yarnpkg.com/@types/body-parser/-/body-parser-1.19.6.tgz#1859bebb8fd7dac9918a45d54c1971ab8b5af474"
@@ -1968,6 +1973,13 @@
   integrity sha512-m0jEgYlYz+mDJZ2+F4v8D1AyQb+QzsNqRuI7xg1VQX/KlKS0qT9r1Mo16yo5F/MtifXFgaofIFsdFMox2SxIbQ==
   dependencies:
     undici-types "~7.16.0"
+
+"@types/node@^20.0.0":
+  version "20.19.33"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.19.33.tgz#ac8364c623b72d43125f0e7dd722bbe968f0c65e"
+  integrity sha512-Rs1bVAIdBs5gbTIKza/tgpMuG1k3U/UMJLWecIMxNdJFDMzcM5LOiLVRYh3PilWEYDIeUDv7bpiHPLPsbydGcw==
+  dependencies:
+    undici-types "~6.21.0"
 
 "@types/node@^22.0.0", "@types/node@^22.10.4":
   version "22.19.11"

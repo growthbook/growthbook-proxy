@@ -1,16 +1,25 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { Context, FetchOptions, getOriginUrl } from "@growthbook/edge-utils";
+import type { CloudFrontRequest, CloudFrontResultResponse } from "aws-lambda";
 import cookie from "cookie";
 import { Env } from "./init";
+
+function cloudFrontHeadersToRecord(headers: CloudFrontRequest["headers"]): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!headers) return out;
+  for (const [k, arr] of Object.entries(headers)) {
+    const v = arr?.[0]?.value;
+    if (v != null) out[k] = v;
+  }
+  return out;
+}
 
 export function buildGetRequestURL(env: Env) {
   const envHost = env.host;
   const envProtocol = env.protocol;
   const envPort = env.port;
 
-  return function getRequestURL(req: any) {
-    const host = envHost || req.headers.host[0].value;
+  return function getRequestURL(req: CloudFrontRequest): string {
+    const host = (envHost || req.headers?.host?.[0]?.value) ?? "";
     const protocol = envProtocol || "https";
     const port = envPort || (protocol === "https" ? 443 : 80);
     const portStr =
@@ -25,30 +34,31 @@ export function buildGetRequestURL(env: Env) {
   };
 }
 
-export function getRequestMethod(req: any) {
+export function getRequestMethod(req: CloudFrontRequest): string {
   return req.method.toUpperCase();
 }
 
-export function getRequestHeader(req: any, key: string) {
-  return req.headers?.[key]?.value || undefined;
+export function getRequestHeader(req: CloudFrontRequest, key: string): string | undefined {
+  return req.headers?.[key]?.[0]?.value;
 }
 
 export function sendResponse(
-  ctx: Context<Request, Response>,
-  _?: any,
-  headers?: Record<string, any>,
+  ctx: Context<CloudFrontRequest, CloudFrontResultResponse>,
+  _res?: CloudFrontResultResponse,
+  headers?: Record<string, string | undefined>,
   body?: string,
   cookies?: Record<string, string>,
   status?: number,
-) {
-  const res: any = {
-    status: String(status || "200"),
-    body: body || "",
+): CloudFrontResultResponse {
+  const res: CloudFrontResultResponse = {
+    status: String(status ?? "200"),
+    body: body ?? "",
   };
   if (headers) {
-    const headersObj: Record<string, { key: string; value: string }[]> = {};
+    const headersObj: CloudFrontResultResponse["headers"] = {};
     for (const key in headers) {
-      headersObj[key] = [{ key, value: headers[key] }];
+      const v = headers[key];
+      if (v != null) headersObj[key] = [{ key, value: v }];
     }
     res.headers = headersObj;
   }
@@ -61,28 +71,28 @@ export function sendResponse(
 }
 
 export async function fetchFn(
-  ctx: Context<Request, Response>,
+  ctx: Context<CloudFrontRequest, CloudFrontResultResponse>,
   url: string,
-  req: any,
+  req: CloudFrontRequest,
   options?: FetchOptions,
-) {
+): Promise<Response> {
   const maxRedirects = 5;
-
-  const newHeaders = new Headers(req.headers);
+  const headerRecord = cloudFrontHeadersToRecord(req.headers);
+  const newHeaders = new Headers(headerRecord);
   if (ctx.config.nocacheOrigin) {
-    // try to prevent 304s:
-    newHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    newHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate"); // try to prevent 304s
   }
   if (options?.additionalHeaders && typeof options.additionalHeaders === "object") {
-    Object.keys(options.additionalHeaders).forEach((key) => {
-      newHeaders.set(key, options?.additionalHeaders?.[key]);
-    });
+    for (const [key, value] of Object.entries(options.additionalHeaders)) {
+      if (value != null) newHeaders.set(key, String(value));
+    }
   }
 
+  const body = req.body?.data ?? undefined;
   let response = await fetch(url, {
     method: req.method,
     headers: newHeaders,
-    body: req.body,
+    body,
   });
   if (!ctx.config.followRedirects) {
     return response;
@@ -95,44 +105,65 @@ export async function fetchFn(
     response = await fetch(location, {
       method: req.method,
       headers: newHeaders,
-      body: req.body,
+      body,
     });
-    location = response.headers.get('location');
+    location = response.headers.get("location");
     redirectCount++;
   }
 
   return response;
 }
 
-export async function proxyRequest(ctx: Context<Request, Response>, req: any) {
-  const originUrl = getOriginUrl(ctx as Context<unknown, unknown>, req.url);
+export async function proxyRequest(
+  ctx: Context<CloudFrontRequest, CloudFrontResultResponse>,
+  req: CloudFrontRequest,
+): Promise<Response> {
+  const requestUrl = ctx.helpers.getRequestURL(req);
+  const originUrl = getOriginUrl(ctx as Context<unknown, unknown>, requestUrl);
   return fetchFn(ctx, originUrl, req);
 }
 
-export function getCookie(req: any, key: string): string {
+// Convert Fetch Response to CloudFront format (e.g. proxyRequest or 4xx pass-through).
+export async function responseToCloudFrontFormat(response: Response): Promise<CloudFrontResultResponse> {
+  const body = await response.text();
+  const res: CloudFrontResultResponse = {
+    status: String(response.status),
+    body,
+  };
+  if (response.headers) {
+    const headersObj: CloudFrontResultResponse["headers"] = {};
+    response.headers.forEach((value, key) => {
+      headersObj[key] = [{ key, value }];
+    });
+    res.headers = headersObj;
+  }
+  return res;
+}
+
+export function getCookie(req: CloudFrontRequest, key: string): string {
   const parsedCookie: Record<string, string> = {};
-  if (req?.headers?.cookie) {
-    for (let i = 0; i < (req?.headers?.cookie?.length || 0); i++) {
-      req?.headers?.cookie?.[i]?.value?.split?.(";")?.forEach((cookie: string) => {
-        if (cookie) {
-          const [c0, c1] = cookie.split("=");
-          if (c0) {
-            parsedCookie[c0.trim()] = c1 ? decodeURIComponent(c1.trim()) : "";
-          }
+  const cookieHeader = req?.headers?.cookie;
+  if (cookieHeader) {
+    for (const entry of cookieHeader) {
+      const raw = entry?.value;
+      if (!raw) continue;
+      raw.split(";").forEach((part: string) => {
+        const [c0, c1] = part.split("=");
+        if (c0) {
+          parsedCookie[c0.trim()] = c1 ? decodeURIComponent(c1.trim()) : "";
         }
       });
     }
   }
-  return parsedCookie?.[key] || "";
+  return parsedCookie[key] ?? "";
 }
 
-export function setCookie(res: any, key: string, value: string) {
-  const COOKIE_DAYS = 400; // 400 days is the max cookie duration for chrome
+export function setCookie(res: CloudFrontResultResponse, key: string, value: string): void {
+  const COOKIE_DAYS = 400; // max cookie duration (days) for Chrome
   const serialized = cookie.serialize(key, value, {
     maxAge: 24 * 60 * 60 * 1000 * COOKIE_DAYS,
   });
-  if (!res.headers["cookie"]) {
-    res.headers["cookie"] = [];
-  }
+  if (!res.headers) res.headers = {};
+  if (!res.headers["cookie"]) res.headers["cookie"] = [];
   res.headers["cookie"].push({ key, value: serialized });
 }

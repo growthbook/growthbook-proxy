@@ -316,7 +316,9 @@ export function getOriginUrl<Req, Res>(context: Context<Req, Res>, currentURL: s
   const currentParsedURL = new URL(currentURL);
   const proxyParsedURL = wasRedirected && ["edge", "everywhere"].includes(context.config.runCrossOriginUrlRedirectExperiments)
     ? new URL(currentURL)
-    : new URL(proxyTarget);
+    : proxyTarget.startsWith("http://") || proxyTarget.startsWith("https://")
+      ? new URL(proxyTarget)
+      : new URL(proxyTarget, currentURL);
 
   const protocol = proxyParsedURL.protocol
     ? proxyParsedURL.protocol
