@@ -1974,6 +1974,13 @@
   dependencies:
     undici-types "~7.16.0"
 
+"@types/node@^20.0.0":
+  version "20.19.33"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.19.33.tgz#ac8364c623b72d43125f0e7dd722bbe968f0c65e"
+  integrity sha512-Rs1bVAIdBs5gbTIKza/tgpMuG1k3U/UMJLWecIMxNdJFDMzcM5LOiLVRYh3PilWEYDIeUDv7bpiHPLPsbydGcw==
+  dependencies:
+    undici-types "~6.21.0"
+
 "@types/node@^22.0.0", "@types/node@^22.10.4":
   version "22.19.11"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-22.19.11.tgz#7e1feaad24e4e36c52fa5558d5864bb4b272603e"
