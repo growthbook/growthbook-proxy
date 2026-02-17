@@ -20,6 +20,7 @@
     "cookie": "^1.0.2"
   },
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.160",
     "@growthbook/growthbook": "^1.6.4",
     "concurrently": "^9.1.2",
     "rimraf": "^6.0.1",

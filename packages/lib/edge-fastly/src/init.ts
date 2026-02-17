@@ -33,56 +33,39 @@ export async function init(
   hooks?: Hooks<Request, Response>,
   helpers?: Partial<Helpers<Request, Response>>,
 ): Promise<Context<Request, Response>> {
-  const context = defaultContext as Context<Request, Response>;
-  if (env) {
-    context.config = getConfig(env) as FastlyConfig;
-  }
-
-  if (config?.gbCacheStore) {
-    context.config.localStorage = getKVLocalStoragePolyfill(config.gbCacheStore);
-  }
-  if (config?.gbPayloadStore) {
-    context.config.payload = await getPayloadFromKV(config.gbPayloadStore);
-  }
-  if (config?.apiHostBackend) {
-    config.fetchFeaturesCall = ({ host, clientKey, headers }: {host: string, clientKey: string, headers?: Record<string, string>}) => {
-      return fetch(
-        `${host}/api/features/${clientKey}`,
-        {
+  const baseConfig = env ? (getConfig(env) as FastlyConfig) : { ...defaultContext.config };
+  const apiHostBackend = config?.apiHostBackend;
+  const fetchFeaturesCall = apiHostBackend
+    ? ({ host, clientKey, headers }: { host: string; clientKey: string; headers?: Record<string, string> }) =>
+        fetch(`${host}/api/features/${clientKey}`, {
           headers,
-          // @ts-ignore
-          backend: config.apiHostBackend
-        }
-      );
-    };
-  }
-
-  // apply overrides
-  if (config) {
-    context.config = {
-      ...context.config,
-      ...config,
-    };
-  }
-
-  context.helpers.getRequestURL = getRequestURL;
-  context.helpers.getRequestMethod = getRequestMethod;
-  context.helpers.getRequestHeader = getRequestHeader;
-  context.helpers.sendResponse = sendResponse;
-  context.helpers.fetch = fetchFn;
-  context.helpers.proxyRequest = proxyRequest;
-  context.helpers.getCookie = getCookie;
-  context.helpers.setCookie = setCookie;
-
-  if (helpers) {
-    Object.assign(context.helpers, helpers);
-  }
-
-  if (hooks) {
-    context.hooks = hooks;
-  }
-
-  return context;
+          // @ts-expect-error Fastly backend
+          backend: apiHostBackend,
+        })
+    : undefined;
+  let configObj: FastlyConfig = {
+    ...baseConfig,
+    ...(config?.gbCacheStore && { localStorage: getKVLocalStoragePolyfill(config.gbCacheStore) }),
+    ...(config?.gbPayloadStore && { payload: await getPayloadFromKV(config.gbPayloadStore) }),
+    ...(fetchFeaturesCall && { fetchFeaturesCall }),
+    ...config,
+  };
+  return {
+    config: configObj,
+    helpers: {
+      ...defaultContext.helpers,
+      getRequestURL,
+      getRequestMethod,
+      getRequestHeader,
+      sendResponse,
+      fetch: fetchFn,
+      proxyRequest,
+      getCookie,
+      setCookie,
+      ...helpers,
+    },
+    hooks: hooks ?? {},
+  } as Context<Request, Response>;
 }
 
 export function getKVLocalStoragePolyfill(store: any) {

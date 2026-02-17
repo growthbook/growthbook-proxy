@@ -28,38 +28,29 @@ export async function init(
   hooks?: Hooks<Request, Response>,
   helpers?: Partial<Helpers<Request, Response>>,
 ): Promise<Context<Request, Response>> {
-  const context = defaultContext as Context<Request, Response>;
-  context.config = getConfig(env);
-  context.config.localStorage = getKVLocalStoragePolyfill(env);
-  context.config.payload = await getPayloadFromKV(env);
-
-  // apply overrides
-  if (config) {
-    context.config = {
-      ...context.config,
-      ...config,
-    };
-  }
-
-  // config.helpers
-  context.helpers.getRequestURL = getRequestURL;
-  context.helpers.getRequestMethod = getRequestMethod;
-  context.helpers.getRequestHeader = getRequestHeader;
-  context.helpers.sendResponse = sendResponse;
-  context.helpers.fetch = fetchFn;
-  context.helpers.proxyRequest = proxyRequest;
-  context.helpers.getCookie = getCookie;
-  context.helpers.setCookie = setCookie;
-
-  if (helpers) {
-    Object.assign(context.helpers, helpers);
-  }
-
-  if (hooks) {
-    context.hooks = hooks;
-  }
-
-  return context;
+  const baseConfig = getConfig(env);
+  const configObj: Config = {
+    ...baseConfig,
+    localStorage: getKVLocalStoragePolyfill(env),
+    payload: await getPayloadFromKV(env),
+    ...config,
+  };
+  return {
+    config: configObj,
+    helpers: {
+      ...defaultContext.helpers,
+      getRequestURL,
+      getRequestMethod,
+      getRequestHeader,
+      sendResponse,
+      fetch: fetchFn,
+      proxyRequest,
+      getCookie,
+      setCookie,
+      ...helpers,
+    },
+    hooks: hooks ?? {},
+  } as Context<Request, Response>;
 }
 
 export function getKVLocalStoragePolyfill(

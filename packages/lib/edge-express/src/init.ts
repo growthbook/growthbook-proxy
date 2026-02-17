@@ -20,21 +20,20 @@ import {
 export async function init(
   env: ConfigEnv,
 ): Promise<Context<Request, Response>> {
-  const context = defaultContext as Context<Request, Response>;
-  context.config = getConfig(env);
-
-  // config.helpers
-  context.helpers.getRequestURL = getRequestURL;
-  context.helpers.getRequestMethod = getRequestMethod;
-  context.helpers.getRequestHeader = getRequestHeader;
-  context.helpers.sendResponse = sendResponse;
-  context.helpers.fetch = fetchFn;
-  context.helpers.proxyRequest = proxyRequest as Helpers<
-    Request,
-    Response
-  >["proxyRequest"];
-  context.helpers.getCookie = getCookie;
-  context.helpers.setCookie = setCookie;
-
-  return context;
+  const baseConfig = getConfig(env);
+  return {
+    config: { ...baseConfig },
+    helpers: {
+      ...defaultContext.helpers,
+      getRequestURL,
+      getRequestMethod,
+      getRequestHeader,
+      sendResponse,
+      fetch: fetchFn,
+      proxyRequest: proxyRequest as Helpers<Request, Response>["proxyRequest"],
+      getCookie,
+      setCookie,
+    },
+    hooks: {},
+  } as Context<Request, Response>;
 }
