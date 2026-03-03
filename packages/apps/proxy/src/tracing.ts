@@ -35,7 +35,7 @@ const metricReader = new PeriodicExportingMetricReader({
 const sdk = new opentelemetry.NodeSDK({
   instrumentations: getNodeAutoInstrumentations(),
   resourceDetectors: getResourceDetectors(),
-  metricReader,
+  metricReader: metricReader as any, // Suppressing otel TypeError due to minor version mismatch
 });
 
 try {

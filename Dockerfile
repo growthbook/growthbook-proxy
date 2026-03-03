@@ -15,6 +15,7 @@ COPY packages/apps/proxy/package.json ./packages/apps/proxy/package.json
 COPY packages/lib/eval/package.json ./packages/lib/eval/package.json
 # Yarn install with dev dependencies
 RUN yarn install --frozen-lockfile --ignore-optional
+RUN yarn cache clean
 
 # Build the proxy app and do a clean install with only production dependencies
 COPY packages ./packages
@@ -23,7 +24,9 @@ RUN \
   && rm -rf node_modules \
   && rm -rf packages/apps/proxy/node_modules \
   && rm -rf packages/lib/eval/node_modules \
-  && yarn install --frozen-lockfile --production=true --ignore-optional
+  && yarn install --frozen-lockfile --production=true --ignore-optional \
+  && yarn cache clean
+RUN npm uninstall -g npm
 
 # Directory with build info (git commit sha, build date)
 COPY buildinfo* ./buildinfo
