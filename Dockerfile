@@ -8,28 +8,37 @@ RUN apt-get install -y ca-certificates && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 
+RUN corepack enable && corepack prepare pnpm@10.30.1 --activate
+
 # Copy over minimum files to install dependencies
 COPY package.json ./package.json
-COPY yarn.lock ./yarn.lock
+COPY pnpm-lock.yaml ./pnpm-lock.yaml
+COPY pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY .npmrc ./.npmrc
 COPY packages/apps/proxy/package.json ./packages/apps/proxy/package.json
 COPY packages/lib/eval/package.json ./packages/lib/eval/package.json
-# Yarn install with dev dependencies
-RUN yarn install --frozen-lockfile --ignore-optional
-RUN yarn cache clean
+# Pnpm install with dev dependencies
+RUN pnpm install --frozen-lockfile --no-optional
 
 # Build the proxy app and do a clean install with only production dependencies
 COPY packages ./packages
 RUN \
-  yarn build:proxy \
-  && rm -rf node_modules \
-  && rm -rf packages/apps/proxy/node_modules \
-  && rm -rf packages/lib/eval/node_modules \
-  && yarn install --frozen-lockfile --production=true --ignore-optional \
-  && yarn cache clean
-RUN npm uninstall -g npm
+  pnpm build:proxy \
+  && pnpm deploy --filter=@growthbook/proxy --prod /app/pruned
 
+
+FROM node:22-slim
+WORKDIR /app
+RUN apt-get update && apt-get -y upgrade && \
+  apt-get install -y ca-certificates && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/*
+ 
+COPY --from=0 /app/pruned/node_modules ./node_modules
+COPY --from=0 /app/pruned/package.json ./package.json
+COPY --from=0 /usr/local/src/app/packages/apps/proxy/dist ./dist
 # Directory with build info (git commit sha, build date)
 COPY buildinfo* ./buildinfo
 
 EXPOSE 3300
-CMD ["yarn","start"]
+CMD ["node", "dist/index.js"]

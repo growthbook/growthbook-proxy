@@ -19,13 +19,16 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: "22"
+
+      - name: Enable corepack
+        run: corepack enable
 
       - name: Build & Publish
         run: |
           if [ ! -v NPM_TOKEN ]; then echo "NPM_TOKEN not set"; exit 1; fi;
           npm set //registry.npmjs.org/:_authToken $NPM_TOKEN
-          yarn install
-          yarn build:proxy
+          pnpm install
+          pnpm build:proxy
           cd packages/apps/proxy
           npm publish
