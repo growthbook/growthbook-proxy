@@ -12,6 +12,7 @@
   "scripts": {
     "prepare": "husky",
     "lint": "eslint './**/*.{ts,tsx,js,jsx}' --fix --max-warnings 0 --cache --cache-strategy content",
+    "lint:ci": "eslint './**/*.{ts,tsx,js,jsx}' --max-warnings 0 --cache --cache-strategy content",
     "build:clean": "pnpm -r build:clean",
     "build:deps": "pnpm --filter @growthbook/proxy-eval --filter @growthbook/edge-utils build",
     "build:deps:proxy": "pnpm --filter @growthbook/proxy-eval build",
@@ -26,8 +27,11 @@
     "dev:edge": "pnpm --filter @growthbook/edge-utils --filter @growthbook/edge-express dev"
   },
   "lint-staged": {
+    "./**/*.{json,md,yaml,yml}": [
+      "prettier --write"
+    ],
     "./**/*.{ts,tsx,js,jsx}": [
-      "eslint --fix --cache --cache-strategy content"
+      "eslint --fix --max-warnings 0 --cache --cache-strategy content"
     ]
   },
   "devDependencies": {
