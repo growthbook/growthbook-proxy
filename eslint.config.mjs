@@ -2,7 +2,7 @@ import js from "@eslint/js";
 import tsParser from "@typescript-eslint/parser";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 import importPlugin from "eslint-plugin-import";
-import prettierRecommended from "eslint-plugin-prettier/recommended";
+import eslintConfigPrettier from "eslint-config-prettier";
 import globals from "globals";
 
 export default [
@@ -75,6 +75,6 @@ export default [
       ],
     },
   },
-  // Must be last — disables rules that conflict with Prettier
-  prettierRecommended,
+  // Must be last — disables ESLint rules that conflict with Prettier
+  eslintConfigPrettier,
 ];
