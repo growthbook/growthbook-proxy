@@ -10,6 +10,7 @@
   "license": "MIT",
   "author": "Bryce Fitzsimons",
   "scripts": {
+    "prepare": "husky",
     "lint": "eslint './**/*.{ts,tsx,js,jsx}' --fix --max-warnings 0 --cache --cache-strategy content",
     "build:clean": "pnpm -r build:clean",
     "build:deps": "pnpm --filter @growthbook/proxy-eval --filter @growthbook/edge-utils build",
@@ -24,8 +25,15 @@
     "dev:proxy": "pnpm --filter @growthbook/proxy --filter @growthbook/proxy-eval dev",
     "dev:edge": "pnpm --filter @growthbook/edge-utils --filter @growthbook/edge-express dev"
   },
+  "lint-staged": {
+    "./**/*.{ts,tsx,js,jsx}": [
+      "eslint --fix --cache --cache-strategy content"
+    ]
+  },
   "devDependencies": {
     "@eslint/js": "^9.25.1",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "globals": "^14.0.0",
     "@typescript-eslint/parser": "^8.31.1",
