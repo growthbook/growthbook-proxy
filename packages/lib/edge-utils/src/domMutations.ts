@@ -80,7 +80,7 @@ export async function applyDomMutations({
       } else {
         if (action === "append") {
           return attribute(selector, attr, (val) =>
-            val !== null ? val + (value ?? "") : value ?? "",
+            val !== null ? val + (value ?? "") : (value ?? ""),
           );
         } else if (action === "set") {
           return attribute(selector, attr, () => value ?? "");

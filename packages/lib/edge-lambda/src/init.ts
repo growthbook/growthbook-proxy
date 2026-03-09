@@ -3,7 +3,9 @@ import {
   defaultContext,
   getConfig,
   ConfigEnv,
-  Config, Helpers, Hooks
+  Config,
+  Helpers,
+  Hooks,
 } from "@growthbook/edge-utils";
 import {
   buildGetRequestURL,
@@ -33,7 +35,7 @@ export async function init(
 ): Promise<Context<Request, Response>> {
   const configEnv = env || {};
   if (configEnv.STALE_TTL === undefined) {
-    configEnv.STALE_TTL = (10 * 1000 * 60) + "";
+    configEnv.STALE_TTL = 10 * 1000 * 60 + "";
   }
   const baseConfig = getConfig(configEnv);
   const context = {
@@ -57,7 +59,12 @@ export async function init(
 
 // Reads env from CloudFront origin custom headers. At viewer_request, request.origin may be absent; pass env/config to init() instead.
 export function mapHeadersToConfigEnv(
-  req: { origin?: { custom?: { customHeaders?: Record<string, Array<{ value?: string }>> }; s3?: { customHeaders?: Record<string, Array<{ value?: string }>> } } },
+  req: {
+    origin?: {
+      custom?: { customHeaders?: Record<string, Array<{ value?: string }>> };
+      s3?: { customHeaders?: Record<string, Array<{ value?: string }>> };
+    };
+  },
   originType: "custom" | "s3" = "custom",
   prefix: string = "x-env-",
 ): ConfigEnv {
@@ -67,7 +74,8 @@ export function mapHeadersToConfigEnv(
     const k = key.toLowerCase();
     const val = header?.[0]?.value;
     if (!val || !k.startsWith(prefix)) continue;
-    const envKey = k.slice(prefix.length).replace(/-/g, "_").toUpperCase() || "";
+    const envKey =
+      k.slice(prefix.length).replace(/-/g, "_").toUpperCase() || "";
     config[envKey] = val;
   }
   return config;

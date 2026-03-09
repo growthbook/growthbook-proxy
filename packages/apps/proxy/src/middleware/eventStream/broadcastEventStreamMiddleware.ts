@@ -1,17 +1,17 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, RequestHandler, Response } from "express";
 import { eventStreamManager } from "../../services/eventStreamManager";
 import { featuresCache } from "../../services/cache";
 import { Context } from "../../types";
 import logger from "../../services/logger";
 import { registrar } from "../../services/registrar";
 
-export const broadcastEventStreamMiddleware = async (
+export const broadcastEventStreamMiddleware: RequestHandler = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   const ctx = req.app.locals?.ctx as Context;
-  ctx?.verboseDebugging && logger.info("broadcastEventStreamMiddleware");
+  if (ctx?.verboseDebugging) logger.info("broadcastEventStreamMiddleware");
 
   if (ctx?.enableEventStream && eventStreamManager) {
     const apiKey = res.locals.apiKey;

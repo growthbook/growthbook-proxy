@@ -73,13 +73,17 @@ export class SSEChannel {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public publish(data?: any, eventName?: string) {
-    this.appContext?.verboseDebugging &&
+    if (this.appContext?.verboseDebugging) {
       logger.info(
         { eventName: eventName || "[ping]", clients: this.clients.size },
         "ssePubsub.subscribe: publish",
       );
+    }
     if (!this.active) {
-      logger.warn({ active: this.active, clients: this.clients.size }, "ssePubsub.publish: Channel closed");
+      logger.warn(
+        { active: this.active, clients: this.clients.size },
+        "ssePubsub.publish: Channel closed",
+      );
     }
     let output = "";
     let id;
@@ -125,10 +129,14 @@ export class SSEChannel {
   }
 
   public subscribe(req: Request, res: Response, events?: (string | RegExp)[]) {
-    this.appContext?.verboseDebugging &&
+    if (this.appContext?.verboseDebugging) {
       logger.info("ssePubsub.subscribe: subscribe");
+    }
     if (!this.active) {
-      logger.warn({ active: this.active, clients: this.clients.size }, "ssePubsub.subscribe: Channel closed");
+      logger.warn(
+        { active: this.active, clients: this.clients.size },
+        "ssePubsub.subscribe: Channel closed",
+      );
     }
     const c: Connection = { req, res, events };
     c.res.writeHead(200, {
@@ -162,34 +170,38 @@ export class SSEChannel {
     if (this.options.maxStreamDuration) {
       setTimeout(() => {
         if (!c.res.finished) {
-          this.appContext?.verboseDebugging &&
+          if (this.appContext?.verboseDebugging) {
             logger.info("ssePubsub.subscribe: unsubscribe via timeout");
+          }
           this.unsubscribe(c);
         }
       }, this.options.maxStreamDuration);
     }
 
     c.res.on("close", () => {
-      this.appContext?.verboseDebugging &&
+      if (this.appContext?.verboseDebugging) {
         logger.info("ssePubsub.subscribe: unsubscribe via response close");
+      }
       this.unsubscribe(c);
     });
 
     c.res.on("error", (err) => {
-      this.appContext?.verboseDebugging &&
+      if (this.appContext?.verboseDebugging) {
         logger.warn({ err }, "ssePubsub.subscribe: response error");
+      }
     });
 
     c.res.on("finish", () => {
-      this.appContext?.verboseDebugging &&
+      if (this.appContext?.verboseDebugging) {
         logger.info("ssePubsub.subscribe: response finish");
+      }
     });
 
     return c;
   }
 
   public unsubscribe(c: Connection) {
-    this.appContext?.verboseDebugging && logger.info("ssePubsub.unsubscribe");
+    if (this.appContext?.verboseDebugging) logger.info("ssePubsub.unsubscribe");
     c.res.end();
     this.clients.delete(c);
   }

@@ -53,9 +53,11 @@ export function getUUID<Req, Res>(ctx: Context<Req, Res>, req: Req) {
   };
 
   // get the existing UUID from cookie if set, otherwise create one
-  return helpers.getCookie(req, config.uuidCookieName)
-    || helpers?.getRequestHeader?.(req, "x-gbuuid")
-    || genUUID();
+  return (
+    helpers.getCookie(req, config.uuidCookieName) ||
+    helpers?.getRequestHeader?.(req, "x-gbuuid") ||
+    genUUID()
+  );
 }
 
 // Infer attributes from the request
@@ -74,19 +76,19 @@ export function getAutoAttributes<Req, Res>(
   let autoAttributes: Attributes = skipUuid
     ? {}
     : {
-      [config.uuidKey]: getUUID(ctx, req),
-    };
+        [config.uuidKey]: getUUID(ctx, req),
+      };
 
   const ua = getHeader?.(req, "user-agent") || "";
   autoAttributes.browser = ua.match(/Edg/)
     ? "edge"
     : ua.match(/Chrome/)
-    ? "chrome"
-    : ua.match(/Firefox/)
-    ? "firefox"
-    : ua.match(/Safari/)
-    ? "safari"
-    : "unknown";
+      ? "chrome"
+      : ua.match(/Firefox/)
+        ? "firefox"
+        : ua.match(/Safari/)
+          ? "safari"
+          : "unknown";
   autoAttributes.deviceType = ua.match(/Mobi/) ? "mobile" : "desktop";
 
   autoAttributes.url = url;
@@ -96,8 +98,8 @@ export function getAutoAttributes<Req, Res>(
     autoAttributes.path = urlObj.pathname;
     autoAttributes.host = urlObj.host;
     autoAttributes.query = urlObj.search;
-    autoAttributes = {...autoAttributes, ...getUtmAttributes(urlObj)};
-  } catch (e) {
+    autoAttributes = { ...autoAttributes, ...getUtmAttributes(urlObj) };
+  } catch {
     // ignore
   }
 

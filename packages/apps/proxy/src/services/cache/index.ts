@@ -1,4 +1,8 @@
-import { ClusterNode, ClusterOptions, SentinelConnectionOptions } from "ioredis";
+import {
+  ClusterNode,
+  ClusterOptions,
+  SentinelConnectionOptions,
+} from "ioredis";
 
 import { Context, CacheRefreshStrategy } from "../../types";
 import logger from "../logger";
@@ -59,7 +63,8 @@ export const initializeCache = async (context: Context) => {
     return;
   }
 
-  const strategy = context.cacheSettings.cacheRefreshStrategy || "stale-while-revalidate";
+  const strategy =
+    context.cacheSettings.cacheRefreshStrategy || "stale-while-revalidate";
   logger.info("cache refresh strategy: " + strategy);
   if (["schedule", "none"].includes(strategy)) {
     cacheRefreshScheduler = new CacheRefreshScheduler(context);

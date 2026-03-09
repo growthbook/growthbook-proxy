@@ -3,9 +3,12 @@ import {
   ConfigEnv,
   defaultContext,
   getConfig,
-  Config, Helpers, Hooks
+  Config,
+  Helpers,
+  Hooks,
 } from "@growthbook/edge-utils";
 import { FeatureApiResponse } from "@growthbook/growthbook";
+import { KVNamespace } from "@cloudflare/workers-types";
 import {
   getRequestURL,
   getRequestMethod,
@@ -16,7 +19,6 @@ import {
   getCookie,
   setCookie,
 } from "./helpers";
-import { KVNamespace } from "@cloudflare/workers-types";
 
 export interface Env extends ConfigEnv {
   KV_GB_CACHE?: KVNamespace;
