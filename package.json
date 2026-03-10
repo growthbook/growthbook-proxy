@@ -18,11 +18,14 @@
     "build": "pnpm build:deps && pnpm build:apps",
     "build:proxy": "pnpm build:deps:proxy && pnpm --filter @growthbook/proxy build",
     "type-check": "pnpm -r type-check",
-    "start": "pnpm --filter @growthbook/proxy start",
-    "start:with-tracing": "pnpm --filter @growthbook/proxy start:with-tracing",
+    "start": "pm2-runtime start ecosystem.config.js",
+    "start:with-tracing": "TRACING_ENABLED=true pm2-runtime start ecosystem.config.js",
     "dev": "pnpm -r dev",
     "dev:proxy": "pnpm --filter @growthbook/proxy --filter @growthbook/proxy-eval dev",
     "dev:edge": "pnpm --filter @growthbook/edge-utils --filter @growthbook/edge-express dev"
+  },
+  "dependencies": {
+    "pm2": "^6.0.14"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.1",

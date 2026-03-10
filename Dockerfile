@@ -41,4 +41,4 @@ COPY --from=0 /usr/local/src/app/packages/apps/proxy/dist ./dist
 COPY buildinfo* ./buildinfo
 
 EXPOSE 3300
-CMD ["node", "dist/index.js"]
+CMD ["node_modules/.bin/pm2-runtime", "start", "dist/index.js"]

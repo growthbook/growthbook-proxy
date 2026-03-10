@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@growthbook/growthbook": "^1.6.4",
+    "pm2": "^6.0.14",
     "@growthbook/proxy-eval": "workspace:*",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.48.0",
