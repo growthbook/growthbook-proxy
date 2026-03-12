@@ -2,6 +2,7 @@
   "name": "@growthbook/edge-utils",
   "description": "Edge worker base app",
   "version": "0.2.8",
+  "packageManager": "pnpm@10.30.1",
   "main": "dist/index.js",
   "license": "MIT",
   "repository": {
@@ -13,7 +14,7 @@
   "scripts": {
     "build:clean": "rimraf -rf dist",
     "build:typescript": "tsc",
-    "build": "yarn build:clean && yarn generate-sdk-wrapper && yarn build:typescript",
+    "build": "pnpm build:clean && pnpm generate-sdk-wrapper && pnpm build:typescript",
     "generate-sdk-wrapper": "node scripts/generate-sdk-wrapper.js",
     "type-check": "tsc --pretty --noEmit",
     "dev": "node scripts/generate-sdk-wrapper.js && tsc --watch"

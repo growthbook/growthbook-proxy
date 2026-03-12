@@ -14,18 +14,21 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "22"
+
+      - name: Enable corepack
+        run: corepack enable
 
       - name: Build & Publish
         run: |
           if [ ! -v NPM_TOKEN ]; then echo "NPM_TOKEN not set"; exit 1; fi;
           npm set //registry.npmjs.org/:_authToken $NPM_TOKEN
-          yarn install
-          yarn build:deps:proxy
+          pnpm install
+          pnpm build:deps:proxy
           cd packages/lib/eval
           npm publish

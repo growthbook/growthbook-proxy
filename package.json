@@ -5,38 +5,32 @@
   "engines": {
     "node": ">=22.0.0"
   },
+  "packageManager": "pnpm@10.30.1",
   "description": "GrowthBook proxy server for caching, realtime updates, telemetry, etc",
   "license": "MIT",
   "author": "Bryce Fitzsimons",
   "scripts": {
     "lint": "eslint './**/*.{ts,tsx,js,jsx}' --fix --max-warnings 0 --cache --cache-strategy content",
-    "build:clean": "wsrun -r build:clean",
-    "build:deps": "wsrun -p @growthbook/proxy-eval @growthbook/edge-utils -c build",
-    "build:deps:proxy": "wsrun -p @growthbook/proxy-eval -c build",
-    "build:apps": "wsrun -p @growthbook/proxy @growthbook/edge-cloudflare @growthbook/edge-lambda @growthbook/edge-express -c build",
-    "build": "yarn build:deps && yarn build:apps",
-    "build:proxy": "yarn build:deps:proxy && wsrun -p @growthbook/proxy -c build",
-    "type-check": "wsrun -r type-check",
-    "start": "wsrun -p @growthbook/proxy -c start",
-    "start:with-tracing": "wsrun -p @growthbook/proxy -c start:with-tracing",
-    "dev": "wsrun -r dev",
-    "dev:proxy": "wsrun -p @growthbook/proxy @growthbook/proxy-eval -c dev",
-    "dev:edge": "wsrun -p @growthbook/edge-utils @growthbook/edge-express -c dev"
-  },
-  "workspaces": {
-    "packages": [
-      "packages/**"
-    ],
-    "nohoist": [
-      "**/@growthbook/growthbook",
-      "**/@growthbook/growthbook/**"
-    ]
+    "build:clean": "pnpm -r build:clean",
+    "build:deps": "pnpm --filter @growthbook/proxy-eval --filter @growthbook/edge-utils build",
+    "build:deps:proxy": "pnpm --filter @growthbook/proxy-eval build",
+    "build:apps": "pnpm --filter @growthbook/proxy --filter @growthbook/edge-cloudflare --filter @growthbook/edge-lambda --filter @growthbook/edge-express build",
+    "build": "pnpm build:deps && pnpm build:apps",
+    "build:proxy": "pnpm build:deps:proxy && pnpm --filter @growthbook/proxy build",
+    "type-check": "pnpm -r type-check",
+    "start": "pm2-runtime start ecosystem.config.js",
+    "start:with-tracing": "TRACING_ENABLED=true pm2-runtime start ecosystem.config.js",
+    "dev": "pnpm -r dev",
+    "dev:proxy": "pnpm --filter @growthbook/proxy --filter @growthbook/proxy-eval dev",
+    "dev:edge": "pnpm --filter @growthbook/edge-utils --filter @growthbook/edge-express dev"
   },
   "dependencies": {
-    "wsrun": "^5.2.4"
+    "pm2": "^6.0.14"
   },
   "devDependencies": {
+    "@eslint/js": "^9.25.1",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "globals": "^14.0.0",
     "@typescript-eslint/parser": "^8.31.1",
     "eslint": "^9.25.1",
     "eslint-config-prettier": "^10.1.2",

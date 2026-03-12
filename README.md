@@ -14,12 +14,12 @@ The GrowthBook Proxy server sits between your application and GrowthBook. It tur
 - :key: **Secure** - Private-key authentication between GrowthBook and GrowthBook Proxy
 - :left_right_arrow: **Horizontally Scalable** - Support millions of concurrent users
 
-## About this Repository ###
+## About this Repository
 
 The GrowthBook Proxy repository is a mono-repo containing the following packages:
 
 | Package                       | link                                                | description                                                                                                                               |
-|-------------------------------|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| ----------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `@growthbook/proxy`           | [apps/proxy](packages/apps/proxy)                   | The GrowthBook Proxy server. The remainder of this document pertains to this package.                                                     |
 | `@growthbook/proxy-eval`      | [lib/eval](packages/lib/eval)                       | The remote evaluation engine used by the GrowthBook Proxy server. This package may be included into other back ends, edge functions, etc. |
 | `@growthbook/edge-utils`      | [lib/edge-utils](packages/lib/edge-utils)           | The base GrowthBook Edge App. Can be used standalone. Used in vendor-specific edge libs.                                                  |
@@ -30,69 +30,86 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 ### What's new
 
 **Version 1.3.3**
+
 - Fix Redis sticky bucket mget call when attributes are empty
 - Improve logging context
 - Minimum supported Node.js version is now 22.0.0
 
 **Version 1.3.0**
+
 - Added configurable cache refresh strategies, including a new background scheduled refresh option, for better control over when and how cache entries are refreshed
 - Added support for disabling cache expiration
 - Improved cache stampede protection by fixing race conditions in concurrent fetch operations
 
 **Version 1.2.9**
+
 - Additional support for hydrating SDK connections from environment variables
 
 **Version 1.2.8**
+
 - Fix bugs related to remote evaluation. Fixes prerequisite tracking calls, improperly omitted features with falsey results, and the result object's format.
 
 **Version 1.2.7**
+
 - Improve memory usage
 - Support Redis Sentinel
 
 **Version 1.2.5**
+
 - Fix bugs parsing sticky bucket settings, allow for separate redis configs for proxy cache & sticky bucket service
 
 **Version 1.2.4**
+
 - Support expiring sticky buckets in Redis remote eval sticky bucket service
 
 **Version 1.2.3**
+
 - Update SDK version
 - Minimum supported Node.js version is now 20.0.0.
 
 **Version 1.2.1**
+
 - Move detailed healthcheck statuses to new /healthcheck/checks endpoint
 - Keep /healthcheck endpoint simple & synchronous
 - Add Zod validation and sanitization to remote eval endpoint
 
 **Version 1.2.0**
+
 - ARM support (via Depot)
-- More detailed /healthcheck status 
+- More detailed /healthcheck status
 
 **Version 1.1.11**
+
 - Guard against crashes when API server is down
 
 **Version 1.1.8**
-- Auto-instrument OpenTelemetry when using `yarn start:with-tracing`
+
+- Auto-instrument OpenTelemetry when using `pnpm start:with-tracing`
 
 **Version 1.1.4**
+
 - Support Redis-based sticky bucketing for remote evaluation
 - Update remote evaluation to allow for buffered sticky bucket writes
 - Update SDK version to support sticky bucketing and prerequisite flags
 
 **Version 1.1.2**
+
 - Fix max payload size bug
 - Deprecate `CLUSTER_ROOT_NODES` in favor of `CLUSTER_ROOT_NODES_JSON`
 
 **Version 1.1.1**
+
 - Multi organization support
 - Support paginated SDK Connection polling
 
 **Version 1.1.0**
+
 - Remote evaluation support added
 - Released `@growthbook/proxy-eval` package; reformatted codebase as a mono-repo
 - Minimum supported Node.js version is now 18.0.0.
 
 **Older versions**
+
 - Redis cluster support
 - Horizontal scaling support for proxy cluster using Redis pub/sub
 - Streaming support (SSE)
@@ -129,7 +146,6 @@ PROXY_HOST_PUBLIC=https://proxy.example.com
 When `PROXY_HOST_PUBLIC` is set, GrowthBook will automatically send feature definition updates to the proxy via built-in webhooks whenever features change, and will also poll for SDK Connection metadata changes.
 
 ✻ _If you are using a custom SECRET_API_KEY, you should also add an environment variable to your GrowthBook instance (ex: `SECRET_API_KEY=key_abc123`)._
-
 
 ### Cloud customers
 
@@ -209,18 +225,20 @@ If the GrowthBook app your proxy is connecting to is using a self-signed certifi
 
 The GrowthBook Proxy is instrumented with OpenTelemetry to publish observability metrics, traces, and logs.
 
-To enable, you must change the Docker CMD from the default `yarn start` to `yarn start:with-tracing`.
+To enable, you must change the Docker CMD from the default `pnpm start` to `pnpm start:with-tracing`.
 
 The standard [OTEL\_\* Environment Variables](https://opentelemetry.io/docs/concepts/sdk-configuration/) are supported, such as `OTEL_SERVICE_NAME` and `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
 ### Other common configuration options
 
 **Streaming**
+
 - `ENABLE_EVENT_STREAM` - "true" or "1" to enable streaming (default: `true`)
 - `EVENT_STREAM_MAX_DURATION_MS` - The maximum duration of a SSE connection before the client is forced to reconnect (default: `60000` = 1 minute)
 - `EVENT_STREAM_PING_INTERVAL_MS` - The interval between SSE "ping" messages sent to the client (default: `30000` = 30 seconds)
 
 **Remote Evaluation**
+
 - `ENABLE_REMOTE_EVAL` - "true" or "1" to enable remote evaluation (default: `true`)
 - `ENABLE_STICKY_BUCKETING` - "true" or "1" to enable sticky bucketing for remote evaluation. Requires a Redis connection (default: `false`)
   - `STICKY_BUCKET_ENGINE` - One of: `redis`, `none` (only Redis is supported) (default: `none`)
@@ -231,6 +249,7 @@ The standard [OTEL\_\* Environment Variables](https://opentelemetry.io/docs/conc
   - `STICKY_BUCKET_TTL` - Number of seconds before a sticky bucket document expires in Redis (default: `0` = never)
 
 **Misc**
+
 - `MAX_PAYLOAD_SIZE` - The maximum size of a request body (default: `"2mb"`)
 - `VERBOSE_DEBUGGING` - "true" or "1" to enable verbose debugging (default: `false`)
 - `CONNECTION_POLLING_FREQUENCY` - How frequently to refresh SDK connections (default: `60000` = 1 minute)

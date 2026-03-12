@@ -2,6 +2,7 @@
   "name": "@growthbook/proxy-eval",
   "description": "Remote evaluation service for proxies, edge workers, or backend APIs",
   "version": "1.1.2",
+  "packageManager": "pnpm@10.30.1",
   "main": "dist/index.js",
   "license": "MIT",
   "repository": {
@@ -13,7 +14,7 @@
   "scripts": {
     "build:clean": "rimraf -rf dist",
     "build:typescript": "tsc",
-    "build": "yarn build:clean && yarn build:typescript",
+    "build": "pnpm build:clean && pnpm build:typescript",
     "type-check": "tsc --pretty --noEmit",
     "dev": "tsc --watch"
   },
