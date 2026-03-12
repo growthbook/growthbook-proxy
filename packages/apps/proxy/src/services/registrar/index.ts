@@ -40,7 +40,8 @@ export class Registrar {
   private getConnectionsPollingFrequency: number = 1000 * 60; // 1 min;
   private multiOrg = false;
 
-  public status: "pending" | "connected" | "disconnected" | "unknown" = "pending";
+  public status: "pending" | "connected" | "disconnected" | "unknown" =
+    "pending";
 
   public getConnection(apiKey: ApiKey): Connection | undefined {
     return this.connections.get(apiKey);
@@ -118,7 +119,7 @@ export class Registrar {
         Authorization: `Bearer ${this.secretApiKey}`,
         "User-Agent": `GrowthBook Proxy`,
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const fetchOptions: any = { headers };
       if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
         fetchOptions.agent = new https.Agent({ rejectUnauthorized: false });
@@ -126,37 +127,48 @@ export class Registrar {
 
       let data:
         | {
-        connections: ConnectionDoc[];
-        limit?: number;
-        offset?: number;
-        total?: number;
-        hasMore?: boolean;
-        nextOffset?: number | null;
-      }
+            connections: ConnectionDoc[];
+            limit?: number;
+            offset?: number;
+            total?: number;
+            hasMore?: boolean;
+            nextOffset?: number | null;
+          }
         | undefined = undefined;
 
       try {
         const resp = await fetch(url, fetchOptions);
         if (!resp.ok) {
           const text = await resp.text();
-          logger.error({ status: resp.status, body: text }, "connection polling error");
+          logger.error(
+            { status: resp.status, body: text },
+            "connection polling error",
+          );
           this.status = "disconnected";
           return;
         }
         data = await resp.json();
-
       } catch (e) {
-        logger.error({ err: e }, "connection polling error: API server unreachable");
+        logger.error(
+          { err: e },
+          "connection polling error: API server unreachable",
+        );
         this.status = "disconnected";
       }
 
       if (!data?.connections) {
-        logger.error({ url, hasData: !!data, hasConnections: !!data?.connections }, "connection polling error: no data");
+        logger.error(
+          { url, hasData: !!data, hasConnections: !!data?.connections },
+          "connection polling error: no data",
+        );
         this.status = "disconnected";
         return;
       }
       if (Object.keys(data.connections).length === 0) {
-        logger.warn({ url, connectionCount: 0 }, "connection polling: no connections found");
+        logger.warn(
+          { url, connectionCount: 0 },
+          "connection polling: no connections found",
+        );
         this.status = "unknown";
         return;
       }

@@ -1,5 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
 import { evaluateFeatures } from "@growthbook/proxy-eval";
+import { z } from "zod";
 import readThroughCacheMiddleware from "../middleware/cache/readThroughCacheMiddleware";
 import { featuresCache } from "../services/cache";
 import { stickyBucketService } from "../services/stickyBucket";
@@ -13,7 +14,6 @@ import logger from "../services/logger";
 import { fetchFeatures } from "../services/features";
 import { Context } from "../types";
 import { MAX_PAYLOAD_SIZE } from "../init";
-import { z } from "zod";
 
 const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   if (!registrar?.growthbookApiHost) {
@@ -70,7 +70,7 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
     });
   }
 
-  featuresCache && logger.debug("cache HIT");
+  if (featuresCache) logger.debug("cache HIT");
   return res.status(200).json(payload);
 };
 
@@ -142,8 +142,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
     });
   }
 
-  featuresCache && logger.debug("cache HIT");
-
+  if (featuresCache) logger.debug("cache HIT");
 
   const parsedBody = bodySchema.safeParse(req.body);
   if (!parsedBody.success) {
@@ -152,8 +151,13 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
       error: "Invalid input",
     });
   }
-  const { attributes = {}, forcedVariations = {}, forcedFeatures = [], url = "" } = parsedBody.data;
-  let forcedFeaturesMap: Map<string, any> = new Map();
+  const {
+    attributes = {},
+    forcedVariations = {},
+    forcedFeatures = [],
+    url = "",
+  } = parsedBody.data;
+  let forcedFeaturesMap: Map<string, unknown> = new Map();
   try {
     if (Object.keys(attributes).length > 1000) {
       throw new Error("Max attribute keys");

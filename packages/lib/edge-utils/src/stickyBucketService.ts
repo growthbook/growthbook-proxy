@@ -30,13 +30,12 @@ export class EdgeStickyBucketService<Req, Res> extends StickyBucketService {
     if (!this.req) return doc;
     try {
       // const raw = this.req.cookies[this.prefix + key] || "{}";
-      const raw =
-        this.context.helpers?.getCookie?.(this.req, key) || "{}";
+      const raw = this.context.helpers?.getCookie?.(this.req, key) || "{}";
       const data = JSON.parse(raw);
       if (data.attributeName && data.attributeValue && data.assignments) {
         doc = data;
       }
-    } catch (e) {
+    } catch {
       // Ignore cookie errors
     }
     return doc;

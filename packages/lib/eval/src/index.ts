@@ -71,30 +71,35 @@ export async function evaluateFeatures({
     const gbFeatures = gb.getFeatures();
     for (const key in gbFeatures) {
       const featureResult = gb.evalFeature(key);
-      
+
       // Check if we have any deferred tracking calls (including prerequisite experiments)
       const deferredCalls = gb.getDeferredTrackingCalls();
       const hasDeferredCalls = deferredCalls && deferredCalls.length > 0;
       const hasValue = featureResult.value !== undefined;
-       
+
       // legacy check (if deferred calls are missing)
-      const hasExperiment = featureResult.source === "experiment" && featureResult.experimentResult !== undefined;
-      
+      const hasExperiment =
+        featureResult.source === "experiment" &&
+        featureResult.experimentResult !== undefined;
+
       if (hasValue || hasDeferredCalls) {
         // reduced feature definition
         evaluatedFeatures[key] = {
           defaultValue: featureResult.value,
         };
-        
+
         if (hasDeferredCalls) {
           // Process all experiment exposures (including prerequisites)
-          const tracks: FeatureRule['tracks'] = deferredCalls
-            .filter(call => call.experiment && call.result) // Defensive: ensure call has required properties
-            .map(call => ({
-              experiment: scrubExperiment(call.experiment, call.result.variationId),
+          const tracks: FeatureRule["tracks"] = deferredCalls
+            .filter((call) => call.experiment && call.result) // Defensive: ensure call has required properties
+            .map((call) => ({
+              experiment: scrubExperiment(
+                call.experiment,
+                call.result.variationId,
+              ),
               result: call.result,
             }));
-          
+
           evaluatedFeatures[key].rules = [
             {
               force: featureResult.value,
@@ -102,7 +107,6 @@ export async function evaluateFeatures({
             },
           ];
           gb.setDeferredTrackingCalls([]);
-
         } else if (hasExperiment) {
           // Fallback for direct experiments when no deferred calls
           const scrubbedResultExperiment =
@@ -112,14 +116,16 @@ export async function evaluateFeatures({
                   featureResult.experimentResult.variationId,
                 )
               : featureResult.experiment;
-          
+
           evaluatedFeatures[key].rules = [
             {
               force: featureResult.value,
-              tracks: [{
-                experiment: scrubbedResultExperiment,
-                result: featureResult.experimentResult!,
-              }],
+              tracks: [
+                {
+                  experiment: scrubbedResultExperiment,
+                  result: featureResult.experimentResult!,
+                },
+              ],
             },
           ];
         }

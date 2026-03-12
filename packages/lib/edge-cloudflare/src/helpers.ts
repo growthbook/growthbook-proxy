@@ -42,7 +42,10 @@ export function fetchFn(
     // try to prevent 304s:
     newHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
   }
-  if (options?.additionalHeaders && typeof options.additionalHeaders === "object") {
+  if (
+    options?.additionalHeaders &&
+    typeof options.additionalHeaders === "object"
+  ) {
     Object.keys(options.additionalHeaders).forEach((key) => {
       newHeaders.set(key, options?.additionalHeaders?.[key]);
     });

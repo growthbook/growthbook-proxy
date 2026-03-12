@@ -10,9 +10,9 @@ import logger, { truncatePayloadForLogging } from "../logger";
 import { eventStreamManager } from "../eventStreamManager";
 import { Context } from "../../types";
 import { registrar } from "../registrar";
+import { CacheRefreshStrategy } from "../../types";
 import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, CacheSettings } from "./index";
-import { CacheRefreshStrategy } from "../../types";
 
 export class RedisCache {
   private client: Redis | Cluster | undefined;
@@ -108,7 +108,10 @@ export class RedisCache {
     // try fetching from MemoryCache first
     if (this.memoryCacheClient) {
       const memoryCacheEntry = await this.memoryCacheClient.get(key);
-      if (memoryCacheEntry && (!memoryCacheEntry.expiresOn || memoryCacheEntry.expiresOn > new Date())) {
+      if (
+        memoryCacheEntry &&
+        (!memoryCacheEntry.expiresOn || memoryCacheEntry.expiresOn > new Date())
+      ) {
         entry = memoryCacheEntry.payload as CacheEntry;
       }
     }
@@ -146,7 +149,11 @@ export class RedisCache {
     }
 
     // With "stale-while-revalidate" strategy, allowStale controls whether we return stale but not-yet-expired entries
-    if (this.cacheRefreshStrategy === "stale-while-revalidate" && !this.allowStale && entry.staleOn < new Date()) {
+    if (
+      this.cacheRefreshStrategy === "stale-while-revalidate" &&
+      !this.allowStale &&
+      entry.staleOn < new Date()
+    ) {
       return undefined;
     }
     if (entry.expiresOn && entry.expiresOn < new Date()) {
@@ -170,9 +177,10 @@ export class RedisCache {
     const entry: CacheEntry = {
       payload,
       staleOn: new Date(Date.now() + this.staleTTL),
-      expiresOn: this.expiresTTL === "never" 
-        ? undefined 
-        : new Date(Date.now() + this.expiresTTL),
+      expiresOn:
+        this.expiresTTL === "never"
+          ? undefined
+          : new Date(Date.now() + this.expiresTTL),
     };
     if (this.expiresTTL === "never") {
       await this.client.set(key, JSON.stringify(entry));
@@ -218,7 +226,10 @@ export class RedisCache {
 
       if (this.appContext?.verboseDebugging) {
         logger.info(
-          { payload: truncatePayloadForLogging(payload), oldPayload: truncatePayloadForLogging(oldEntry?.payload) },
+          {
+            payload: truncatePayloadForLogging(payload),
+            oldPayload: truncatePayloadForLogging(oldEntry?.payload),
+          },
           "RedisCache.set: do not publish to Redis subscribers (no changes)",
         );
       }
@@ -227,7 +238,7 @@ export class RedisCache {
 
   private async subscribe() {
     if (!this.publishPayloadToChannel) return;
-    this.appContext?.verboseDebugging && logger.info("RedisCache.subscribe");
+    if (this.appContext?.verboseDebugging) logger.info("RedisCache.subscribe");
 
     if (!this.client) {
       throw new Error("No redis client");
@@ -241,10 +252,14 @@ export class RedisCache {
     // 2. update its MemoryCache
     this.subscriberClient.subscribe("set", (err) => {
       if (err) {
-        logger.error({ err }, "RedisCache.subscribe: error subscribing to 'set'");
+        logger.error(
+          { err },
+          "RedisCache.subscribe: error subscribing to 'set'",
+        );
       } else {
-        this.appContext?.verboseDebugging &&
+        if (this.appContext?.verboseDebugging) {
           logger.info("RedisCache.subscribe: subscribed to 'set' channel");
+        }
       }
     });
 
@@ -258,16 +273,21 @@ export class RedisCache {
             // ignore messages published from this node (shouldn't subscribe to ourselves)
             if (uuid === this.clientUUID) return;
 
-            this.appContext?.verboseDebugging &&
+            if (this.appContext?.verboseDebugging) {
               logger.info(
                 { payload: truncatePayloadForLogging(payload) },
                 "RedisCache.subscribe: got 'set' message",
               );
+            }
 
             // 1. emit SSE to SDK clients
             if (this.appContext?.enableEventStream && eventStreamManager) {
-              this.appContext?.verboseDebugging &&
-                logger.info({ payload: truncatePayloadForLogging(payload) }, "RedisCache.subscribe: publish SSE");
+              if (this.appContext?.verboseDebugging) {
+                logger.info(
+                  { payload: truncatePayloadForLogging(payload) },
+                  "RedisCache.subscribe: publish SSE",
+                );
+              }
 
               const remoteEvalEnabled =
                 !!registrar.getConnection(key)?.remoteEvalEnabled;
@@ -284,14 +304,18 @@ export class RedisCache {
               const entry: CacheEntry = {
                 payload,
                 staleOn: new Date(Date.now() + this.staleTTL),
-                expiresOn: this.expiresTTL === "never" 
-                  ? undefined 
-                  : new Date(Date.now() + this.expiresTTL),
+                expiresOn:
+                  this.expiresTTL === "never"
+                    ? undefined
+                    : new Date(Date.now() + this.expiresTTL),
               };
               await this.memoryCacheClient.set(key, entry);
             }
           } catch (e) {
-            logger.error({ err: e }, "Error parsing message from Redis pub/sub");
+            logger.error(
+              { err: e },
+              "Error parsing message from Redis pub/sub",
+            );
           }
         }
       },

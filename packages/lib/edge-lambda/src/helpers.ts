@@ -3,7 +3,9 @@ import type { CloudFrontRequest, CloudFrontResultResponse } from "aws-lambda";
 import cookie from "cookie";
 import { Env } from "./init";
 
-function cloudFrontHeadersToRecord(headers: CloudFrontRequest["headers"]): Record<string, string> {
+function cloudFrontHeadersToRecord(
+  headers: CloudFrontRequest["headers"],
+): Record<string, string> {
   const out: Record<string, string> = {};
   if (!headers) return out;
   for (const [k, arr] of Object.entries(headers)) {
@@ -38,7 +40,10 @@ export function getRequestMethod(req: CloudFrontRequest): string {
   return req.method.toUpperCase();
 }
 
-export function getRequestHeader(req: CloudFrontRequest, key: string): string | undefined {
+export function getRequestHeader(
+  req: CloudFrontRequest,
+  key: string,
+): string | undefined {
   return req.headers?.[key]?.[0]?.value;
 }
 
@@ -82,7 +87,10 @@ export async function fetchFn(
   if (ctx.config.nocacheOrigin) {
     newHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate"); // try to prevent 304s
   }
-  if (options?.additionalHeaders && typeof options.additionalHeaders === "object") {
+  if (
+    options?.additionalHeaders &&
+    typeof options.additionalHeaders === "object"
+  ) {
     for (const [key, value] of Object.entries(options.additionalHeaders)) {
       if (value != null) newHeaders.set(key, String(value));
     }
@@ -98,10 +106,15 @@ export async function fetchFn(
     return response;
   }
 
-  let location = response.headers.get('location');
+  let location = response.headers.get("location");
   let redirectCount = 0;
 
-  while (response.status >= 300 && response.status < 400 && location && redirectCount < maxRedirects) {
+  while (
+    response.status >= 300 &&
+    response.status < 400 &&
+    location &&
+    redirectCount < maxRedirects
+  ) {
     response = await fetch(location, {
       method: req.method,
       headers: newHeaders,
@@ -124,7 +137,9 @@ export async function proxyRequest(
 }
 
 // Convert Fetch Response to CloudFront format (e.g. proxyRequest or 4xx pass-through).
-export async function responseToCloudFrontFormat(response: Response): Promise<CloudFrontResultResponse> {
+export async function responseToCloudFrontFormat(
+  response: Response,
+): Promise<CloudFrontResultResponse> {
   const body = await response.text();
   const res: CloudFrontResultResponse = {
     status: String(response.status),
@@ -158,7 +173,11 @@ export function getCookie(req: CloudFrontRequest, key: string): string {
   return parsedCookie[key] ?? "";
 }
 
-export function setCookie(res: CloudFrontResultResponse, key: string, value: string): void {
+export function setCookie(
+  res: CloudFrontResultResponse,
+  key: string,
+  value: string,
+): void {
   const COOKIE_DAYS = 400; // max cookie duration (days) for Chrome
   const serialized = cookie.serialize(key, value, {
     maxAge: 24 * 60 * 60 * 1000 * COOKIE_DAYS,

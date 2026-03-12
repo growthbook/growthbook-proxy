@@ -1,6 +1,6 @@
-import express, { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
+import express, { Request, Response } from "express";
 import { Context, version } from "../app";
 import { registrar } from "../services/registrar";
 import { featuresCache } from "../services/cache";
@@ -27,18 +27,19 @@ function getBuild() {
 }
 
 async function getChecks(ctx: Context) {
-  const checks: Record<string, any> = {
+  const checks: Record<string, unknown> = {
     apiServer: "down",
     registrar: registrar.status,
   };
   const cacheType = ctx?.cacheSettings?.cacheEngine || "memory";
-  checks[`cache:${cacheType}`] = await featuresCache?.getStatus?.() || "pending";
+  checks[`cache:${cacheType}`] =
+    (await featuresCache?.getStatus?.()) || "pending";
 
   try {
     const resp = await fetch(ctx.growthbookApiHost + "/healthcheck");
     const data = await resp.json();
     if (data?.healthy) checks.apiServer = "up";
-  } catch(e) {
+  } catch (e) {
     console.error("healthcheck API sever error", e);
   }
   return checks;

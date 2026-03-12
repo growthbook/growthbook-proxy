@@ -45,7 +45,10 @@ export async function fetchFn(
     // try to prevent 304s:
     newHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
   }
-  if (options?.additionalHeaders && typeof options.additionalHeaders === "object") {
+  if (
+    options?.additionalHeaders &&
+    typeof options.additionalHeaders === "object"
+  ) {
     Object.keys(options.additionalHeaders).forEach((key) => {
       newHeaders.set(key, options?.additionalHeaders?.[key]);
     });
@@ -63,10 +66,15 @@ export async function fetchFn(
     return response;
   }
 
-  let location = response.headers.get('location');
+  let location = response.headers.get("location");
   let redirectCount = 0;
 
-  while (response.status >= 300 && response.status < 400 && location && redirectCount < maxRedirects) {
+  while (
+    response.status >= 300 &&
+    response.status < 400 &&
+    location &&
+    redirectCount < maxRedirects
+  ) {
     const backend = getBackend(ctx, location);
     response = await fetch(location, {
       method: req.method,
@@ -75,7 +83,7 @@ export async function fetchFn(
       // @ts-ignore
       backend: backend,
     });
-    location = response.headers.get('location');
+    location = response.headers.get("location");
     redirectCount++;
   }
 
@@ -103,7 +111,10 @@ export function setCookie(res: Response, key: string, value: string) {
   );
 }
 
-function getBackend(ctx: Context<Request, Response>, url: string): string | undefined {
+function getBackend(
+  ctx: Context<Request, Response>,
+  url: string,
+): string | undefined {
   const config = ctx.config as FastlyConfig;
   if (!config.backends) return;
   const urlObj = new URL(url);

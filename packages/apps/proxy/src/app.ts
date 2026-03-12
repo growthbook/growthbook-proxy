@@ -1,10 +1,15 @@
 import { Express } from "express";
 import cors from "cors";
+import packageJson from "../package.json";
 import { adminRouter } from "./controllers/adminController";
 import { eventStreamRouter } from "./controllers/eventStreamController";
 import { featuresRouter } from "./controllers/featuresController";
 import proxyMiddleware from "./middleware/proxyMiddleware";
-import { featuresCache, initializeCache, cacheRefreshScheduler } from "./services/cache";
+import {
+  featuresCache,
+  initializeCache,
+  cacheRefreshScheduler,
+} from "./services/cache";
 import { initializeRegistrar, registrar } from "./services/registrar";
 import {
   eventStreamManager,
@@ -17,7 +22,6 @@ import { healthRouter } from "./controllers/healthController";
 
 export { Context, GrowthBookProxy, CacheEngine } from "./types";
 
-const packageJson = require("../package.json");
 export const version = (packageJson.version ?? "unknown") + "";
 
 const defaultContext: Context = {
@@ -56,22 +60,24 @@ export const growthBookProxy = async (
   // initialize
   initializeLogger(ctx);
   await initializeRegistrar(ctx);
-  ctx.enableCache && (await initializeCache(ctx));
-  ctx.enableRemoteEval &&
-    ctx.enableStickyBucketing &&
-    (await initializeStickyBucketService(ctx));
-  ctx.enableEventStream && initializeEventStreamManager(ctx);
+  if (ctx.enableCache) await initializeCache(ctx);
+  if (ctx.enableRemoteEval && ctx.enableStickyBucketing) {
+    await initializeStickyBucketService(ctx);
+  }
+  if (ctx.enableEventStream) initializeEventStreamManager(ctx);
 
   // set up handlers
-  ctx.enableCors && app.use(cors());
-  ctx.enableHealthCheck && app.use("/healthcheck", healthRouter);
-  ctx.enableAdmin && logger.warn({ enableAdmin: ctx.enableAdmin }, "Admin API is enabled");
-  ctx.enableAdmin && app.use("/admin", adminRouter);
+  if (ctx.enableCors) app.use(cors());
+  if (ctx.enableHealthCheck) app.use("/healthcheck", healthRouter);
+  if (ctx.enableAdmin) {
+    logger.warn({ enableAdmin: ctx.enableAdmin }, "Admin API is enabled");
+    app.use("/admin", adminRouter);
+  }
 
-  ctx.enableEventStream && app.use("/sub", eventStreamRouter);
+  if (ctx.enableEventStream) app.use("/sub", eventStreamRouter);
   app.use("/", featuresRouter(ctx));
 
-  ctx.proxyAllRequests && app.all("/*", proxyMiddleware);
+  if (ctx.proxyAllRequests) app.all("/*", proxyMiddleware);
 
   return {
     app,

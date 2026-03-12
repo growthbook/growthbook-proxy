@@ -46,8 +46,7 @@ jobs:
       - name: Lint and Type-check
         run: |
           # Linting
-          # Temporarily disabled due to code drift while this script wasn't running
-          # pnpm lint
+          pnpm lint:ci
 
           # Typescript type checks
           pnpm type-check

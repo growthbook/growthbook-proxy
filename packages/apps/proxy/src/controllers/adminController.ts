@@ -39,7 +39,10 @@ const getAllConnections = (req: Request, res: Response) => {
   return res.status(200).json(data);
 };
 
-const deleteConnection = (req: Request<ConnectionApiKeyParams>, res: Response) => {
+const deleteConnection = (
+  req: Request<ConnectionApiKeyParams>,
+  res: Response,
+) => {
   const apiKey = req.params.apiKey;
   if (!apiKey) {
     return res.status(400).json({ message: "API key required" });
