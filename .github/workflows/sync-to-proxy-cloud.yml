@@ -44,8 +44,6 @@ jobs:
           rm -rf proxy-cloud/src/proxy-app
           mkdir -p proxy-cloud/src/proxy-app
           cp -r packages/apps/proxy/dist/* proxy-cloud/src/proxy-app/
-          # Remove package.json if present (version is patched into app.js instead)
-          rm -f proxy-cloud/src/proxy-app/package.json
 
       - name: Patch app.js with version and sync dependencies
         run: |
