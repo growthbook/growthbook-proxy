@@ -1,9 +1,9 @@
 import { Context } from "../../types";
 import { registrar } from "../registrar";
-import { featuresCache } from "./index";
 import { fetchFeatures } from "../features";
 import logger from "../logger";
 import { CacheRefreshStrategy } from "../../types";
+import { featuresCache } from "./index";
 
 export class CacheRefreshScheduler {
   private timeoutId: NodeJS.Timeout | null = null;
@@ -14,8 +14,9 @@ export class CacheRefreshScheduler {
     this.ctx = ctx;
     this.staleTTL = (ctx.cacheSettings?.staleTTL || 60) * 1000;
 
-    const strategy: CacheRefreshStrategy = ctx.cacheSettings?.cacheRefreshStrategy || "stale-while-revalidate";
-    
+    const strategy: CacheRefreshStrategy =
+      ctx.cacheSettings?.cacheRefreshStrategy || "stale-while-revalidate";
+
     if (strategy === "none" || strategy === "schedule") {
       // Single fetch on bootup if stale, then never refresh again
       const connections = registrar.getAllConnections();
@@ -45,6 +46,7 @@ export class CacheRefreshScheduler {
     }, this.staleTTL);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async maybeFetch(apiKey: string, connection: any) {
     if (!featuresCache) return;
 
@@ -72,4 +74,3 @@ export class CacheRefreshScheduler {
     }
   }
 }
-

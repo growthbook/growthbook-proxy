@@ -10,19 +10,22 @@ interface Env {
 }
 
 interface PostBody {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   attributes: Record<string, any>;
   forcedVariations?: Record<string, number>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   forcedFeatures?: Map<string, any>;
   url?: string;
   // NOTE: For advanced experimentation, you may want to connect a KV or cookie Sticky Bucket service
   stickyBucketService?:
     | (StickyBucketService & {
-    // For cookie-based service, should be a no-op:
-    connect: () => Promise<void>;
-    // For write-buffer flushes (ex: GB Proxy's implementation of RedisStickyBucketService):
-    onEvaluate?: () => Promise<void>;
-  })
+        // For cookie-based service, should be a no-op:
+        connect: () => Promise<void>;
+        // For write-buffer flushes (ex: GB Proxy's implementation of RedisStickyBucketService):
+        onEvaluate?: () => Promise<void>;
+      })
     | null;
   ctx?: { verboseDebugging?: boolean };
 }
@@ -31,18 +34,18 @@ const KV_KEY = "gb_payload";
 const CACHE_TTL = 60 * 1000; // 1 min
 
 // Cache payload from KV
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let cachedPayload: any = null;
 let lastFetch = 0;
-
 
 export default {
   fetch: async function (
     request: Request,
     env: Env,
-    ctx: ExecutionContext,
+    _ctx: ExecutionContext,
   ): Promise<Response> {
     // Handle CORS preflight requests
-    if (request.method === 'OPTIONS') {
+    if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
         headers: getCORSHeaders(),
@@ -50,13 +53,13 @@ export default {
     }
 
     // Only allow POST requests
-    if (request.method !== 'POST') {
+    if (request.method !== "POST") {
       return new Response(null, {
         status: 405,
         headers: {
-          'Allow': 'POST',
+          Allow: "POST",
           ...getCORSHeaders(),
-        }
+        },
       });
     }
 
@@ -67,11 +70,16 @@ export default {
       }
 
       if (!cachedPayload || Date.now() - lastFetch > CACHE_TTL) {
-        cachedPayload = await env.KV_GB_PAYLOAD.get(KV_KEY, 'json');
+        cachedPayload = await env.KV_GB_PAYLOAD.get(KV_KEY, "json");
         lastFetch = Date.now();
       }
 
-      const { attributes = {}, forcedVariations = {}, forcedFeatures = [], url = "" } = body;
+      const {
+        attributes = {},
+        forcedVariations = {},
+        forcedFeatures = [],
+        url = "",
+      } = body;
       const forcedFeaturesMap = new Map(forcedFeatures);
 
       const evalResponse = await evaluateFeatures({
@@ -84,30 +92,26 @@ export default {
       });
 
       // Return success response
-      return new Response(
-        JSON.stringify(evalResponse),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            ...getCORSHeaders(),
-          }
-        }
-      );
-
+      return new Response(JSON.stringify(evalResponse), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...getCORSHeaders(),
+        },
+      });
     } catch (error) {
       console.error(error);
       return handleInvalidRequest();
     }
-  }
-}
+  },
+};
 
 function getCORSHeaders(): Record<string, string> {
   return {
-    'Access-Control-Allow-Origin': '*', // Configure this appropriately for production
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Max-Age': '86400',
+    "Access-Control-Allow-Origin": "*", // Configure this appropriately for production
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
   };
 }
 

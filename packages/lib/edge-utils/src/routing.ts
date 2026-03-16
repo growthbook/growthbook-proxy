@@ -7,7 +7,10 @@ const defaultRoute: Route = {
   behavior: "intercept",
 };
 
-export function getRoute<Req, Res>(context: Context<Req, Res>, url: string): Route {
+export function getRoute<Req, Res>(
+  context: Context<Req, Res>,
+  url: string,
+): Route {
   const routes = [...(context.config.routes || []), defaultRoute];
   for (const route of routes) {
     route.type = route.type ?? "simple";
@@ -35,7 +38,7 @@ export function getRoute<Req, Res>(context: Context<Req, Res>, url: string): Rou
           // extensions will proxy if not explicitly included
           return { ...route, behavior: "proxy" };
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
       return route;

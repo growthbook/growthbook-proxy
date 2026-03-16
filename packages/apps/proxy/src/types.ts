@@ -51,6 +51,9 @@ export interface Context {
 }
 
 export type CacheEngine = "memory" | "redis" | "mongo";
-export type CacheRefreshStrategy = "stale-while-revalidate" | "schedule" | "none";
+export type CacheRefreshStrategy =
+  | "stale-while-revalidate"
+  | "schedule"
+  | "none";
 
 export type StickyBucketEngine = "redis" | "none";

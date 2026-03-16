@@ -1,5 +1,9 @@
 import Redis, { Cluster, ClusterNode, ClusterOptions } from "ioredis";
-import { StickyAssignmentsDocument, StickyAttributeKey, StickyBucketService } from "@growthbook/growthbook";
+import {
+  StickyAssignmentsDocument,
+  StickyAttributeKey,
+  StickyBucketService,
+} from "@growthbook/growthbook";
 import logger from "../logger";
 import { StickyBucketSettings } from "./index";
 
@@ -69,7 +73,7 @@ export class RedisStickyBucketService extends StickyBucketService {
         } catch (e) {
           logger.error(
             { err: e, rawValue: raw },
-            "unable to parse sticky bucket json"
+            "unable to parse sticky bucket json",
           );
         }
       });

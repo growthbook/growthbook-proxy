@@ -4,8 +4,11 @@ import { CacheEntry, featuresCache } from "../cache";
 import logger from "../logger";
 import { eventStreamManager } from "../eventStreamManager";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const activeFetches: Record<string, Promise<{ payload: any, oldEntry: CacheEntry | undefined }>> = {};
+const activeFetches: Record<
+  string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Promise<{ payload: any; oldEntry: CacheEntry | undefined }>
+> = {};
 
 export async function fetchFeatures({
   apiKey,
@@ -17,7 +20,8 @@ export async function fetchFeatures({
   ctx: Context;
   remoteEvalEnabled?: boolean;
   organization?: string; // for multi-orgs
-}): Promise<{ payload: any, oldEntry: CacheEntry | undefined }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+}): Promise<{ payload: any; oldEntry: CacheEntry | undefined }> {
   const path = remoteEvalEnabled
     ? `/api/v1/sdk-payload/${apiKey}`
     : `/api/features/${apiKey}`;
@@ -54,7 +58,7 @@ export async function fetchFeatures({
       if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
         fetchOptions.agent = new https.Agent({ rejectUnauthorized: false });
       }
-      
+
       const resp = await fetch(url, fetchOptions);
       if (!resp.ok) {
         throw new Error(`HTTP error: ${resp.status}`);

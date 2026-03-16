@@ -1,5 +1,5 @@
-import { CacheEntry, CacheSettings } from "./index";
 import { CacheRefreshStrategy } from "../../types";
+import { CacheEntry, CacheSettings } from "./index";
 
 export class MemoryCache {
   private readonly store: Map<string, CacheEntry>;
@@ -38,7 +38,11 @@ export class MemoryCache {
     }
 
     // With "stale-while-revalidate" strategy, allowStale controls whether we return stale but not-yet-expired entries
-    if (this.cacheRefreshStrategy === "stale-while-revalidate" && !this.allowStale && entry.staleOn < new Date()) {
+    if (
+      this.cacheRefreshStrategy === "stale-while-revalidate" &&
+      !this.allowStale &&
+      entry.staleOn < new Date()
+    ) {
       return undefined;
     }
     if (entry.expiresOn && entry.expiresOn < new Date()) {
@@ -51,9 +55,10 @@ export class MemoryCache {
     this.store.set(key, {
       payload,
       staleOn: new Date(Date.now() + this.staleTTL),
-      expiresOn: this.expiresTTL === "never" 
-        ? undefined 
-        : new Date(Date.now() + this.expiresTTL),
+      expiresOn:
+        this.expiresTTL === "never"
+          ? undefined
+          : new Date(Date.now() + this.expiresTTL),
     });
   }
 

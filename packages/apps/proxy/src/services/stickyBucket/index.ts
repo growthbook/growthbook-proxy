@@ -27,7 +27,9 @@ export const initializeStickyBucketService = async (context: Context) => {
   ) {
     if (context.stickyBucketSettings.engine === "redis") {
       logger.info("using Redis sticky bucketing");
-      stickyBucketService = new RedisStickyBucketService(context.stickyBucketSettings);
+      stickyBucketService = new RedisStickyBucketService(
+        context.stickyBucketSettings,
+      );
       await stickyBucketService.connect();
     }
   }

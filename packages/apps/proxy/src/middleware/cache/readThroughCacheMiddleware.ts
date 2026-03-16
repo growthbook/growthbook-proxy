@@ -80,13 +80,18 @@ export default async ({ proxyTarget }: { proxyTarget: string }) => {
         error: (err, req, res) => {
           logger.error({ err }, "proxy error");
           errorCounts[proxyTarget] = (errorCounts[proxyTarget] || 0) + 1;
-          if ((res as ServerResponse)?.writeHead && !(res as ServerResponse).headersSent) {
-            (res as ServerResponse)?.writeHead(500, { 'Content-Type': 'application/json' });
+          if (
+            (res as ServerResponse)?.writeHead &&
+            !(res as ServerResponse).headersSent
+          ) {
+            (res as ServerResponse)?.writeHead(500, {
+              "Content-Type": "application/json",
+            });
           }
           res?.end(
             JSON.stringify({
-              message: 'Proxy error',
-            })
+              message: "Proxy error",
+            }),
           );
         },
       },

@@ -39,7 +39,11 @@ export function sendResponse(
   return res.status(status || 200).send(body || "");
 }
 
-export async function fetchFn(ctx: Context<Request, Response>, url: string, req: Request) {
+export async function fetchFn(
+  ctx: Context<Request, Response>,
+  url: string,
+  _req: Request,
+) {
   // @ts-ignore
   return fetch(url, request) as Promise<Response>;
 }

@@ -1,8 +1,8 @@
 import { Collection, Db, MongoClient } from "mongodb";
 import logger from "../logger";
+import { CacheRefreshStrategy } from "../../types";
 import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, CacheSettings } from "./index";
-import { CacheRefreshStrategy } from "../../types";
 
 export class MongoCache {
   private client: MongoClient | undefined;
@@ -76,7 +76,10 @@ export class MongoCache {
     // try fetching from MemoryCache first
     if (this.memoryCacheClient) {
       const memoryCacheEntry = await this.memoryCacheClient.get(key);
-      if (memoryCacheEntry && (!memoryCacheEntry.expiresOn || memoryCacheEntry.expiresOn > new Date())) {
+      if (
+        memoryCacheEntry &&
+        (!memoryCacheEntry.expiresOn || memoryCacheEntry.expiresOn > new Date())
+      ) {
         entry = memoryCacheEntry.payload as CacheEntry;
       }
     }
@@ -96,7 +99,10 @@ export class MongoCache {
         docEntry.payload = JSON.parse(docEntry.payload as string);
         entry = docEntry;
       } catch (e) {
-        logger.error({ err: e }, "MongoCache: unable to parse doc entry payload");
+        logger.error(
+          { err: e },
+          "MongoCache: unable to parse doc entry payload",
+        );
       }
     }
 
@@ -118,7 +124,11 @@ export class MongoCache {
     }
 
     // With "stale-while-revalidate" strategy, allowStale controls whether we return stale but not-yet-expired entries
-    if (this.cacheRefreshStrategy === "stale-while-revalidate" && !this.allowStale && entry.staleOn < new Date()) {
+    if (
+      this.cacheRefreshStrategy === "stale-while-revalidate" &&
+      !this.allowStale &&
+      entry.staleOn < new Date()
+    ) {
       return undefined;
     }
     if (entry.expiresOn && entry.expiresOn < new Date()) {
@@ -139,9 +149,10 @@ export class MongoCache {
     const entry: CacheEntry = {
       payload,
       staleOn: new Date(Date.now() + this.staleTTL),
-      expiresOn: this.expiresTTL === "never" 
-        ? undefined 
-        : new Date(Date.now() + this.expiresTTL),
+      expiresOn:
+        this.expiresTTL === "never"
+          ? undefined
+          : new Date(Date.now() + this.expiresTTL),
     };
     const docEntry = { ...entry };
     docEntry.payload = JSON.stringify(docEntry.payload) as string;
@@ -166,7 +177,7 @@ export class MongoCache {
     }
     try {
       const stats = await this.db.stats({ maxTimeMS: 1000 });
-      return stats?.ok === 1 ? "up" : "down"
+      return stats?.ok === 1 ? "up" : "down";
     } catch (e) {
       logger.error({ err: e }, "Mongo getStatus");
       return "down";
