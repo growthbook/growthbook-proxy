@@ -1,0 +1,64 @@
+# Syncs proxy dist to growthbook-proxy-cloud on push to main.
+# Requires: GH_PAT secret with repo scope (to push to growthbook-proxy-cloud).
+name: Sync to growthbook-proxy-cloud
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/apps/proxy/**"
+      - "packages/lib/eval/**"
+      - ".github/workflows/sync-to-proxy-cloud.yml"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    if: github.repository == 'growthbook/growthbook-proxy'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout growthbook-proxy
+        uses: actions/checkout@v4
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install and build proxy
+        run: pnpm build:proxy
+
+      - name: Checkout growthbook-proxy-cloud
+        uses: actions/checkout@v4
+        with:
+          repository: growthbook/growthbook-proxy-cloud
+          token: ${{ secrets.GH_PAT }}
+          path: proxy-cloud
+
+      - name: Copy proxy dist to proxy-cloud
+        run: |
+          rm -rf proxy-cloud/src/proxy-app
+          mkdir -p proxy-cloud/src/proxy-app
+          cp -r packages/apps/proxy/dist/* proxy-cloud/src/proxy-app/
+
+      - name: Patch app.js with version and sync dependencies
+        run: |
+          cd proxy-cloud
+          node ../.github/scripts/sync-proxy-to-cloud.mjs
+
+      - name: Commit and push
+        run: |
+          cd proxy-cloud
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/proxy-app package.json pnpm-lock.yaml
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: sync proxy from growthbook-proxy@${{ github.sha }}"
+            git push
+          fi
