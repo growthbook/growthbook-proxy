@@ -29,8 +29,13 @@ jobs:
           node-version: "22"
           cache: "pnpm"
 
-      - name: Install and build proxy
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build proxy
         run: pnpm build:proxy
+        env:
+          CI: true
 
       - name: Checkout growthbook-proxy-cloud
         uses: actions/checkout@v4
