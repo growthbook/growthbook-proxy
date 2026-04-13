@@ -8,7 +8,7 @@ RUN apt-get install -y ca-certificates && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && corepack prepare pnpm@10.30.1 --activate
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 # Copy over minimum files to install dependencies
 COPY package.json ./package.json
@@ -33,7 +33,6 @@ RUN apt-get update && apt-get -y upgrade && \
   apt-get install -y ca-certificates && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
- 
 COPY --from=0 /app/pruned/node_modules ./node_modules
 COPY --from=0 /app/pruned/package.json ./package.json
 COPY --from=0 /usr/local/src/app/packages/apps/proxy/dist ./dist
