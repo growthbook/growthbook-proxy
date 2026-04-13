@@ -1,6 +1,7 @@
+import { readFileSync } from "fs";
+import { join } from "path";
 import { Express } from "express";
 import cors from "cors";
-import packageJson from "../package.json";
 import { adminRouter } from "./controllers/adminController";
 import { eventStreamRouter } from "./controllers/eventStreamController";
 import { featuresRouter } from "./controllers/featuresController";
@@ -22,6 +23,9 @@ import { healthRouter } from "./controllers/healthController";
 
 export { Context, GrowthBookProxy, CacheEngine } from "./types";
 
+const packageJson = JSON.parse(
+  readFileSync(join(__dirname, "../package.json"), "utf8"),
+);
 export const version = (packageJson.version ?? "unknown") + "";
 
 const defaultContext: Context = {

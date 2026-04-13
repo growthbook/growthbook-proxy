@@ -35,10 +35,9 @@ console.log("Proxy version:", version);
 const appPath = path.join(proxyCloudDir, "src/proxy-app/app.js");
 let content = fs.readFileSync(appPath, "utf8");
 
-// Replace: const packageJson = require("../package.json");\n    exports.version = ...
-// or: const packageJson = require("./package.json");\n    exports.version = ...
+// Replace the packageJson read + version assignment with a hardcoded version string
 content = content.replace(
-  /const packageJson = require\(["'].*?package\.json["']\);\s*\n\s*exports\.version = \(.*?\) \+ "";/s,
+  /const packageJson = JSON\.parse\(.*?package\.json.*?\);\s*\n\s*exports\.version = .*? \+ "";/s,
   `exports.version = "${version}" + "";`
 );
 
