@@ -44,14 +44,26 @@ const appPath = path.join(proxyCloudDir, "src/proxy-app/app.js");
 let content = fs.readFileSync(appPath, "utf8");
 
 // Remove: const package_json_1 = __importDefault(require("../package.json"));
-content = content.replace(
-  /const package_json_1 = __importDefault\(require\(["'].*?package\.json["']\)\);\n/,
-  "",
-);
+const requirePattern =
+  /const package_json_1 = __importDefault\(require\(["'].*?package\.json["']\)\);\n/;
+if (!requirePattern.test(content)) {
+  console.error(
+    "Failed to find package.json require in app.js — compiled output may have changed",
+  );
+  process.exit(1);
+}
+content = content.replace(requirePattern, "");
 
 // Replace the version export with a hardcoded string
+const versionPattern = /exports\.version = \(.*?\) \+ "";/s;
+if (!versionPattern.test(content)) {
+  console.error(
+    "Failed to find exports.version assignment in app.js — compiled output may have changed",
+  );
+  process.exit(1);
+}
 content = content.replace(
-  /exports\.version = \(.*?\) \+ "";/s,
+  versionPattern,
   `exports.version = "${version}" + "";`,
 );
 
