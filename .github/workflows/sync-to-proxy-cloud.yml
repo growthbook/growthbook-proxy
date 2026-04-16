@@ -48,7 +48,7 @@ jobs:
         run: |
           rm -rf proxy-cloud/src/proxy-app
           mkdir -p proxy-cloud/src/proxy-app
-          cp -r packages/apps/proxy/dist/* proxy-cloud/src/proxy-app/
+          cp -r packages/apps/proxy/dist/src/* proxy-cloud/src/proxy-app/
 
       - name: Patch app.js with version and sync dependencies
         run: |
