@@ -17,29 +17,54 @@ const proxyCloudDir = process.cwd();
 // In CI: proxy-cloud is inside growthbook-proxy, so .. = proxy repo
 // Locally: proxy-cloud and growthbook-proxy are siblings under growthbook/
 const parentDir = path.resolve(proxyCloudDir, "..");
-const proxyRepoDir = fs.existsSync(path.join(parentDir, "packages/apps/proxy/package.json"))
+const proxyRepoDir = fs.existsSync(
+  path.join(parentDir, "packages/apps/proxy/package.json"),
+)
   ? parentDir
   : path.join(parentDir, "growthbook-proxy");
 
 const proxyPkg = JSON.parse(
-  fs.readFileSync(path.join(proxyRepoDir, "packages/apps/proxy/package.json"), "utf8")
+  fs.readFileSync(
+    path.join(proxyRepoDir, "packages/apps/proxy/package.json"),
+    "utf8",
+  ),
 );
 const evalPkg = JSON.parse(
-  fs.readFileSync(path.join(proxyRepoDir, "packages/lib/eval/package.json"), "utf8")
+  fs.readFileSync(
+    path.join(proxyRepoDir, "packages/lib/eval/package.json"),
+    "utf8",
+  ),
 );
 
 const version = proxyPkg.version ?? "unknown";
 console.log("Proxy version:", version);
 
-// 1. Patch app.js
+// 1. Patch app.js — remove the package.json require and hardcode the version
 const appPath = path.join(proxyCloudDir, "src/proxy-app/app.js");
 let content = fs.readFileSync(appPath, "utf8");
 
-// Replace: const packageJson = require("../package.json");\n    exports.version = ...
-// or: const packageJson = require("./package.json");\n    exports.version = ...
+// Remove: const package_json_1 = __importDefault(require("../package.json"));
+const requirePattern =
+  /const package_json_1 = __importDefault\(require\(["'].*?package\.json["']\)\);\n/;
+if (!requirePattern.test(content)) {
+  console.error(
+    "Failed to find package.json require in app.js — compiled output may have changed",
+  );
+  process.exit(1);
+}
+content = content.replace(requirePattern, "");
+
+// Replace the version export with a hardcoded string
+const versionPattern = /exports\.version = \(.*?\) \+ "";/s;
+if (!versionPattern.test(content)) {
+  console.error(
+    "Failed to find exports.version assignment in app.js — compiled output may have changed",
+  );
+  process.exit(1);
+}
 content = content.replace(
-  /const packageJson = require\(["'].*?package\.json["']\);\s*\n\s*exports\.version = \(.*?\) \+ "";/s,
-  `exports.version = "${version}" + "";`
+  versionPattern,
+  `exports.version = "${version}" + "";`,
 );
 
 fs.writeFileSync(appPath, content);
