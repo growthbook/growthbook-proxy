@@ -40,7 +40,10 @@
   "pnpm": {
     "overrides": {
       "picomatch@2": ">=2.3.2",
-      "path-to-regexp@8": ">=8.4.0"
+      "picomatch@4": "^4.0.4",
+      "path-to-regexp@8": ">=8.4.0",
+      "protobufjs@7": "^7.5.5",
+      "follow-redirects@1": "^1.16.0"
     }
   },
   "devDependencies": {
