@@ -60,11 +60,13 @@ The GrowthBook Edge App supports a number of configuration options available via
 
 #### Proxy behavior
 
-- `PROXY_TARGET` - Non-edge url to your website
-- `FORWARD_PROXY_HEADERS` - "true" or "1" to preserve response headers from your server (default : `true`)
-- `FOLLOW_REDIRECTS` - "true" or "1" to follow redirects when processing an origin response (default : `true`)
+- `PROXY_TARGET` - Origin (non-edge) base URL to your website
+- `FORWARD_PROXY_HEADERS` - "true" or "1" to preserve response headers from your server (default `true`)
+- `FOLLOW_REDIRECTS` - "true" or "1" to follow redirects when processing an origin response (default `true`)
 - `USE_DEFAULT_CONTENT_TYPE` - "true" or "1" to assume a content-type of "text-html" if no "Content-Type" header was set (default `false`).
 - `PROCESS_TEXT_HTML_ONLY` - "true" or "1" to only process server responses with the `Content-Type: text/html` header set – others will be proxied through (default `true`).
+- `AUTO_INFLATE` - "true" or "1" to automatically unzip gzipped content. Not needed for most vendors (default: `false`).
+- `NOCACHE_ORIGIN` - "true" or "1" to send "nocache" headers on origin requests. Not needed for most vendors (default: `false`).
 - `NODE_ENV` - default: `production`
 - `ROUTES` - JSON encoded array of Routes, rules for intercepting, proxy passing, or erroring based on request URL pattern matching
 
@@ -76,6 +78,7 @@ The GrowthBook Edge App supports a number of configuration options available via
 - `RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS` - One of `everywhere`, `edge`, `browser`, or `skip` (default `browser`)
 - `INJECT_REDIRECT_URL_SCRIPT` - "true" or "1" to mutate browser URL via window.history.replaceState() to reflect the redirected URL (default `true`)
 - `MAX_REDIRECTS` - Number of on-edge redirects calculated before bailing out. Only the final redirect is fetched from your origin. (default `5`)
+- `EXPERIMENT_URL_TARGETING` - URL targeting for visual editor and redirect experiments: `request` targets using the edge worker URL; `origin` uses the origin server URL. (default `request`)
 
 #### Front-end SDK hydration
 
@@ -109,6 +112,7 @@ The GrowthBook Edge App supports a number of configuration options available via
 #### Misc
 
 - `CONTENT_SECURITY_POLICY` - CSP header value
+- `EMIT_TRACE_HEADERS` - "true" or "1" to set extra headers to detect edge redirect loops and stabilize gbuuid generation (default `true`).
 
 ## Lifecycle hooks
 
