@@ -14,8 +14,10 @@ export function getUserAttributes<Req, Res>(
   if (config.skipAutoAttributes) {
     return providedAttributes;
   }
-  // get any saved attributes from the cookie
-  const uuid = getUUID(ctx, req);
+
+  const autoAttributes = getAutoAttributes(ctx, req, url);
+  const uuid = autoAttributes[config.uuidKey] as string;
+
   if (config.persistUuid && !config.noAutoCookies) {
     if (!helpers?.setCookie) {
       throw new Error("Missing required dependencies");
@@ -23,7 +25,6 @@ export function getUserAttributes<Req, Res>(
     setRespCookie(config.uuidCookieName, uuid);
   }
 
-  const autoAttributes = getAutoAttributes(ctx, req, url);
   return { ...autoAttributes, ...providedAttributes };
 }
 
@@ -65,9 +66,7 @@ export function getAutoAttributes<Req, Res>(
 
   const getHeader = helpers?.getRequestHeader;
 
-  let autoAttributes: Attributes = {
-    [config.uuidKey]: getUUID(ctx, req),
-  };
+  let autoAttributes: Attributes = {};
 
   const ua = getHeader?.(req, "user-agent") || "";
   autoAttributes.browser = ua.match(/Edg/)
@@ -92,6 +91,10 @@ export function getAutoAttributes<Req, Res>(
   } catch (e) {
     // ignore
   }
+
+  // Set uuid last so it wins if config.uuidKey collides with a reserved
+  // auto-attr name (browser, deviceType, url, path, host, query, utm*).
+  autoAttributes[config.uuidKey] = getUUID(ctx, req);
 
   return autoAttributes;
 }
