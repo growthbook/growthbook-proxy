@@ -1,5 +1,3 @@
-const path = require("path");
-
 module.exports = {
   testEnvironment: "node",
   testMatch: ["**/*.test.ts"],
@@ -15,8 +13,8 @@ module.exports = {
           strict: true,
           moduleResolution: "node",
           typeRoots: [
-            path.resolve(__dirname, "node_modules/@types"),
-            path.resolve(__dirname, "../../../node_modules/@types"),
+            __dirname + "/node_modules/@types",
+            __dirname + "/../../../node_modules/@types",
           ],
           types: ["jest", "node"],
         },
