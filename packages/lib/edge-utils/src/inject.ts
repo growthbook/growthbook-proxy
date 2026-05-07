@@ -144,7 +144,9 @@ ${
   return;
 }
 
-export function getCspInfo<Req, Res>(context: Context<Req, Res>): {
+export function getCspInfo<Req, Res>(
+  context: Context<Req, Res>,
+): {
   csp?: string;
   nonce?: string;
 } {

@@ -1,7 +1,12 @@
 import express from "express";
 import * as spdy from "spdy";
 import dotenv from "dotenv";
-import { CacheEngine, Context, StickyBucketEngine } from "./types";
+import {
+  CacheEngine,
+  Context,
+  StickyBucketEngine,
+  CacheRefreshStrategy,
+} from "./types";
 dotenv.config({ path: "./.env.local" });
 
 export const MAX_PAYLOAD_SIZE = "2mb";
@@ -35,8 +40,13 @@ export default async () => {
     cacheSettings: {
       cacheEngine: (process.env.CACHE_ENGINE || "memory") as CacheEngine,
       staleTTL: parseInt(process.env.CACHE_STALE_TTL || "60"),
-      expiresTTL: parseInt(process.env.CACHE_EXPIRES_TTL || "3600"),
+      expiresTTL:
+        process.env.CACHE_EXPIRES_TTL === "never"
+          ? "never"
+          : parseInt(process.env.CACHE_EXPIRES_TTL || "3600"),
       allowStale: ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? "1"),
+      cacheRefreshStrategy: (process.env.CACHE_REFRESH_STRATEGY ||
+        "schedule") as CacheRefreshStrategy,
       connectionUrl: process.env.CACHE_CONNECTION_URL,
       useAdditionalMemoryCache: true,
       // Mongo only:
@@ -53,6 +63,12 @@ export default async () => {
         : undefined,
       clusterOptionsJSON: process.env.CLUSTER_OPTIONS_JSON
         ? JSON.parse(process.env.CLUSTER_OPTIONS_JSON)
+        : undefined,
+      // Redis only - sentinel:
+      useSentinel: ["true", "1"].includes(process.env.USE_SENTINEL ?? "0"),
+      sentinelConnectionOptionsJSON: process.env
+        .SENTINEL_CONNECTION_OPTIONS_JSON
+        ? JSON.parse(process.env.SENTINEL_CONNECTION_OPTIONS_JSON)
         : undefined,
     },
     // SSE settings:
@@ -89,6 +105,9 @@ export default async () => {
         : undefined,
       clusterOptionsJSON: process.env.STICKY_BUCKET_CLUSTER_OPTIONS_JSON
         ? JSON.parse(process.env.STICKY_BUCKET_CLUSTER_OPTIONS_JSON)
+        : undefined,
+      ttl: process.env.STICKY_BUCKET_TTL
+        ? parseInt(process.env.STICKY_BUCKET_TTL)
         : undefined,
     },
   };

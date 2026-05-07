@@ -1,11 +1,15 @@
 /// <reference types="@fastly/js-compute" />
 import { ConfigStore } from "fastly:config-store";
 import { KVStore } from "fastly:kv-store";
-import { FastlyConfig, gbHandleRequest, getConfigEnvFromStore } from "@growthbook/edge-fastly";
+import {
+  FastlyConfig,
+  gbHandleRequest,
+  getConfigEnvFromStore,
+} from "@growthbook/edge-fastly";
 import {
   Hooks,
   OnBeforeResponseParams,
-  OnRouteParams
+  OnRouteParams,
 } from "@growthbook/edge-utils";
 
 addEventListener("fetch", (event) => event.respondWith(handleRequest(event)));
@@ -27,10 +31,13 @@ async function handleRequest(event: FetchEvent) {
       console.log("will route", params.route);
     },
     onBeforeResponse: (params: OnBeforeResponseParams<Request, Response>) => {
-      console.log("will send...")
-      params.setBody(params.body + `<script>console.log("manually injected content")</script>`)
-    }
-  }
+      console.log("will send...");
+      params.setBody(
+        params.body +
+          `<script>console.log("manually injected content")</script>`,
+      );
+    },
+  };
 
   return await gbHandleRequest(event.request, env, config, hooks);
 }

@@ -17,6 +17,7 @@ export interface StickyBucketSettings {
   useCluster?: boolean; // for RedisCache
   clusterRootNodesJSON?: ClusterNode[]; // for RedisCache
   clusterOptionsJSON?: ClusterOptions; // for RedisCache
+  ttl?: number;
 }
 
 export const initializeStickyBucketService = async (context: Context) => {
@@ -26,7 +27,9 @@ export const initializeStickyBucketService = async (context: Context) => {
   ) {
     if (context.stickyBucketSettings.engine === "redis") {
       logger.info("using Redis sticky bucketing");
-      stickyBucketService = new RedisStickyBucketService(context.cacheSettings);
+      stickyBucketService = new RedisStickyBucketService(
+        context.stickyBucketSettings,
+      );
       await stickyBucketService.connect();
     }
   }

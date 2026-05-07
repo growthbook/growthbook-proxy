@@ -1,4 +1,4 @@
-import { Context, getOriginUrl } from "@growthbook/edge-utils";
+import { Context, FetchOptions, getOriginUrl } from "@growthbook/edge-utils";
 import { parse } from "cookie";
 import { FastlyConfig } from "./init";
 
@@ -32,13 +32,32 @@ export function sendResponse(
   return resp;
 }
 
-export async function fetchFn(ctx: Context<Request, Response>, url: string, req: Request) {
+export async function fetchFn(
+  ctx: Context<Request, Response>,
+  url: string,
+  req: Request,
+  options?: FetchOptions,
+) {
   const maxRedirects = 5;
+
+  const newHeaders = new Headers(req.headers);
+  if (ctx.config.nocacheOrigin) {
+    // try to prevent 304s:
+    newHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  }
+  if (
+    options?.additionalHeaders &&
+    typeof options.additionalHeaders === "object"
+  ) {
+    Object.keys(options.additionalHeaders).forEach((key) => {
+      newHeaders.set(key, options?.additionalHeaders?.[key]);
+    });
+  }
 
   const backend = getBackend(ctx, url);
   let response = await fetch(url, {
     method: req.method,
-    headers: req.headers,
+    headers: newHeaders,
     body: req.body,
     // @ts-ignore
     backend: backend,
@@ -47,19 +66,24 @@ export async function fetchFn(ctx: Context<Request, Response>, url: string, req:
     return response;
   }
 
-  let location = response.headers.get('location');
+  let location = response.headers.get("location");
   let redirectCount = 0;
 
-  while (response.status >= 300 && response.status < 400 && location && redirectCount < maxRedirects) {
+  while (
+    response.status >= 300 &&
+    response.status < 400 &&
+    location &&
+    redirectCount < maxRedirects
+  ) {
     const backend = getBackend(ctx, location);
     response = await fetch(location, {
       method: req.method,
-      headers: req.headers,
+      headers: newHeaders,
       body: req.body,
       // @ts-ignore
       backend: backend,
     });
-    location = response.headers.get('location');
+    location = response.headers.get("location");
     redirectCount++;
   }
 
@@ -87,7 +111,10 @@ export function setCookie(res: Response, key: string, value: string) {
   );
 }
 
-function getBackend(ctx: Context<Request, Response>, url: string): string | undefined {
+function getBackend(
+  ctx: Context<Request, Response>,
+  url: string,
+): string | undefined {
   const config = ctx.config as FastlyConfig;
   if (!config.backends) return;
   const urlObj = new URL(url);

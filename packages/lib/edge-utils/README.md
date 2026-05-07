@@ -10,8 +10,8 @@ The **GrowthBook Edge App** provides turnkey Visual Editor and URL Redirect expe
 - Inject the JavaScript SDK with hydrated payload, allowing the front-end to pick up where the edge left off without any extra network requests.
 
 > [!NOTE]
-> 
-> This is a vendor-agnostic **base app** for the GrowthBook Edge App. It is used by our vendor-specific Edge Apps (Cloudflare Workers, Lambda@Edge). You can also easily build a custom implementation for your edge provider. 
+>
+> This is a vendor-agnostic **base app** for the GrowthBook Edge App. It is used by our vendor-specific Edge Apps (Cloudflare Workers, Lambda@Edge). You can also easily build a custom implementation for your edge provider.
 
 ## Installation
 
@@ -33,7 +33,7 @@ function init(env) {
   context.helpers = {
     // define utility functions for request/response manipulation
   };
-return context;
+  return context;
 }
 ```
 
@@ -59,31 +59,38 @@ Set up an edge key-val store and optionally use a GrowthBook SDK Webhook to keep
 The GrowthBook Edge App supports a number of configuration options available via environment variables:
 
 #### Proxy behavior
-- `PROXY_TARGET` - Non-edge url to your website
-- `FORWARD_PROXY_HEADERS` - "true" or "1" to preserve response headers from your server (default : `true`)
-- `FOLLOW_REDIRECTS` - "true" or "1" to follow redirects when processing an origin response (default : `true`)
+
+- `PROXY_TARGET` - Origin (non-edge) base URL to your website
+- `FORWARD_PROXY_HEADERS` - "true" or "1" to preserve response headers from your server (default `true`)
+- `FOLLOW_REDIRECTS` - "true" or "1" to follow redirects when processing an origin response (default `true`)
 - `USE_DEFAULT_CONTENT_TYPE` - "true" or "1" to assume a content-type of "text-html" if no "Content-Type" header was set (default `false`).
 - `PROCESS_TEXT_HTML_ONLY` - "true" or "1" to only process server responses with the `Content-Type: text/html` header set – others will be proxied through (default `true`).
+- `AUTO_INFLATE` - "true" or "1" to automatically unzip gzipped content. Not needed for most vendors (default: `false`).
+- `NOCACHE_ORIGIN` - "true" or "1" to send "nocache" headers on origin requests. Not needed for most vendors (default: `false`).
 - `NODE_ENV` - default: `production`
 - `ROUTES` - JSON encoded array of Routes, rules for intercepting, proxy passing, or erroring based on request URL pattern matching
 
 #### Experiment behavior
+
 - `RUN_VISUAL_EDITOR_EXPERIMENTS` - One of `everywhere`, `edge`, `browser`, or `skip` (default `everywhere`)
 - `DISABLE_JS_INJECTION` - "true" or "1" to skip injecting JavaScript coming from a Visual Experiment (default `false`)
 - `RUN_URL_REDIRECT_EXPERIMENTS` - One of `everywhere`, `edge`, `browser`, or `skip` (default `browser`)
 - `RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS` - One of `everywhere`, `edge`, `browser`, or `skip` (default `browser`)
 - `INJECT_REDIRECT_URL_SCRIPT` - "true" or "1" to mutate browser URL via window.history.replaceState() to reflect the redirected URL (default `true`)
 - `MAX_REDIRECTS` - Number of on-edge redirects calculated before bailing out. Only the final redirect is fetched from your origin. (default `5`)
+- `EXPERIMENT_URL_TARGETING` - URL targeting for visual editor and redirect experiments: `request` targets using the edge worker URL; `origin` uses the origin server URL. (default `request`)
 
 #### Front-end SDK hydration
+
 - `SCRIPT_INJECTION_PATTERN` - Inject the GrowthBook SDK before this token (default `</head>`)
 - `DISABLE_INJECTIONS` - "true" or "1" to disable SDK injection entirely, including tracking callbacks (default `false`)
 
 #### GrowthBook SDK behavior
+
 - `GROWTHBOOK_API_HOST` - Required
 - `GROWTHBOOK_CLIENT_KEY` - Required
 - `GROWTHBOOK_DECRYPTION_KEY` - Required when using an encrypted SDK Connection
-<br /><br />
+  <br /><br />
 - `STALE_TTL` - In-memory SDK cache TTL (default 1 min = `60000`).
 - `GROWTHBOOK_TRACKING_CALLBACK` - String representation of custom JavaScript client-side tracking callback.
 - `ENABLE_STREAMING` - "true" or "1" to enable front-end SSE streaming (default `false`)
@@ -91,6 +98,7 @@ The GrowthBook Edge App supports a number of configuration options available via
 - `STICKY_BUCKET_PREFIX` - The name prefix for Sticky Bucketing cookies (default `gbStickyBuckets__`)
 
 #### User Attribute behavior
+
 - `PERSIST_UUID` - "true" or "1" to write the user's ID to cookie from the edge server instead of from the browser (default `false`)
 - `NO_AUTO_COOKIES` - "true" or "1" to avoid writing any cookies (excluding Sticky Buckets) until user permission is granted on front-end via `document.dispatchEvent(new CustomEvent("growthbookpersist"));` (default `false`)
 - `UUID_COOKIE_NAME` - Customize the cookie name for persisting the user's ID (default `gbuuid`)
@@ -98,16 +106,19 @@ The GrowthBook Edge App supports a number of configuration options available via
 - `SKIP_AUTO_ATTRIBUTES` "true" or "1" to skip auto-generating targeting attributes (default `false`)
 
 #### Lifecycle hooks
+
 - `ALWAYS_PARSE_DOM` - Normally the worker will only build a virtual DOM if there are visual changes. Set to "true" or "1" to always build a virtual DOM so that you can access it in lifecycle hooks (ex: `onBodyReady`)
 
 #### Misc
-- `CONTENT_SECURITY_POLICY` - CSP header value
 
+- `CONTENT_SECURITY_POLICY` - CSP header value
+- `EMIT_TRACE_HEADERS` - "true" or "1" to set extra headers to detect edge redirect loops and stabilize gbuuid generation (default `true`).
 
 ## Lifecycle hooks
+
 You can perform custom logic and optionally return a response at various stages in the Edge App's lifecycle. This allows for expressiveness of custom routing, user attribute mutation, header and body (DOM) mutation, and custom feature flag and experiment implementations – while preserving the ability to automatically run Visual and URL Redirect experiments and SDK hydration.
 
-With each hook, you may mutate any of the provided attributes *or* return an early response to halt the Edge App processing. The following hooks are available
+With each hook, you may mutate any of the provided attributes _or_ return an early response to halt the Edge App processing. The following hooks are available
 
 - `onRequest` - Fired on initial user request. Can exit early based on requested URL.
 - `onRoute` - Fired after standard routing has been processed. Can exit early (proxy) based on manual routing logic.
@@ -116,7 +127,7 @@ With each hook, you may mutate any of the provided attributes *or* return an ear
 - `onBeforeOriginFetch` - Similar hook to the above; triggers after any URL Redirect experiments have run but before any origin requests have been made.
 - `onOriginFetch` - Fired immediately after the origin fetch has been made, but before the full response body has been captured. Useful for exiting early based on response status or headers.
 - `onBodyReadyParams` - Fired once the entire response body has been parsed. In addition to early exiting, you may begin to mutate the final response body via `resHeaders` and the `setBody()` method. The text `body` as well as the optional parsed virtual DOM `root` (disabled by default, use `ALWAYS_PARSE_DOM` to enable) are exposed. NOTE: If mutating the `root` DOM, it is your responsibility to `setBody()` with the latest changes before the response is returned.
-- `onBeforeResponse` - The final hook fired before the response is returned to the user, triggering after both visual editor changes and client SDK hydration have been injected. While the virtual DOM is no longer available, this hook can be used to apply any final changes the body via `setBody()`. 
+- `onBeforeResponse` - The final hook fired before the response is returned to the user, triggering after both visual editor changes and client SDK hydration have been injected. While the virtual DOM is no longer available, this hook can be used to apply any final changes the body via `setBody()`.
 
 ## Further reading
 

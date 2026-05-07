@@ -7,6 +7,7 @@ import {
   Helpers,
   Hooks,
 } from "@growthbook/edge-utils";
+import { FeatureApiResponse } from "@growthbook/growthbook";
 import {
   getRequestURL,
   getRequestMethod,
@@ -17,14 +18,15 @@ import {
   getCookie,
   setCookie,
 } from "./helpers";
-import { FeatureApiResponse } from "@growthbook/growthbook";
 
 export interface FastlyConfig extends Config {
   apiHostBackend?: string;
   backends?: Record<string, string>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   gbCacheStore?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   gbPayloadStore?: any;
-  fetchFeaturesCall?: Config['fetchFeaturesCall'];
+  fetchFeaturesCall?: Config["fetchFeaturesCall"];
 }
 
 export async function init(
@@ -33,72 +35,68 @@ export async function init(
   hooks?: Hooks<Request, Response>,
   helpers?: Partial<Helpers<Request, Response>>,
 ): Promise<Context<Request, Response>> {
-  const context = defaultContext as Context<Request, Response>;
-  if (env) {
-    context.config = getConfig(env) as FastlyConfig;
-  }
-
-  if (config?.gbCacheStore) {
-    context.config.localStorage = getKVLocalStoragePolyfill(config.gbCacheStore);
-  }
-  if (config?.gbPayloadStore) {
-    context.config.payload = await getPayloadFromKV(config.gbPayloadStore);
-  }
-  if (config?.apiHostBackend) {
-    config.fetchFeaturesCall = ({ host, clientKey, headers }: {host: string, clientKey: string, headers?: Record<string, string>}) => {
-      return fetch(
-        `${host}/api/features/${clientKey}`,
-        {
+  const baseConfig = env
+    ? (getConfig(env) as FastlyConfig)
+    : { ...defaultContext.config };
+  const apiHostBackend = config?.apiHostBackend;
+  const fetchFeaturesCall = apiHostBackend
+    ? ({
+        host,
+        clientKey,
+        headers,
+      }: {
+        host: string;
+        clientKey: string;
+        headers?: Record<string, string>;
+      }) =>
+        fetch(`${host}/api/features/${clientKey}`, {
           headers,
-          // @ts-ignore
-          backend: config.apiHostBackend
-        }
-      );
-    };
-  }
-
-  // apply overrides
-  if (config) {
-    context.config = {
-      ...context.config,
-      ...config,
-    };
-  }
-
-  context.helpers.getRequestURL = getRequestURL;
-  context.helpers.getRequestMethod = getRequestMethod;
-  context.helpers.getRequestHeader = getRequestHeader;
-  context.helpers.sendResponse = sendResponse;
-  context.helpers.fetch = fetchFn;
-  context.helpers.proxyRequest = proxyRequest;
-  context.helpers.getCookie = getCookie;
-  context.helpers.setCookie = setCookie;
-
-  if (helpers) {
-    Object.assign(context.helpers, helpers);
-  }
-
-  if (hooks) {
-    context.hooks = hooks;
-  }
-
-  return context;
+          // @ts-expect-error Fastly backend
+          backend: apiHostBackend,
+        })
+    : undefined;
+  let configObj: FastlyConfig = {
+    ...baseConfig,
+    ...(config?.gbCacheStore && {
+      localStorage: getKVLocalStoragePolyfill(config.gbCacheStore),
+    }),
+    ...(config?.gbPayloadStore && {
+      payload: await getPayloadFromKV(config.gbPayloadStore),
+    }),
+    ...(fetchFeaturesCall && { fetchFeaturesCall }),
+    ...config,
+  };
+  return {
+    config: configObj,
+    helpers: {
+      ...defaultContext.helpers,
+      getRequestURL,
+      getRequestMethod,
+      getRequestHeader,
+      sendResponse,
+      fetch: fetchFn,
+      proxyRequest,
+      getCookie,
+      setCookie,
+      ...helpers,
+    },
+    hooks: hooks ?? {},
+  } as Context<Request, Response>;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getKVLocalStoragePolyfill(store: any) {
   return {
     getItem: async (key: string) => {
       const entry = await store.get(key);
-      return await entry?.text() ?? null;
+      return (await entry?.text()) ?? null;
     },
     setItem: async (key: string, value: string) => await store.put(key, value),
   };
 }
 
-export async function getPayloadFromKV(
-  store: any,
-  key: string = "gb_payload",
-) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getPayloadFromKV(store: any, key: string = "gb_payload") {
   const entry = await store.get(key);
   const value = await entry?.text();
   let payload = undefined;
@@ -133,6 +131,7 @@ export function getConfigEnvFromStore(store: any): ConfigEnv {
     "RUN_CROSS_ORIGIN_URL_REDIRECT_EXPERIMENTS",
     "INJECT_REDIRECT_URL_SCRIPT",
     "MAX_REDIRECTS",
+    "EXPERIMENT_URL_TARGETING",
     "SCRIPT_INJECTION_PATTERN",
     "DISABLE_INJECTIONS",
     "ENABLE_STREAMING",
@@ -140,6 +139,7 @@ export function getConfigEnvFromStore(store: any): ConfigEnv {
     "STICKY_BUCKET_PREFIX",
     "CONTENT_SECURITY_POLICY",
     "NONCE",
+    "EMIT_TRACE_HEADERS",
     "GROWTHBOOK_API_HOST",
     "GROWTHBOOK_CLIENT_KEY",
     "GROWTHBOOK_DECRYPTION_KEY",
@@ -153,7 +153,7 @@ export function getConfigEnvFromStore(store: any): ConfigEnv {
     "SKIP_AUTO_ATTRIBUTES",
   ];
 
-  fields.forEach(key => {
+  fields.forEach((key) => {
     const val = store.get(key);
     if (val !== null) {
       configEnv[key] = val;

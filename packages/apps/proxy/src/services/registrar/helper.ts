@@ -1,12 +1,12 @@
-// import dotenv from "dotenv";
 import { Connection } from "./index";
-// dotenv.config({ path: "./.env.local" });
 
 export const envToConnectionVarMap: Record<string, string> = {
   API_KEY: "apiKey",
   SIGNING_KEY: "signingKey",
   ENCRYPTION_KEY: "encryptionKey",
   USE_ENCRYPTION: "useEncryption",
+  REMOTE_EVAL_ENABLED: "remoteEvalEnabled",
+  ORGANIZATION: "organization", // multi-org
 };
 
 export const getApiHostFromEnv = (): string => {
@@ -25,7 +25,13 @@ export const getConnectionsFromEnv = (): Connection[] => {
       const [key, val] = v;
       const entryKey = envToConnectionVarMap[key];
       if (entryKey) {
-        connection[entryKey] = val;
+        // boolean casts
+        if (["useEncryption", "remoteEvalEnabled"].includes(entryKey)) {
+          let boolVal = ["true", "1"].includes(val);
+          connection[entryKey] = boolVal;
+        } else {
+          connection[entryKey] = val;
+        }
       }
     });
     connection.connected = false;

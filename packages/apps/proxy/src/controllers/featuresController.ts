@@ -1,5 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
 import { evaluateFeatures } from "@growthbook/proxy-eval";
+import { z } from "zod";
 import readThroughCacheMiddleware from "../middleware/cache/readThroughCacheMiddleware";
 import { featuresCache } from "../services/cache";
 import { stickyBucketService } from "../services/stickyBucket";
@@ -13,7 +14,6 @@ import logger from "../services/logger";
 import { fetchFeatures } from "../services/features";
 import { Context } from "../types";
 import { MAX_PAYLOAD_SIZE } from "../init";
-import { z } from "zod";
 
 const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
   if (!registrar?.growthbookApiHost) {
@@ -57,6 +57,7 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
 
   if (
     featuresCache?.allowStale &&
+    featuresCache.cacheRefreshStrategy === "stale-while-revalidate" &&
     entry?.staleOn &&
     entry.staleOn < new Date()
   ) {
@@ -65,11 +66,11 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
       apiKey: res.locals.apiKey,
       ctx: req.app.locals?.ctx,
     }).catch((e) => {
-      logger.error(e, "Unable to refresh stale cache");
+      logger.error({ err: e }, "Unable to refresh stale cache");
     });
   }
 
-  featuresCache && logger.debug("cache HIT");
+  if (featuresCache) logger.debug("cache HIT");
   return res.status(200).json(payload);
 };
 
@@ -126,6 +127,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
 
   if (
     featuresCache?.allowStale &&
+    featuresCache.cacheRefreshStrategy === "stale-while-revalidate" &&
     oldEntry?.staleOn &&
     oldEntry.staleOn < new Date()
   ) {
@@ -136,12 +138,11 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
       remoteEvalEnabled: true,
       organization: connection?.organization,
     }).catch((e) => {
-      logger.error(e, "Unable to refresh stale cache");
+      logger.error({ err: e }, "Unable to refresh stale cache");
     });
   }
 
-  featuresCache && logger.debug("cache HIT");
-
+  if (featuresCache) logger.debug("cache HIT");
 
   const parsedBody = bodySchema.safeParse(req.body);
   if (!parsedBody.success) {
@@ -150,8 +151,13 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
       error: "Invalid input",
     });
   }
-  const { attributes = {}, forcedVariations = {}, forcedFeatures = [], url = "" } = parsedBody.data;
-  let forcedFeaturesMap: Map<string, any> = new Map();
+  const {
+    attributes = {},
+    forcedVariations = {},
+    forcedFeatures = [],
+    url = "",
+  } = parsedBody.data;
+  let forcedFeaturesMap: Map<string, unknown> = new Map();
   try {
     if (Object.keys(attributes).length > 1000) {
       throw new Error("Max attribute keys");
@@ -164,7 +170,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
     }
     forcedFeaturesMap = new Map(forcedFeatures);
   } catch (e) {
-    logger.error(e, "getEvaluatedFeatures input error");
+    logger.error({ err: e }, "getEvaluatedFeatures input error");
     return res.status(400).json({
       status: 400,
       error: "Invalid input",
@@ -188,7 +194,7 @@ const postFeatures = async (req: Request, res: Response) => {
   try {
     await featuresCache?.set(res.locals.apiKey, req.body);
   } catch (e) {
-    logger.error(e, "Unable to update features");
+    logger.error({ err: e }, "Unable to update features");
     return res.status(500).json({ message: "Unable to update features" });
   }
   return res.status(200).json({ message: "Success" });
@@ -199,7 +205,7 @@ export const featuresRouter = (ctx: Context) => {
 
   // proxy clients' "get features" endpoint call to GrowthBook, with cache layer
   router.get(
-    "/api/features/*",
+    "/api/features/*path",
     apiKeyMiddleware,
     sseSupportMiddleware,
     getFeatures,
@@ -208,7 +214,7 @@ export const featuresRouter = (ctx: Context) => {
   // get evaluated features for user, with cache layer for raw feature definitions. Uses a POST to encode attributes
   if (ctx.enableRemoteEval) {
     router.post(
-      "/api/eval/*",
+      "/api/eval/*path",
       apiKeyMiddleware,
       express.json({
         limit: process.env.MAX_PAYLOAD_SIZE ?? MAX_PAYLOAD_SIZE,

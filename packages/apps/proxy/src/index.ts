@@ -21,6 +21,7 @@ import { GrowthBookProxy, growthBookProxy } from "./app";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function onClose(server: any, proxy: GrowthBookProxy) {
   proxy.services.eventStreamManager?.closeAll();
+  proxy.services.cacheRefreshScheduler?.stop();
   server.close(() => {
     console.info("HTTP server closed");
     process.exit(0);

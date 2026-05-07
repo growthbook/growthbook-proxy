@@ -1,19 +1,30 @@
 import {
-  AutoExperimentVariation, configureCache,
+  AutoExperimentVariation,
+  configureCache,
   GrowthBook,
   helpers,
   setPolyfills,
-  StickyBucketService
+  StickyBucketService,
 } from "@growthbook/growthbook";
-import { Context } from "./types";
+import { HTMLElement, parse } from "node-html-parser";
+import pako from "pako";
+import {
+  BaseHookParams,
+  Context,
+  OnRouteParams,
+  OnUserAttributesParams,
+  OnGrowthBookInitParams,
+  OnBeforeOriginFetchParams,
+  OnOriginFetchParams,
+  OnBodyReadyParams,
+  OnBeforeResponseParams,
+} from "./types";
 import { getUserAttributes } from "./attributes";
 import { getCspInfo, injectScript } from "./inject";
 import { applyDomMutations } from "./domMutations";
 import redirect from "./redirect";
 import { getRoute } from "./routing";
 import { EdgeStickyBucketService } from "./stickyBucketService";
-import { HTMLElement, parse } from "node-html-parser";
-import pako from "pako";
 
 interface OriginResponse {
   status: number;
@@ -32,7 +43,7 @@ export async function edgeApp<Req, Res>(
   /**
    * 1. Init app variables
    */
-    // Request vars:
+  // Request vars:
   let requestUrl = context.helpers.getRequestURL(req);
   let originUrl = getOriginUrl(context, requestUrl);
   // Response vars:
@@ -42,9 +53,34 @@ export async function edgeApp<Req, Res>(
   const setRespCookie = (key: string, value: string) => {
     respCookies[key] = value;
   };
+
+  // Loop check
+  const requestCount =
+    parseInt(
+      context.helpers?.getRequestHeader?.(req, "x-gb-request-count") || "0",
+    ) + 1;
+  if (requestCount > 1) {
+    console.error(
+      "Edge request loop detected. Count: " + requestCount,
+      requestUrl,
+    );
+  }
+  if (requestCount > context.config.maxRedirects) {
+    throw new Error("Edge request loop: max requests reached: " + requestCount);
+  }
+
   // Initial hook:
   let hookResp: Res | undefined | void;
-  hookResp = await context?.hooks?.onRequest?.({ context, req, res, next, requestUrl, originUrl });
+  let onRequestParams: BaseHookParams<Req, Res> = {
+    context,
+    req,
+    res,
+    next,
+    requestUrl,
+    originUrl,
+    requestCount,
+  };
+  hookResp = await context?.hooks?.onRequest?.(onRequestParams);
   if (hookResp) return hookResp;
 
   // DOM mutations
@@ -66,13 +102,21 @@ export async function edgeApp<Req, Res>(
   // Check the url for routing rules (default behavior is intercept)
   const route = getRoute(context, requestUrl);
   if (route.behavior === "error") {
-    return context.helpers.sendResponse(context, res, {}, route.body || "", {}, route.statusCode);
+    return context.helpers.sendResponse(
+      context,
+      res,
+      {},
+      route.body || "",
+      {},
+      route.statusCode,
+    );
   }
   if (route.behavior === "proxy") {
     return context.helpers.proxyRequest(context, req, res, next);
   }
   // Custom route behavior via hook:
-  hookResp = await context?.hooks?.onRoute?.({ context, req, res, next, requestUrl, originUrl, route });
+  const onRouteParams: OnRouteParams<Req, Res> = { ...onRequestParams, route };
+  hookResp = await context?.hooks?.onRoute?.(onRouteParams);
   if (hookResp) return hookResp;
 
   /**
@@ -81,7 +125,11 @@ export async function edgeApp<Req, Res>(
   const attributes = getUserAttributes(context, req, requestUrl, setRespCookie);
 
   // Hook to allow enriching user attributes, etc
-  hookResp = await context?.hooks?.onUserAttributes?.({ context, req, res, next, requestUrl, originUrl, route, attributes });
+  const onUserAttributesParams: OnUserAttributesParams<Req, Res> = {
+    ...onRouteParams,
+    attributes,
+  };
+  hookResp = await context?.hooks?.onUserAttributes?.(onUserAttributesParams);
   if (hookResp) return hookResp;
 
   /**
@@ -96,7 +144,10 @@ export async function edgeApp<Req, Res>(
   if (context.config.fetchFeaturesCall)
     helpers.fetchFeaturesCall = context.config.fetchFeaturesCall;
 
-  let stickyBucketService: EdgeStickyBucketService<Req, Res> | StickyBucketService | undefined;
+  let stickyBucketService:
+    | EdgeStickyBucketService<Req, Res>
+    | StickyBucketService
+    | undefined;
   if (context.config.enableStickyBucketing) {
     stickyBucketService =
       context.config.edgeStickyBucketService ??
@@ -113,10 +164,12 @@ export async function edgeApp<Req, Res>(
     attributes,
     applyDomChangesCallback: (changes: AutoExperimentVariation) => {
       domChanges.push(changes);
-      return () => {
-      };
+      return () => {};
     },
-    url: requestUrl,
+    url:
+      context.config.experimentUrlTargeting === "origin"
+        ? originUrl
+        : requestUrl,
     disableVisualExperiments: ["skip", "browser"].includes(
       context.config.runVisualEditorExperiments,
     ),
@@ -136,9 +189,12 @@ export async function edgeApp<Req, Res>(
   });
 
   // Hook to perform any custom logic given the initialized SDK
-  hookResp = await context?.hooks?.onGrowthbookInit?.({ context, req, res, next, requestUrl, originUrl, route, attributes, growthbook });
+  const onGrowthbookInitParams: OnGrowthBookInitParams<Req, Res> = {
+    ...onUserAttributesParams,
+    growthbook,
+  };
+  hookResp = await context?.hooks?.onGrowthbookInit?.(onGrowthbookInitParams);
   if (hookResp) return hookResp;
-
 
   /**
    * 5. Run URL redirect tests before fetching from origin
@@ -148,38 +204,73 @@ export async function edgeApp<Req, Res>(
     req,
     setRespCookie,
     growthbook,
-    previousUrl: requestUrl,
+    previousUrl:
+      context.config.experimentUrlTargeting === "origin"
+        ? originUrl
+        : requestUrl,
     resetDomChanges,
     setPreRedirectChangeIds: setPreRedirectChangeIds,
   });
-  originUrl = getOriginUrl(context, redirectRequestUrl);
+  originUrl = getOriginUrl(
+    context,
+    redirectRequestUrl,
+    redirectRequestUrl !== requestUrl,
+  );
 
   // Pre-origin-fetch hook (after redirect logic):
-  hookResp = await context?.hooks?.onBeforeOriginFetch?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook });
+  const onBeforeOriginFetchParams: OnBeforeOriginFetchParams<Req, Res> = {
+    ...onGrowthbookInitParams,
+    redirectRequestUrl,
+    originUrl,
+  };
+  hookResp = await context?.hooks?.onBeforeOriginFetch?.(
+    onBeforeOriginFetchParams,
+  );
   if (hookResp) return hookResp;
 
   /**
    * 6. Fetch from origin, parse body / DOM
    */
   try {
-    originResponse = await context.helpers.fetch(
+    originResponse = (await context.helpers.fetch(
       context,
       originUrl,
       req,
-    ) as OriginResponse & Res;
+      context.config.emitTraceHeaders
+        ? {
+            additionalHeaders: {
+              "x-gb-request-count": "" + requestCount,
+              "x-gbuuid": growthbook.getAttributes()?.[context.config.uuidKey],
+            },
+          }
+        : undefined,
+    )) as OriginResponse & Res;
   } catch (e) {
     console.error(e);
   }
-  const originStatus = originResponse ? parseInt(originResponse.status ? originResponse.status + "" : "400") : 500;
+  const originStatus = originResponse
+    ? parseInt(originResponse.status ? originResponse.status + "" : "400")
+    : 500;
 
   // On fetch hook (for custom response processing, etc)
-  hookResp = await context?.hooks?.onOriginFetch?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus });
+  const onOriginFetchParams: OnOriginFetchParams<Req, Res> = {
+    ...onBeforeOriginFetchParams,
+    originResponse,
+    originStatus,
+  };
+  hookResp = await context?.hooks?.onOriginFetch?.(onOriginFetchParams);
   if (hookResp) return hookResp;
 
   // Standard error response handling
   if (originStatus >= 500 || !originResponse) {
-    console.error("Fetch: 5xx status returned");
-    return context.helpers.sendResponse(context, res, {}, "Error fetching page", {}, 500);
+    return context.helpers.sendResponse(
+      context,
+      res,
+      {},
+      "Error fetching page",
+      {},
+      500,
+    );
   }
   if (originStatus >= 400) {
     return originResponse;
@@ -196,7 +287,10 @@ export async function edgeApp<Req, Res>(
   if (context.config.useDefaultContentType && !resHeaders["content-type"]) {
     resHeaders["content-type"] = "text/html";
   }
-  if (context.config.processTextHtmlOnly && !(resHeaders["content-type"] ?? "").includes("text/html")) {
+  if (
+    context.config.processTextHtmlOnly &&
+    !(resHeaders["content-type"] ?? "").includes("text/html")
+  ) {
     return context.helpers.proxyRequest(context, req, res, next);
   }
 
@@ -205,30 +299,49 @@ export async function edgeApp<Req, Res>(
     resHeaders["content-security-policy"] = csp;
   }
 
-  let body: string = "";
+  const autoInflate = context.config.autoInflate; // fastly only!!!
+  let body = "";
+  const isGzipped = originHeaders["content-encoding"] === "gzip";
   try {
-    // Check if content-encoding is gzip
-    if (originHeaders["content-encoding"] === "gzip") {
-      const buffer = await originResponse.arrayBuffer();
-      body = pako.inflate(new Uint8Array(buffer), { to: "string" });
-      delete resHeaders["content-encoding"]; // do not forward this header since it's now unzipped
-    } else {
-      body = await originResponse?.text() ?? "";
+    const buffer = await originResponse.arrayBuffer();
+    try {
+      if (isGzipped && autoInflate) {
+        body = pako.inflate(new Uint8Array(buffer), { to: "string" });
+      } else {
+        body = new TextDecoder().decode(buffer);
+      }
+    } catch {
+      if (isGzipped) {
+        body = pako.inflate(new Uint8Array(buffer), { to: "string" });
+      } else {
+        throw new Error("Failed to decode response as text.");
+      }
     }
-  } catch(e) {
-    console.error(e);
+    if (isGzipped) {
+      delete resHeaders["content-encoding"]; // Remove to prevent double decompression
+    }
+  } catch (e) {
+    console.error("Response decoding error", e);
   }
   let setBody = (s: string) => {
     body = s;
-  }
+  };
 
   let root: HTMLElement | undefined;
   if (context.config.alwaysParseDOM) {
-    root = parse(body);
+    root = parse(body, { comment: true });
   }
 
   // Body ready hook (pre-DOM-mutations):
-  hookResp = await context?.hooks?.onBodyReady?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus, originHeaders, resHeaders, body, setBody, root });
+  const onBodyReadyParams: OnBodyReadyParams<Req, Res> = {
+    ...onOriginFetchParams,
+    originHeaders,
+    resHeaders,
+    body,
+    setBody,
+    root,
+  };
+  hookResp = await context?.hooks?.onBodyReady?.(onBodyReadyParams);
   if (hookResp) return hookResp;
 
   /**
@@ -258,20 +371,44 @@ export async function edgeApp<Req, Res>(
   });
 
   // Final hook (post-mutations) before sending back
-  hookResp = await context?.hooks?.onBeforeResponse?.({ context, req, res, next, requestUrl, redirectRequestUrl, originUrl, route, attributes, growthbook, originResponse, originStatus, originHeaders, resHeaders, body, setBody });
+  const onBeforeResponseParams: OnBeforeResponseParams<Req, Res> = {
+    ...onOriginFetchParams,
+    originHeaders,
+    resHeaders,
+    body,
+    setBody,
+  };
+  hookResp = await context?.hooks?.onBeforeResponse?.(onBeforeResponseParams);
   if (hookResp) return hookResp;
 
   /**
    * 9. Send mutated response
    */
-  return context.helpers.sendResponse(context, res, resHeaders, body, respCookies);
+  return context.helpers.sendResponse(
+    context,
+    res,
+    resHeaders,
+    body,
+    respCookies,
+  );
 }
 
-
-export function getOriginUrl<Req, Res>(context: Context<Req, Res>, currentURL: string): string {
+export function getOriginUrl<Req, Res>(
+  context: Context<Req, Res>,
+  currentURL: string,
+  wasRedirected?: boolean,
+): string {
   const proxyTarget = context.config.proxyTarget;
   const currentParsedURL = new URL(currentURL);
-  const proxyParsedURL = new URL(proxyTarget);
+  const proxyParsedURL =
+    wasRedirected &&
+    ["edge", "everywhere"].includes(
+      context.config.runCrossOriginUrlRedirectExperiments,
+    )
+      ? new URL(currentURL)
+      : proxyTarget.startsWith("http://") || proxyTarget.startsWith("https://")
+        ? new URL(proxyTarget)
+        : new URL(proxyTarget, currentURL);
 
   const protocol = proxyParsedURL.protocol
     ? proxyParsedURL.protocol
@@ -282,8 +419,8 @@ export function getOriginUrl<Req, Res>(context: Context<Req, Res>, currentURL: s
   const port = proxyParsedURL.port
     ? proxyParsedURL.port
     : protocol === "http:"
-    ? "80"
-    : "443";
+      ? "80"
+      : "443";
 
   let newURL = `${protocol}//${hostname}`;
   if ((protocol === "http" && port !== "80") || port !== "443") {
@@ -300,6 +437,7 @@ export function getOriginUrl<Req, Res>(context: Context<Req, Res>, currentURL: s
   return newURL;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function headersToObject(headers: any) {
   if (headers && typeof headers.entries === "function") {
     return Object.fromEntries(headers.entries());

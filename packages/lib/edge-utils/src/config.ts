@@ -1,6 +1,13 @@
-import { Config, Context, ExperimentRunEnvironment } from "./types";
+import {
+  Config,
+  Context,
+  ExperimentRunEnvironment,
+  ExperimentUrlTargeting,
+} from "./types";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Req = any; // placeholder
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Res = any; // placeholder
 
 export const defaultContext: Context<Req, Res> = {
@@ -10,6 +17,8 @@ export const defaultContext: Context<Req, Res> = {
     followRedirects: true,
     useDefaultContentType: false,
     processTextHtmlOnly: true,
+    autoInflate: false,
+    nocacheOrigin: false,
     environment: "production",
     maxPayloadSize: "2mb",
     runVisualEditorExperiments: "everywhere",
@@ -19,10 +28,12 @@ export const defaultContext: Context<Req, Res> = {
     runCrossOriginUrlRedirectExperiments: "browser",
     injectRedirectUrlScript: true,
     maxRedirects: 5,
+    experimentUrlTargeting: "request",
     scriptInjectionPattern: "</head>",
     disableInjections: false,
     enableStreaming: false,
     enableStickyBucketing: false,
+    emitTraceHeaders: true,
     apiHost: "",
     clientKey: "",
     persistUuid: false,
@@ -32,21 +43,37 @@ export const defaultContext: Context<Req, Res> = {
     skipAutoAttributes: false,
   },
   helpers: {
-    getRequestURL: function(req: Req): string {
+    getRequestURL: function (_req: Req): string {
       throw new Error("getRequestURL not implemented");
     },
-    getRequestMethod: function(req: Req): string {
+    getRequestMethod: function (_req: Req): string {
       throw new Error("getRequestMethod not implemented");
     },
-    sendResponse: function(ctx: Context<Req, Res>, res?: any, headers?: Record<string, any> | undefined, body?: string | undefined, cookies?: Record<string, string> | undefined, status?: number | undefined): unknown {
+    sendResponse: function (
+      _ctx: Context<Req, Res>,
+      _res?: Res,
+      _headers?: Record<string, unknown> | undefined,
+      _body?: string | undefined,
+      _cookies?: Record<string, string> | undefined,
+      _status?: number | undefined,
+    ): unknown {
       throw new Error("sendResponse not implemented");
     },
-    fetch: function(ctx: Context<Req, Res>, url: string, req: Req): Promise<Res> {
+    fetch: function (
+      _ctx: Context<Req, Res>,
+      _url: string,
+      _req: Req,
+    ): Promise<Res> {
       throw new Error("fetchFn not implemented");
     },
-    proxyRequest: function(ctx: Context<Req, Res>, req: Req, res?: any, next?: any): Promise<unknown> {
+    proxyRequest: function (
+      _ctx: Context<Req, Res>,
+      _req: Req,
+      _res?: Res,
+      _next?: unknown,
+    ): Promise<unknown> {
       throw new Error("proxyRequest not implemented");
-    }
+    },
   },
   hooks: {},
 };
@@ -57,6 +84,8 @@ export interface ConfigEnv {
   FOLLOW_REDIRECTS?: string;
   USE_DEFAULT_CONTENT_TYPE?: string;
   PROCESS_TEXT_HTML_ONLY?: string;
+  AUTO_INFLATE?: string;
+  NOCACHE_ORIGIN?: string;
   NODE_ENV?: string;
   MAX_PAYLOAD_SIZE?: string;
 
@@ -71,6 +100,8 @@ export interface ConfigEnv {
   INJECT_REDIRECT_URL_SCRIPT?: string;
   MAX_REDIRECTS?: string;
 
+  EXPERIMENT_URL_TARGETING?: ExperimentUrlTargeting;
+
   SCRIPT_INJECTION_PATTERN?: string;
   DISABLE_INJECTIONS?: string;
 
@@ -80,6 +111,7 @@ export interface ConfigEnv {
 
   CONTENT_SECURITY_POLICY?: string;
   NONCE?: string;
+  EMIT_TRACE_HEADERS?: string;
 
   GROWTHBOOK_API_HOST?: string;
   GROWTHBOOK_CLIENT_KEY?: string;
@@ -95,13 +127,11 @@ export interface ConfigEnv {
 
   SKIP_AUTO_ATTRIBUTES?: string;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getConfig(env: ConfigEnv): Config {
-  const config = defaultContext.config;
+  const config = { ...defaultContext.config };
 
   config.proxyTarget = env.PROXY_TARGET ?? defaultContext.config.proxyTarget;
   config.forwardProxyHeaders = ["true", "1"].includes(
@@ -111,10 +141,18 @@ export function getConfig(env: ConfigEnv): Config {
     env.FOLLOW_REDIRECTS ?? "" + defaultContext.config.followRedirects,
   );
   config.useDefaultContentType = ["true", "1"].includes(
-    env.USE_DEFAULT_CONTENT_TYPE ?? "" + defaultContext.config.useDefaultContentType,
+    env.USE_DEFAULT_CONTENT_TYPE ??
+      "" + defaultContext.config.useDefaultContentType,
   );
   config.processTextHtmlOnly = ["true", "1"].includes(
-    env.PROCESS_TEXT_HTML_ONLY ?? "" + defaultContext.config.processTextHtmlOnly,
+    env.PROCESS_TEXT_HTML_ONLY ??
+      "" + defaultContext.config.processTextHtmlOnly,
+  );
+  config.autoInflate = ["true", "1"].includes(
+    env.AUTO_INFLATE ?? "" + defaultContext.config.autoInflate,
+  );
+  config.nocacheOrigin = ["true", "1"].includes(
+    env.NOCACHE_ORIGIN ?? "" + defaultContext.config.nocacheOrigin,
   );
   config.environment = env.NODE_ENV ?? defaultContext.config.environment;
   config.maxPayloadSize =
@@ -152,6 +190,9 @@ export function getConfig(env: ConfigEnv): Config {
     env.MAX_REDIRECTS || "" + defaultContext.config.maxRedirects,
   );
 
+  config.experimentUrlTargeting = (env.EXPERIMENT_URL_TARGETING ??
+    defaultContext.config.experimentUrlTargeting) as ExperimentUrlTargeting;
+
   config.scriptInjectionPattern =
     env.SCRIPT_INJECTION_PATTERN ||
     defaultContext.config.scriptInjectionPattern;
@@ -166,8 +207,9 @@ export function getConfig(env: ConfigEnv): Config {
     env.ENABLE_STICKY_BUCKETING ??
       "" + defaultContext.config.enableStickyBucketing,
   );
-  "STICKY_BUCKET_PREFIX" in env &&
-    (config.stickyBucketPrefix = env.STICKY_BUCKET_PREFIX);
+  if ("STICKY_BUCKET_PREFIX" in env) {
+    config.stickyBucketPrefix = env.STICKY_BUCKET_PREFIX;
+  }
 
   config.contentSecurityPolicy = env.CONTENT_SECURITY_POLICY || "";
   // warning: for testing only; nonce should be unique per request
@@ -175,21 +217,30 @@ export function getConfig(env: ConfigEnv): Config {
 
   config.crypto = crypto;
 
+  config.emitTraceHeaders = ["true", "1"].includes(
+    env.EMIT_TRACE_HEADERS ?? "" + defaultContext.config.emitTraceHeaders,
+  );
+
   // growthbook
   config.apiHost = (env.GROWTHBOOK_API_HOST ?? "").replace(/\/*$/, "");
   config.clientKey = env.GROWTHBOOK_CLIENT_KEY ?? "";
-  "GROWTHBOOK_DECRYPTION_KEY" in env &&
-    (config.decryptionKey = env.GROWTHBOOK_DECRYPTION_KEY);
-  "GROWTHBOOK_TRACKING_CALLBACK" in env &&
-    (config.trackingCallback = env.GROWTHBOOK_TRACKING_CALLBACK);
+  if ("GROWTHBOOK_DECRYPTION_KEY" in env) {
+    config.decryptionKey = env.GROWTHBOOK_DECRYPTION_KEY;
+  }
+  if ("GROWTHBOOK_TRACKING_CALLBACK" in env) {
+    config.trackingCallback = env.GROWTHBOOK_TRACKING_CALLBACK;
+  }
   try {
-    "GROWTHBOOK_PAYLOAD" in env &&
-      (config.payload = JSON.parse(env.GROWTHBOOK_PAYLOAD || ""));
+    if ("GROWTHBOOK_PAYLOAD" in env) {
+      config.payload = JSON.parse(env.GROWTHBOOK_PAYLOAD || "");
+    }
   } catch (e) {
     console.error("Error parsing GROWTHBOOK_PAYLOAD", e);
   }
 
-  "STALE_TTL" in env && (config.staleTTL = parseInt(env.STALE_TTL || (1000 * 60)+""))
+  if ("STALE_TTL" in env) {
+    config.staleTTL = parseInt(env.STALE_TTL || 1000 * 60 + "");
+  }
   config.persistUuid = ["true", "1"].includes(
     env.PERSIST_UUID ?? "" + defaultContext.config.persistUuid,
   );

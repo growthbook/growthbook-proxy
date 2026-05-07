@@ -6,7 +6,7 @@ import {
   FeatureApiResponse,
   LocalStorageCompat,
   StickyBucketService,
-  TrackingCallback
+  TrackingCallback,
 } from "@growthbook/growthbook";
 import { HTMLElement } from "node-html-parser";
 
@@ -22,6 +22,8 @@ export interface Config {
   forwardProxyHeaders: boolean;
   useDefaultContentType: boolean;
   processTextHtmlOnly: boolean;
+  autoInflate: boolean;
+  nocacheOrigin: boolean;
   environment: string;
   maxPayloadSize?: string;
   routes?: Route[];
@@ -34,6 +36,8 @@ export interface Config {
   runCrossOriginUrlRedirectExperiments: ExperimentRunEnvironment; // default: browser
   injectRedirectUrlScript: boolean;
   maxRedirects: number;
+
+  experimentUrlTargeting?: ExperimentUrlTargeting; // default: request (edge worker url)
 
   scriptInjectionPattern: string;
   disableInjections: boolean;
@@ -48,11 +52,16 @@ export interface Config {
   crypto?: any;
   localStorage?: LocalStorageCompat;
   staleTTL?: number;
-  fetchFeaturesCall?: ({host, clientKey, headers}: {
+  fetchFeaturesCall?: ({
+    host,
+    clientKey,
+    headers,
+  }: {
     host: string;
     clientKey: string;
     headers?: Record<string, string>;
   }) => Promise<any>;
+  emitTraceHeaders?: boolean;
 
   // growthbook
   apiHost: string;
@@ -78,6 +87,13 @@ export type ExperimentRunEnvironment =
   | "browser"
   | "skip";
 
+// whether to use the `requestUrl` or `originUrl` when triggering url-based experiments
+export type ExperimentUrlTargeting = "request" | "origin";
+
+export type FetchOptions = {
+  additionalHeaders?: Record<string, any>;
+};
+
 export interface Helpers<Req, Res> {
   getRequestURL: (req: Req) => string;
   getRequestMethod: (req: Req) => string;
@@ -90,7 +106,12 @@ export interface Helpers<Req, Res> {
     cookies?: Record<string, string>,
     status?: number,
   ) => unknown;
-  fetch: (ctx: Context<Req, Res>, url: string, req: Req) => Promise<Res>;
+  fetch: (
+    ctx: Context<Req, Res>,
+    url: string,
+    req: Req,
+    options?: FetchOptions,
+  ) => Promise<Res>;
   proxyRequest: (
     ctx: Context<Req, Res>,
     req: Req,
@@ -108,6 +129,7 @@ export type BaseHookParams<Req, Res> = {
   next?: any;
   requestUrl: string;
   originUrl: string;
+  requestCount: number;
 };
 export type OnRouteParams<Req, Res> = BaseHookParams<Req, Res> & {
   route: Route;
@@ -115,13 +137,22 @@ export type OnRouteParams<Req, Res> = BaseHookParams<Req, Res> & {
 export type OnUserAttributesParams<Req, Res> = OnRouteParams<Req, Res> & {
   attributes: Attributes;
 };
-export type OnGrowthBookInitParams<Req, Res> = OnUserAttributesParams<Req, Res> & {
+export type OnGrowthBookInitParams<Req, Res> = OnUserAttributesParams<
+  Req,
+  Res
+> & {
   growthbook: GrowthBook;
 };
-export type OnBeforeOriginFetchParams<Req, Res> = OnGrowthBookInitParams<Req, Res> & {
+export type OnBeforeOriginFetchParams<Req, Res> = OnGrowthBookInitParams<
+  Req,
+  Res
+> & {
   redirectRequestUrl: string;
 };
-export type OnOriginFetchParams<Req, Res> = OnBeforeOriginFetchParams<Req, Res> & {
+export type OnOriginFetchParams<Req, Res> = OnBeforeOriginFetchParams<
+  Req,
+  Res
+> & {
   originResponse: Res | undefined;
   originStatus: number;
 };
@@ -132,19 +163,38 @@ export type OnBodyReadyParams<Req, Res> = OnOriginFetchParams<Req, Res> & {
   setBody: (s: string) => void;
   root?: HTMLElement;
 };
-export type OnBeforeResponseParams<Req, Res> = Omit<OnBodyReadyParams<Req, Res>, "root">;
+export type OnBeforeResponseParams<Req, Res> = Omit<
+  OnBodyReadyParams<Req, Res>,
+  "root"
+>;
 
 type HookReturn<Res> = Res | undefined | void;
 
 export interface Hooks<Req, Res> {
-  onRequest?: (params: BaseHookParams<Req, Res>) => Promise<HookReturn<Res>> | HookReturn<Res>;
-  onRoute?: (params: OnRouteParams<Req, Res>) => Promise<HookReturn<Res>> | HookReturn<Res>;
-  onUserAttributes?: (params: OnUserAttributesParams<Req, Res>) => Promise<HookReturn<Res>> | HookReturn<Res>;
-  onGrowthbookInit?: (params: OnGrowthBookInitParams<Req, Res> ) => Promise<HookReturn<Res>> | HookReturn<Res>;
-  onBeforeOriginFetch?: (params: OnBeforeOriginFetchParams<Req, Res>) => Promise<HookReturn<Res>> | HookReturn<Res>;
-  onOriginFetch?: (params: OnOriginFetchParams<Req, Res>) => Promise<HookReturn<Res>> | HookReturn<Res>;
-  onBodyReady?: (params: OnBodyReadyParams<Req, Res>) => Promise<HookReturn<Res>> | HookReturn<Res>;
-  onBeforeResponse?: (params: OnBeforeResponseParams<Req, Res>) => Promise<HookReturn<Res>> | HookReturn<Res>;
+  onRequest?: (
+    params: BaseHookParams<Req, Res>,
+  ) => Promise<HookReturn<Res>> | HookReturn<Res>;
+  onRoute?: (
+    params: OnRouteParams<Req, Res>,
+  ) => Promise<HookReturn<Res>> | HookReturn<Res>;
+  onUserAttributes?: (
+    params: OnUserAttributesParams<Req, Res>,
+  ) => Promise<HookReturn<Res>> | HookReturn<Res>;
+  onGrowthbookInit?: (
+    params: OnGrowthBookInitParams<Req, Res>,
+  ) => Promise<HookReturn<Res>> | HookReturn<Res>;
+  onBeforeOriginFetch?: (
+    params: OnBeforeOriginFetchParams<Req, Res>,
+  ) => Promise<HookReturn<Res>> | HookReturn<Res>;
+  onOriginFetch?: (
+    params: OnOriginFetchParams<Req, Res>,
+  ) => Promise<HookReturn<Res>> | HookReturn<Res>;
+  onBodyReady?: (
+    params: OnBodyReadyParams<Req, Res>,
+  ) => Promise<HookReturn<Res>> | HookReturn<Res>;
+  onBeforeResponse?: (
+    params: OnBeforeResponseParams<Req, Res>,
+  ) => Promise<HookReturn<Res>> | HookReturn<Res>;
 }
 
 export type Route = {

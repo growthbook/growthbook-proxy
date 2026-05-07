@@ -1,10 +1,16 @@
-import Redis, { Cluster, ClusterNode, ClusterOptions } from "ioredis";
+import Redis, {
+  Cluster,
+  ClusterNode,
+  ClusterOptions,
+  SentinelConnectionOptions,
+} from "ioredis";
 
 import { v4 as uuidv4 } from "uuid";
-import logger from "../logger";
+import logger, { truncatePayloadForLogging } from "../logger";
 import { eventStreamManager } from "../eventStreamManager";
 import { Context } from "../../types";
 import { registrar } from "../registrar";
+import { CacheRefreshStrategy } from "../../types";
 import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, CacheSettings } from "./index";
 
@@ -18,12 +24,16 @@ export class RedisCache {
   private readonly memoryCacheClient: MemoryCache | undefined;
   private readonly connectionUrl: string | undefined;
   private readonly staleTTL: number;
-  private readonly expiresTTL: number;
+  private readonly expiresTTL: number | "never";
   public readonly allowStale: boolean;
+  public readonly cacheRefreshStrategy: CacheRefreshStrategy;
 
   private readonly useCluster: boolean;
   private readonly clusterRootNodesJSON?: ClusterNode[];
   private readonly clusterOptions?: ClusterOptions;
+
+  private readonly useSentinel: boolean;
+  private readonly sentinelConnectionOptions?: SentinelConnectionOptions;
 
   private readonly appContext?: Context;
 
@@ -32,23 +42,29 @@ export class RedisCache {
       staleTTL = 60, //         1 minute
       expiresTTL = 10 * 60, //  10 minutes
       allowStale = true,
+      cacheRefreshStrategy,
       connectionUrl,
       useAdditionalMemoryCache,
       publishPayloadToChannel = false,
       useCluster = false,
       clusterRootNodesJSON,
       clusterOptionsJSON,
+      useSentinel = false,
+      sentinelConnectionOptionsJSON,
     }: CacheSettings = {},
     appContext?: Context,
   ) {
     this.connectionUrl = connectionUrl;
     this.staleTTL = staleTTL * 1000;
-    this.expiresTTL = expiresTTL * 1000;
+    this.expiresTTL = expiresTTL === "never" ? "never" : expiresTTL * 1000;
     this.allowStale = allowStale;
+    this.cacheRefreshStrategy = cacheRefreshStrategy!;
     this.publishPayloadToChannel = publishPayloadToChannel;
     this.useCluster = useCluster;
     this.clusterRootNodesJSON = clusterRootNodesJSON;
     this.clusterOptions = clusterOptionsJSON;
+    this.useSentinel = useSentinel;
+    this.sentinelConnectionOptions = sentinelConnectionOptionsJSON;
 
     this.appContext = appContext;
 
@@ -57,16 +73,13 @@ export class RedisCache {
       this.memoryCacheClient = new MemoryCache({
         expiresTTL: 1, //  1 second,
         allowStale: false,
+        cacheRefreshStrategy: this.cacheRefreshStrategy,
       });
     }
   }
 
   public async connect() {
-    if (!this.useCluster) {
-      this.client = this.connectionUrl
-        ? new Redis(this.connectionUrl)
-        : new Redis();
-    } else {
+    if (this.useCluster) {
       if (this.clusterRootNodesJSON) {
         this.client = new Redis.Cluster(
           this.clusterRootNodesJSON,
@@ -75,6 +88,12 @@ export class RedisCache {
       } else {
         throw new Error("No cluster root nodes");
       }
+    } else if (this.useSentinel && this.sentinelConnectionOptions) {
+      this.client = new Redis(this.sentinelConnectionOptions);
+    } else {
+      this.client = this.connectionUrl
+        ? new Redis(this.connectionUrl)
+        : new Redis();
     }
 
     await this.subscribe();
@@ -89,7 +108,10 @@ export class RedisCache {
     // try fetching from MemoryCache first
     if (this.memoryCacheClient) {
       const memoryCacheEntry = await this.memoryCacheClient.get(key);
-      if (memoryCacheEntry && memoryCacheEntry.expiresOn > new Date()) {
+      if (
+        memoryCacheEntry &&
+        (!memoryCacheEntry.expiresOn || memoryCacheEntry.expiresOn > new Date())
+      ) {
         entry = memoryCacheEntry.payload as CacheEntry;
       }
     }
@@ -103,7 +125,7 @@ export class RedisCache {
       try {
         entry = JSON.parse(entryRaw);
       } catch (e) {
-        logger.error("unable to parse cache json");
+        logger.error({ err: e }, "unable to parse cache json");
         return undefined;
       }
     }
@@ -113,12 +135,28 @@ export class RedisCache {
     }
 
     entry.staleOn = new Date(entry.staleOn);
-    entry.expiresOn = new Date(entry.expiresOn);
+    if (entry.expiresOn) {
+      entry.expiresOn = new Date(entry.expiresOn);
+    }
 
-    if (!this.allowStale && entry.staleOn < new Date()) {
+    // With "none" strategy, never eject based on staleness or expiration
+    if (this.cacheRefreshStrategy === "none") {
+      // refresh MemoryCache
+      if (this.memoryCacheClient) {
+        await this.memoryCacheClient.set(key, entry);
+      }
+      return entry;
+    }
+
+    // With "stale-while-revalidate" strategy, allowStale controls whether we return stale but not-yet-expired entries
+    if (
+      this.cacheRefreshStrategy === "stale-while-revalidate" &&
+      !this.allowStale &&
+      entry.staleOn < new Date()
+    ) {
       return undefined;
     }
-    if (entry.expiresOn < new Date()) {
+    if (entry.expiresOn && entry.expiresOn < new Date()) {
       return undefined;
     }
 
@@ -136,17 +174,24 @@ export class RedisCache {
 
     const oldEntry = await this.get(key);
 
-    const entry = {
+    const entry: CacheEntry = {
       payload,
       staleOn: new Date(Date.now() + this.staleTTL),
-      expiresOn: new Date(Date.now() + this.expiresTTL),
+      expiresOn:
+        this.expiresTTL === "never"
+          ? undefined
+          : new Date(Date.now() + this.expiresTTL),
     };
-    await this.client.set(
-      key,
-      JSON.stringify(entry),
-      "EX",
-      this.expiresTTL / 1000,
-    );
+    if (this.expiresTTL === "never") {
+      await this.client.set(key, JSON.stringify(entry));
+    } else {
+      await this.client.set(
+        key,
+        JSON.stringify(entry),
+        "EX",
+        this.expiresTTL / 1000,
+      );
+    }
 
     // refresh MemoryCache
     if (this.memoryCacheClient) {
@@ -163,7 +208,7 @@ export class RedisCache {
       if (hasChanges) {
         if (this.appContext?.verboseDebugging) {
           logger.info(
-            { payload },
+            { payload: truncatePayloadForLogging(payload) },
             "RedisCache.set: publish to Redis subscribers",
           );
         }
@@ -181,7 +226,10 @@ export class RedisCache {
 
       if (this.appContext?.verboseDebugging) {
         logger.info(
-          { payload, oldPayload: oldEntry?.payload },
+          {
+            payload: truncatePayloadForLogging(payload),
+            oldPayload: truncatePayloadForLogging(oldEntry?.payload),
+          },
           "RedisCache.set: do not publish to Redis subscribers (no changes)",
         );
       }
@@ -190,7 +238,7 @@ export class RedisCache {
 
   private async subscribe() {
     if (!this.publishPayloadToChannel) return;
-    this.appContext?.verboseDebugging && logger.info("RedisCache.subscribe");
+    if (this.appContext?.verboseDebugging) logger.info("RedisCache.subscribe");
 
     if (!this.client) {
       throw new Error("No redis client");
@@ -204,10 +252,14 @@ export class RedisCache {
     // 2. update its MemoryCache
     this.subscriberClient.subscribe("set", (err) => {
       if (err) {
-        logger.error(err, "RedisCache.subscribe: error subscribing to 'set'");
+        logger.error(
+          { err },
+          "RedisCache.subscribe: error subscribing to 'set'",
+        );
       } else {
-        this.appContext?.verboseDebugging &&
+        if (this.appContext?.verboseDebugging) {
           logger.info("RedisCache.subscribe: subscribed to 'set' channel");
+        }
       }
     });
 
@@ -221,16 +273,21 @@ export class RedisCache {
             // ignore messages published from this node (shouldn't subscribe to ourselves)
             if (uuid === this.clientUUID) return;
 
-            this.appContext?.verboseDebugging &&
+            if (this.appContext?.verboseDebugging) {
               logger.info(
-                { payload },
+                { payload: truncatePayloadForLogging(payload) },
                 "RedisCache.subscribe: got 'set' message",
               );
+            }
 
             // 1. emit SSE to SDK clients
             if (this.appContext?.enableEventStream && eventStreamManager) {
-              this.appContext?.verboseDebugging &&
-                logger.info({ payload }, "RedisCache.subscribe: publish SSE");
+              if (this.appContext?.verboseDebugging) {
+                logger.info(
+                  { payload: truncatePayloadForLogging(payload) },
+                  "RedisCache.subscribe: publish SSE",
+                );
+              }
 
               const remoteEvalEnabled =
                 !!registrar.getConnection(key)?.remoteEvalEnabled;
@@ -244,15 +301,21 @@ export class RedisCache {
 
             // 2. update MemoryCache
             if (this.memoryCacheClient) {
-              const entry = {
+              const entry: CacheEntry = {
                 payload,
                 staleOn: new Date(Date.now() + this.staleTTL),
-                expiresOn: new Date(Date.now() + this.expiresTTL),
+                expiresOn:
+                  this.expiresTTL === "never"
+                    ? undefined
+                    : new Date(Date.now() + this.expiresTTL),
               };
               await this.memoryCacheClient.set(key, entry);
             }
           } catch (e) {
-            logger.error(e, "Error parsing message from Redis pub/sub");
+            logger.error(
+              { err: e },
+              "Error parsing message from Redis pub/sub",
+            );
           }
         }
       },

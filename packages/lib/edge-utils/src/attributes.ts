@@ -7,6 +7,7 @@ export function getUserAttributes<Req, Res>(
   req: Req,
   url: string,
   setRespCookie: (key: string, value: string) => void,
+  skipUuid: boolean = false,
 ): Attributes {
   const { config, helpers } = ctx;
 
@@ -15,14 +16,16 @@ export function getUserAttributes<Req, Res>(
     return providedAttributes;
   }
 
-  const autoAttributes = getAutoAttributes(ctx, req, url);
-  const uuid = autoAttributes[config.uuidKey] as string;
+  const autoAttributes = getAutoAttributes(ctx, req, url, skipUuid);
 
-  if (config.persistUuid && !config.noAutoCookies) {
-    if (!helpers?.setCookie) {
-      throw new Error("Missing required dependencies");
+  if (!skipUuid) {
+    const uuid = autoAttributes[config.uuidKey] as string;
+    if (config.persistUuid && !config.noAutoCookies) {
+      if (!helpers?.setCookie) {
+        throw new Error("Missing required dependencies");
+      }
+      setRespCookie(config.uuidCookieName, uuid);
     }
-    setRespCookie(config.uuidCookieName, uuid);
   }
 
   return { ...autoAttributes, ...providedAttributes };
@@ -51,7 +54,11 @@ export function getUUID<Req, Res>(ctx: Context<Req, Res>, req: Req) {
   };
 
   // get the existing UUID from cookie if set, otherwise create one
-  return helpers.getCookie(req, config.uuidCookieName) || genUUID();
+  return (
+    helpers.getCookie(req, config.uuidCookieName) ||
+    helpers?.getRequestHeader?.(req, "x-gbuuid") ||
+    genUUID()
+  );
 }
 
 // Infer attributes from the request
@@ -61,6 +68,7 @@ export function getAutoAttributes<Req, Res>(
   ctx: Context<Req, Res>,
   req: Req,
   url: string,
+  skipUuid: boolean = false,
 ): Attributes {
   const { config, helpers } = ctx;
 
@@ -72,12 +80,12 @@ export function getAutoAttributes<Req, Res>(
   autoAttributes.browser = ua.match(/Edg/)
     ? "edge"
     : ua.match(/Chrome/)
-    ? "chrome"
-    : ua.match(/Firefox/)
-    ? "firefox"
-    : ua.match(/Safari/)
-    ? "safari"
-    : "unknown";
+      ? "chrome"
+      : ua.match(/Firefox/)
+        ? "firefox"
+        : ua.match(/Safari/)
+          ? "safari"
+          : "unknown";
   autoAttributes.deviceType = ua.match(/Mobi/) ? "mobile" : "desktop";
 
   autoAttributes.url = url;
@@ -87,14 +95,16 @@ export function getAutoAttributes<Req, Res>(
     autoAttributes.path = urlObj.pathname;
     autoAttributes.host = urlObj.host;
     autoAttributes.query = urlObj.search;
-    autoAttributes = {...autoAttributes, ...getUtmAttributes(urlObj)};
-  } catch (e) {
+    autoAttributes = { ...autoAttributes, ...getUtmAttributes(urlObj) };
+  } catch {
     // ignore
   }
 
   // Set uuid last so it wins if config.uuidKey collides with a reserved
   // auto-attr name (browser, deviceType, url, path, host, query, utm*).
-  autoAttributes[config.uuidKey] = getUUID(ctx, req);
+  if (!skipUuid) {
+    autoAttributes[config.uuidKey] = getUUID(ctx, req);
+  }
 
   return autoAttributes;
 }
@@ -104,7 +114,7 @@ function getUtmAttributes(urlObj: URL) {
   let utms: Record<string, string> = {};
 
   // Add utm params from querystring
-  if (location.search) {
+  if (urlObj.search) {
     const params = new URLSearchParams(urlObj.search);
     ["source", "medium", "campaign", "term", "content"].forEach((k) => {
       // Querystring is in snake_case

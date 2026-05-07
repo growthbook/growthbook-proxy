@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import logger from "../logger";
+import logger, { truncatePayloadForLogging } from "../logger";
 import { Context } from "../../types";
 import { SSEChannel } from "./ssePubsub";
 
@@ -20,30 +20,32 @@ export class SSEManager {
   }
 
   public subscribe(req: Request, res: Response) {
-    this.appContext?.verboseDebugging &&
+    if (this.appContext?.verboseDebugging) {
       logger.info("EventStreamManager.subscribe");
+    }
     const apiKey = res.locals.apiKey;
     if (apiKey) {
       let scopedChannel;
       try {
         scopedChannel = this.getScopedChannel(apiKey);
       } catch (e) {
-        logger.error(e, "Unable to get SSE channel");
+        logger.error({ err: e }, "Unable to get SSE channel");
       }
       if (scopedChannel) {
         try {
           scopedChannel.channel.subscribe(req, res);
 
-          this.appContext?.verboseDebugging &&
+          if (this.appContext?.verboseDebugging) {
             logger.info(
               this.getSubscriberCounts(),
               `EventSource subscriber counts`,
             );
+          }
         } catch (e) {
-          logger.error(e, "Unable to subscribe to SSE channel");
+          logger.error({ err: e }, "Unable to subscribe to SSE channel");
         }
       } else {
-        logger.error("Unable to get SSE channel");
+        logger.error({ apiKey }, "Unable to get SSE channel");
       }
     }
   }
@@ -78,22 +80,33 @@ export class SSEManager {
     oldPayload?: any;
     remoteEvalEnabled?: boolean;
   }) {
-    this.appContext?.verboseDebugging &&
+    if (this.appContext?.verboseDebugging) {
       logger.info(
-        { apiKey, event, payload, oldPayload },
+        {
+          apiKey,
+          event,
+          payload: truncatePayloadForLogging(payload),
+          oldPayload: truncatePayloadForLogging(oldPayload),
+        },
         "EventStreamManager.publish",
       );
+    }
     const scopedChannel = this.getScopedChannel(apiKey);
     if (!scopedChannel) {
-      this.appContext?.verboseDebugging &&
+      if (this.appContext?.verboseDebugging) {
         logger.info("No scoped channel found");
+      }
       return;
     }
 
     const hasChanges = JSON.stringify(payload) !== JSON.stringify(oldPayload);
     if (!hasChanges) {
-      this.appContext?.verboseDebugging &&
-        logger.info({ payload, event }, "skipping SSE publish, no changes");
+      if (this.appContext?.verboseDebugging) {
+        logger.info(
+          { payload: truncatePayloadForLogging(payload), event },
+          "skipping SSE publish, no changes",
+        );
+      }
       return;
     }
 

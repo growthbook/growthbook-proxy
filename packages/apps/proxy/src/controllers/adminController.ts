@@ -4,6 +4,8 @@ import { adminMiddleware } from "../middleware/adminMiddleware";
 import logger from "../services/logger";
 import { MAX_PAYLOAD_SIZE } from "../init";
 
+type ConnectionApiKeyParams = { apiKey: string };
+
 const postConnection = (req: Request, res: Response) => {
   const apiKey = req.body.apiKey;
   if (!apiKey) {
@@ -12,13 +14,13 @@ const postConnection = (req: Request, res: Response) => {
   try {
     registrar.setConnection(apiKey, req.body);
   } catch (e) {
-    logger.error(e);
+    logger.error({ err: e }, "Malformed payload");
     return res.status(400).json({ message: "Malformed payload" });
   }
   return res.status(200).json({ message: "Success" });
 };
 
-const getConnection = (req: Request, res: Response) => {
+const getConnection = (req: Request<ConnectionApiKeyParams>, res: Response) => {
   const apiKey = req.params.apiKey;
   if (!apiKey) {
     return res.status(400).json({ message: "API key required" });
@@ -37,7 +39,10 @@ const getAllConnections = (req: Request, res: Response) => {
   return res.status(200).json(data);
 };
 
-const deleteConnection = (req: Request, res: Response) => {
+const deleteConnection = (
+  req: Request<ConnectionApiKeyParams>,
+  res: Response,
+) => {
   const apiKey = req.params.apiKey;
   if (!apiKey) {
     return res.status(400).json({ message: "API key required" });
