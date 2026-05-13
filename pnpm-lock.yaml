@@ -150,8 +150,8 @@ importers:
   packages/lib/edge-cloudflare:
     dependencies:
       "@growthbook/edge-utils":
-        specifier: ^0.2.8
-        version: 0.2.8
+        specifier: ^0.2.9
+        version: 0.2.9
       cookie:
         specifier: ^1.0.2
         version: 1.1.1
@@ -175,8 +175,8 @@ importers:
   packages/lib/edge-express:
     dependencies:
       "@growthbook/edge-utils":
-        specifier: ^0.2.8
-        version: 0.2.8
+        specifier: ^0.2.9
+        version: 0.2.9
       "@growthbook/growthbook":
         specifier: ^1.6.5
         version: 1.6.5
@@ -221,8 +221,8 @@ importers:
   packages/lib/edge-fastly:
     dependencies:
       "@growthbook/edge-utils":
-        specifier: ^0.2.8
-        version: 0.2.8
+        specifier: ^0.2.9
+        version: 0.2.9
       cookie:
         specifier: ^1.0.2
         version: 1.1.1
@@ -240,8 +240,8 @@ importers:
   packages/lib/edge-lambda:
     dependencies:
       "@growthbook/edge-utils":
-        specifier: ^0.2.8
-        version: 0.2.8
+        specifier: ^0.2.9
+        version: 0.2.9
       cookie:
         specifier: ^1.0.2
         version: 1.1.1
@@ -977,10 +977,10 @@ packages:
       }
     engines: { node: ^18.18.0 || ^20.9.0 || >=21.1.0 }
 
-  "@growthbook/edge-utils@0.2.8":
+  "@growthbook/edge-utils@0.2.9":
     resolution:
       {
-        integrity: sha512-8Xlrf15RkbvpwekQRa0IUaTDnqMFz1ZcIVLkDwu27+Xxlu/tVs5VGNHo8dOZD0pZEVux3dytcqhIzSyzVy0ckA==,
+        integrity: sha512-yhwgm3FBrCx521uixNsF24ey8ptjuMj5iQapKVo913B7TUw5vqkjx6kAnHUyvVL5NmLZ58yH35CofovM3Iegsg==,
       }
 
   "@growthbook/growthbook@1.6.5":
@@ -8047,7 +8047,7 @@ snapshots:
       "@eslint/core": 0.17.0
       levn: 0.4.1
 
-  "@growthbook/edge-utils@0.2.8":
+  "@growthbook/edge-utils@0.2.9":
     dependencies:
       "@growthbook/growthbook": 1.6.5
       node-html-parser: 7.1.0

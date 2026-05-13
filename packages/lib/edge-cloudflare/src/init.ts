@@ -60,7 +60,7 @@ export function getKVLocalStoragePolyfill(
   namespace: string = "KV_GB_CACHE",
 ) {
   if (env?.[namespace]) {
-    const KV: KVNamespace = env[namespace];
+    const KV = env[namespace] as KVNamespace;
     return {
       getItem: async (key: string) => await KV.get(key),
       setItem: async (key: string, value: string) => await KV.put(key, value),
@@ -74,7 +74,7 @@ export async function getPayloadFromKV(
   key: string = "gb_payload",
 ) {
   if (env?.[namespace]) {
-    const KV: KVNamespace = env[namespace];
+    const KV = env[namespace] as KVNamespace;
     const value = (await KV.get(key)) || undefined;
     let payload = undefined;
     if (value) {
