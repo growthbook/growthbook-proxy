@@ -1,7 +1,7 @@
 {
   "name": "@growthbook/edge-utils",
   "description": "Edge worker base app",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "packageManager": "pnpm@10.33.0",
   "main": "dist/index.js",
   "license": "MIT",
@@ -17,17 +17,21 @@
     "build": "pnpm build:clean && pnpm generate-sdk-wrapper && pnpm build:typescript",
     "generate-sdk-wrapper": "node scripts/generate-sdk-wrapper.js",
     "type-check": "tsc --pretty --noEmit",
-    "dev": "node scripts/generate-sdk-wrapper.js && tsc --watch"
+    "dev": "node scripts/generate-sdk-wrapper.js && tsc --watch",
+    "test": "jest"
   },
   "dependencies": {
-    "@growthbook/growthbook": "^1.6.4",
+    "@growthbook/growthbook": "^1.6.5",
     "node-html-parser": "^7.0.1",
     "pako": "^2.1.0"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.14",
     "@types/node": "^22.10.4",
     "@types/pako": "^2.0.3",
+    "jest": "^29.7.0",
     "rimraf": "^6.0.1",
+    "ts-jest": "^29.2.5",
     "typescript": "^5.7.2"
   }
 }
