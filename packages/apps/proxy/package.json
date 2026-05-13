@@ -15,7 +15,7 @@
   },
   "author": "Bryce Fitzsimons",
   "scripts": {
-    "build:clean": "rimraf -rf dist",
+    "build:clean": "rimraf -rf dist tsconfig.tsbuildinfo",
     "build:typescript": "tsc",
     "build": "pnpm build:clean && pnpm build:typescript",
     "type-check": "tsc --pretty --noEmit",
