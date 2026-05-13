@@ -1,7 +1,7 @@
 {
   "name": "@growthbook/edge-utils",
   "description": "Edge worker base app",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "packageManager": "pnpm@10.33.0",
   "main": "dist/index.js",
   "license": "MIT",
@@ -21,7 +21,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@growthbook/growthbook": "^1.6.4",
+    "@growthbook/growthbook": "^1.6.5",
     "node-html-parser": "^7.0.1",
     "pako": "^2.1.0"
   },

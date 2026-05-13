@@ -56,7 +56,7 @@ importers:
   packages/apps/proxy:
     dependencies:
       "@growthbook/growthbook":
-        specifier: ^1.6.4
+        specifier: ^1.6.5
         version: 1.6.5
       "@growthbook/proxy-eval":
         specifier: workspace:*
@@ -160,7 +160,7 @@ importers:
         specifier: ^4.20250926.0
         version: 4.20260301.1
       "@growthbook/growthbook":
-        specifier: ^1.6.4
+        specifier: ^1.6.5
         version: 1.6.5
       rimraf:
         specifier: ^6.0.1
@@ -178,7 +178,7 @@ importers:
         specifier: ^0.2.8
         version: 0.2.8
       "@growthbook/growthbook":
-        specifier: ^1.6.4
+        specifier: ^1.6.5
         version: 1.6.5
       cookie-parser:
         specifier: ^1.4.7
@@ -228,7 +228,7 @@ importers:
         version: 1.1.1
     devDependencies:
       "@growthbook/growthbook":
-        specifier: ^1.6.4
+        specifier: ^1.6.5
         version: 1.6.5
       rimraf:
         specifier: ^6.0.1
@@ -247,7 +247,7 @@ importers:
         version: 1.1.1
     devDependencies:
       "@growthbook/growthbook":
-        specifier: ^1.6.4
+        specifier: ^1.6.5
         version: 1.6.5
       "@types/aws-lambda":
         specifier: ^8.10.160
@@ -268,7 +268,7 @@ importers:
   packages/lib/edge-utils:
     dependencies:
       "@growthbook/growthbook":
-        specifier: ^1.6.4
+        specifier: ^1.6.5
         version: 1.6.5
       node-html-parser:
         specifier: ^7.0.1
@@ -302,7 +302,7 @@ importers:
   packages/lib/eval:
     dependencies:
       "@growthbook/growthbook":
-        specifier: ^1.6.4
+        specifier: ^1.6.5
         version: 1.6.5
     devDependencies:
       rimraf:
