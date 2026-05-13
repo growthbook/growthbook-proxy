@@ -121,6 +121,22 @@ describe("getUserAttributes", () => {
     expect(cookies["gbuuid"]).not.toBe("override-id");
   });
 
+  it("skipUuid skips uuid generation and cookie writing (redirect loop path)", () => {
+    const cookies: Record<string, string> = {};
+    const attrs = getUserAttributes(
+      makeCtx({ cookieValue: "" }),
+      {},
+      "http://x.com/",
+      (k, v) => {
+        cookies[k] = v;
+      },
+      true,
+    );
+    expect(cookies["gbuuid"]).toBeUndefined();
+    expect(attrs.id).toBeUndefined();
+    expect(attrs.url).toBe("http://x.com/");
+  });
+
   it("uuid wins when uuidKey collides with a reserved auto-attr name", () => {
     const cookies: Record<string, string> = {};
     const attrs = getUserAttributes(
