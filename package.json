@@ -40,7 +40,10 @@
   "pnpm": {
     "overrides": {
       "picomatch@2": ">=2.3.2",
-      "path-to-regexp@8": ">=8.4.0"
+      "path-to-regexp@8": ">=8.4.0",
+      "uuid@8": "^11.1.1",
+      "uuid@9": "^11.1.1",
+      "uuid@10": "^11.1.1"
     }
   },
   "devDependencies": {
