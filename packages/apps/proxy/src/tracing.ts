@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import * as opentelemetry from "@opentelemetry/sdk-node";
-import { diag, DiagConsoleLogger } from "@opentelemetry/api";
+import { diag, DiagConsoleLogger, DiagLogLevel } from "@opentelemetry/api";
 import {
   getNodeAutoInstrumentations,
   getResourceDetectors,
@@ -22,10 +22,13 @@ import {
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-proto";
 import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 
-diag.setLogger(
-  new DiagConsoleLogger(),
-  opentelemetry.core.getEnv().OTEL_LOG_LEVEL,
-);
+// `@opentelemetry/core` removed `getEnv()` in 2.x; read OTEL_LOG_LEVEL directly.
+const envLevel = (process.env.OTEL_LOG_LEVEL ?? "").toUpperCase();
+const logLevel =
+  envLevel in DiagLogLevel
+    ? DiagLogLevel[envLevel as keyof typeof DiagLogLevel]
+    : DiagLogLevel.INFO;
+diag.setLogger(new DiagConsoleLogger(), logLevel);
 
 const metricReader = new PeriodicExportingMetricReader({
   exporter: new OTLPMetricExporter(),
