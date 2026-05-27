@@ -50,7 +50,6 @@
     "@types/node": "^22.0.0",
     "@types/pino": "^7.0.5",
     "@types/spdy": "^3.4.9",
-    "@types/uuid": "^10.0.0",
     "concurrently": "^9.0.1",
     "nodemon": "^3.1.7",
     "pino-pretty": "^11.3.0",
