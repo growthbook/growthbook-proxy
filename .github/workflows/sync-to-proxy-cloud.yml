@@ -8,6 +8,7 @@ on:
     paths:
       - "packages/apps/proxy/**"
       - "packages/lib/eval/**"
+      - "pnpm-lock.yaml"
       - ".github/workflows/sync-to-proxy-cloud.yml"
 
 jobs:
