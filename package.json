@@ -45,7 +45,9 @@
       "follow-redirects@1": "^1.16.0",
       "qs@6": "^6.15.2",
       "@protobufjs/utf8@1": "^1.1.1",
-      "protobufjs@7": "^7.6.1"
+      "protobufjs@7": "^7.6.3",
+      "@grpc/grpc-js@1": "^1.14.4",
+      "@opentelemetry/core@2": "^2.8.0"
     }
   },
   "devDependencies": {
