@@ -86,7 +86,13 @@ export class MongoCache {
 
     // if cache miss from MemoryCache, fetch from Mongo
     if (!entry) {
-      const doc = await this.collection.findOne({ key });
+      let doc;
+      try {
+        doc = await this.collection.findOne({ key });
+      } catch (e) {
+        logger.error({ err: e }, "MongoCache: unable to fetch doc");
+        return undefined;
+      }
       if (!doc) {
         return undefined;
       }
