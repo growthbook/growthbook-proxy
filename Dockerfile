@@ -39,6 +39,10 @@ COPY --from=0 /usr/local/src/app/packages/apps/proxy/dist ./dist
 # Directory with build info (git commit sha, build date)
 COPY buildinfo* ./buildinfo
 
+# yarn/pnpm shim: neither is shipped here, but deploy configs still override the CMD with `<pm> start:with-tracing`.
+COPY --chmod=755 bin/start-shim /usr/local/bin/yarn
+COPY --chmod=755 bin/start-shim /usr/local/bin/pnpm
+
 EXPOSE 3300
 # Launch pm2-runtime via node directly: the .bin shim is a #!/bin/sh script, and
 # pm2's own entry relies on #!/usr/bin/env node — neither can exec here, but pm2
