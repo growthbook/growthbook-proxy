@@ -39,9 +39,7 @@ COPY --from=0 /usr/local/src/app/packages/apps/proxy/dist ./dist
 # Directory with build info (git commit sha, build date)
 COPY buildinfo* ./buildinfo
 
-# yarn/pnpm compat shim so deploy configs overriding the Docker CMD with
-# `yarn start:with-tracing` or the README's documented `pnpm start:with-tracing`
-# keep working now that neither yarn nor pnpm are shipped in this image.
+# yarn/pnpm shim: neither is shipped here, but deploy configs still override the CMD with `<pm> start:with-tracing`.
 COPY --chmod=755 bin/start-shim /usr/local/bin/yarn
 COPY --chmod=755 bin/start-shim /usr/local/bin/pnpm
 

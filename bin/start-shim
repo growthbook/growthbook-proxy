@@ -1,10 +1,5 @@
 #!/usr/local/bin/node
-// yarn/pnpm compat shim for the shell-less distroless runtime image, which
-// ships neither (corepack/pnpm only exist in the discarded builder stage) -
-// lets deploy configs that override the Docker CMD with `yarn start:with-tracing`
-// or the documented `pnpm start:with-tracing` keep working. Ported from
-// growthbook's bin/yarn, rewritten as a node script since a bash shebang
-// can't exec on this image.
+// yarn/pnpm shim for the shell-less distroless image, which ships neither - keeps `start:with-tracing` CMD overrides working.
 const { spawnSync } = require("node:child_process");
 
 const PM2_RUNTIME = "node_modules/pm2/bin/pm2-runtime";
