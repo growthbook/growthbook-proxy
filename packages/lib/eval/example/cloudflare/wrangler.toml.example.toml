@@ -7,8 +7,12 @@ compatibility_date = "2025-09-25"
 # Docs: https://developers.cloudflare.com/workers/platform/environment-variables
 
 kv_namespaces = [
-  { binding = "KV_GB_PAYLOAD", id = "qwerty123" }
+  { binding = "KV_GB_PAYLOAD", id = "qwerty123" },
+  # Optional: enables sticky bucketing
+  # { binding = "KV_STICKY_BUCKETS", id = "qwerty456" },
 ]
 
 [vars]
 NODE_ENV="production"
+# Optional: sticky bucket expiration in seconds, min 60
+# STICKY_BUCKET_TTL="2592000"

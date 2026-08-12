@@ -1,5 +1,8 @@
 import express, { NextFunction, Request, Response } from "express";
-import { evaluateFeatures } from "@growthbook/proxy-eval";
+import {
+  evaluateFeatures,
+  type FeatureApiResponse,
+} from "@growthbook/proxy-eval";
 import { z } from "zod";
 import readThroughCacheMiddleware from "../middleware/cache/readThroughCacheMiddleware";
 import { featuresCache } from "../services/cache";
@@ -110,7 +113,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
     !forceSeedCache && featuresCache
       ? await featuresCache.get(res.locals.apiKey)
       : undefined;
-  let payload = oldEntry?.payload;
+  let payload = (oldEntry?.payload ?? null) as FeatureApiResponse | null;
 
   if (!payload) {
     const resp = await fetchFeatures({

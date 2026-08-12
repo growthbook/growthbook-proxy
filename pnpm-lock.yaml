@@ -65,11 +65,11 @@ importers:
   packages/apps/proxy:
     dependencies:
       '@growthbook/growthbook':
-        specifier: ^1.6.5
-        version: 1.6.5
+        specifier: ^1.7.0
+        version: 1.7.0
       '@growthbook/proxy-eval':
-        specifier: 1.1.3
-        version: 1.1.3
+        specifier: 1.2.0
+        version: 1.2.0
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.0
@@ -166,8 +166,8 @@ importers:
         specifier: ^4.20250926.0
         version: 4.20260301.1
       '@growthbook/growthbook':
-        specifier: ^1.6.5
-        version: 1.6.5
+        specifier: ^1.7.0
+        version: 1.7.0
       rimraf:
         specifier: ^6.0.1
         version: 6.1.3
@@ -184,8 +184,8 @@ importers:
         specifier: ^0.2.9
         version: 0.2.9
       '@growthbook/growthbook':
-        specifier: ^1.6.5
-        version: 1.6.5
+        specifier: ^1.7.0
+        version: 1.7.0
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
@@ -234,8 +234,8 @@ importers:
         version: 1.1.1
     devDependencies:
       '@growthbook/growthbook':
-        specifier: ^1.6.5
-        version: 1.6.5
+        specifier: ^1.7.0
+        version: 1.7.0
       rimraf:
         specifier: ^6.0.1
         version: 6.1.3
@@ -253,8 +253,8 @@ importers:
         version: 1.1.1
     devDependencies:
       '@growthbook/growthbook':
-        specifier: ^1.6.5
-        version: 1.6.5
+        specifier: ^1.7.0
+        version: 1.7.0
       '@types/aws-lambda':
         specifier: ^8.10.160
         version: 8.10.161
@@ -274,8 +274,8 @@ importers:
   packages/lib/edge-utils:
     dependencies:
       '@growthbook/growthbook':
-        specifier: ^1.6.5
-        version: 1.6.5
+        specifier: ^1.7.0
+        version: 1.7.0
       node-html-parser:
         specifier: ^7.0.1
         version: 7.1.0
@@ -308,8 +308,8 @@ importers:
   packages/lib/eval:
     dependencies:
       '@growthbook/growthbook':
-        specifier: ^1.6.5
-        version: 1.6.5
+        specifier: ^1.7.0
+        version: 1.7.0
     devDependencies:
       rimraf:
         specifier: ^6.0.1
@@ -741,12 +741,12 @@ packages:
   '@growthbook/edge-utils@0.2.9':
     resolution: {integrity: sha512-yhwgm3FBrCx521uixNsF24ey8ptjuMj5iQapKVo913B7TUw5vqkjx6kAnHUyvVL5NmLZ58yH35CofovM3Iegsg==}
 
-  '@growthbook/growthbook@1.6.5':
-    resolution: {integrity: sha512-mUaMsgeUTpRIUOTn33EUXHRK6j7pxBjwqH4WpQyq+pukjd1AIzWlEa6w7i6bInJUcweGgP2beXZmaP6b6UPn7A==}
+  '@growthbook/growthbook@1.7.0':
+    resolution: {integrity: sha512-Vmad3fWRh1XaFH4q+AS62ofX6Q3IxSTD7sBGuhEHCaad8VyZerxrVdojucjzlnJDUocfrnZFUSpEkR6R/wCV+A==}
     engines: {node: '>=10'}
 
-  '@growthbook/proxy-eval@1.1.3':
-    resolution: {integrity: sha512-MoBsDrzfn7LWudiXrSfHxPgI/V+6aFyzorjxi6l9sRnKhobLm+IeThfu07W3cxGuSyY4MB+004+wuWNjaF78IQ==}
+  '@growthbook/proxy-eval@1.2.0':
+    resolution: {integrity: sha512-XHiZ6EMR9sUzg8TctyEyOdRqHFN2FD5s5XB/XE0D/F67Ki92JB4EikheNCKq2aP0Qlt/yJBNc9/hcG6f2/Ws1A==}
 
   '@grpc/grpc-js@1.14.4':
     resolution: {integrity: sha512-k9Dj3DV/itK9D06Y8f190Qgop7/Ui+D0njFV3LHMPwPT75DpXLQohE9Wmz0QElrJnzsjB7KPWiKJbOl7IPDArQ==}
@@ -5045,17 +5045,17 @@ snapshots:
 
   '@growthbook/edge-utils@0.2.9':
     dependencies:
-      '@growthbook/growthbook': 1.6.5
+      '@growthbook/growthbook': 1.7.0
       node-html-parser: 7.1.0
       pako: 2.1.0
 
-  '@growthbook/growthbook@1.6.5':
+  '@growthbook/growthbook@1.7.0':
     dependencies:
       dom-mutator: 0.6.0
 
-  '@growthbook/proxy-eval@1.1.3':
+  '@growthbook/proxy-eval@1.2.0':
     dependencies:
-      '@growthbook/growthbook': 1.6.5
+      '@growthbook/growthbook': 1.7.0
 
   '@grpc/grpc-js@1.14.4':
     dependencies:

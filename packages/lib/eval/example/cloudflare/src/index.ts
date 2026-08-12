@@ -1,5 +1,9 @@
-import { evaluateFeatures } from "@growthbook/proxy-eval";
-import { StickyBucketService } from "@growthbook/growthbook";
+import {
+  evaluateFeatures,
+  type Attributes,
+  type FeatureApiResponse,
+} from "@growthbook/proxy-eval";
+import { KVStickyBucketService } from "./KVStickyBucketService";
 
 interface Env {
   ENVIRONMENT: string;
@@ -7,26 +11,19 @@ interface Env {
   KV_GB_PAYLOAD: KVNamespace;
   // NOTE: Be sure to connect a GrowthBook SDK Webhook to your KV store.
   // Use the webhook type "Cloudflare KV" in the SDK webhook settings.
+
+  // Optional: bind a KV namespace to enable sticky bucketing
+  KV_STICKY_BUCKETS?: KVNamespace;
+  STICKY_BUCKET_TTL?: string; // seconds, min 60 (KV expirationTtl floor)
 }
 
 interface PostBody {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payload: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  attributes: Record<string, any>;
+  attributes: Attributes;
   forcedVariations?: Record<string, number>;
+  // Map entries, as serialized by the JS SDK's remote eval fetch
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  forcedFeatures?: Map<string, any>;
+  forcedFeatures?: [string, any][];
   url?: string;
-  // NOTE: For advanced experimentation, you may want to connect a KV or cookie Sticky Bucket service
-  stickyBucketService?:
-    | (StickyBucketService & {
-        // For cookie-based service, should be a no-op:
-        connect: () => Promise<void>;
-        // For write-buffer flushes (ex: GB Proxy's implementation of RedisStickyBucketService):
-        onEvaluate?: () => Promise<void>;
-      })
-    | null;
   ctx?: { verboseDebugging?: boolean };
 }
 
@@ -34,15 +31,14 @@ const KV_KEY = "gb_payload";
 const CACHE_TTL = 60 * 1000; // 1 min
 
 // Cache payload from KV
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let cachedPayload: any = null;
+let cachedPayload: FeatureApiResponse | null = null;
 let lastFetch = 0;
 
 export default {
   fetch: async function (
     request: Request,
     env: Env,
-    _ctx: ExecutionContext,
+    ctx: ExecutionContext,
   ): Promise<Response> {
     // Handle CORS preflight requests
     if (request.method === "OPTIONS") {
@@ -70,7 +66,10 @@ export default {
       }
 
       if (!cachedPayload || Date.now() - lastFetch > CACHE_TTL) {
-        cachedPayload = await env.KV_GB_PAYLOAD.get(KV_KEY, "json");
+        cachedPayload = await env.KV_GB_PAYLOAD.get<FeatureApiResponse>(
+          KV_KEY,
+          "json",
+        );
         lastFetch = Date.now();
       }
 
@@ -82,14 +81,30 @@ export default {
       } = body;
       const forcedFeaturesMap = new Map(forcedFeatures);
 
+      // Per-request instance; workers handle concurrent requests per isolate,
+      // so a shared write buffer would race
+      const stickyBucketService = env.KV_STICKY_BUCKETS
+        ? new KVStickyBucketService({
+            kv: env.KV_STICKY_BUCKETS,
+            ttl: env.STICKY_BUCKET_TTL
+              ? parseInt(env.STICKY_BUCKET_TTL)
+              : undefined,
+          })
+        : null;
+
       const evalResponse = await evaluateFeatures({
         payload: cachedPayload,
         attributes,
         forcedVariations,
         forcedFeatures: forcedFeaturesMap,
         url,
-        // stickyBucketService,
+        stickyBucketService,
       });
+
+      // Flush after responding; un-awaited writes are canceled without waitUntil
+      if (stickyBucketService) {
+        ctx.waitUntil(stickyBucketService.flushWrites());
+      }
 
       // Return success response
       return new Response(JSON.stringify(evalResponse), {
