@@ -27,7 +27,11 @@ import logger from "./services/logger";
     logger.error({ err }, "Uncaught exception: closing HTTP server");
     onClose(server, proxy);
   });
-})();
+})().catch((err) => {
+  // startup failure; the process guards above are not registered yet
+  console.error("Fatal error during startup", err);
+  process.exit(1);
+});
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function onClose(server: any, proxy: GrowthBookProxy) {

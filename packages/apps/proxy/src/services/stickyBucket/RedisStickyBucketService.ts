@@ -95,24 +95,32 @@ export class RedisStickyBucketService extends StickyBucketService {
   }
 
   public async onEvaluate() {
-    if (!this.client) return;
+    const client = this.client;
+    if (!client) return;
     // claim the buffer synchronously so concurrent saveAssignments aren't lost
     const buffer = this.writeBuffer;
     this.writeBuffer = {};
     const entries = Object.entries(buffer);
     if (entries.length === 0) return;
-    try {
-      if (this.ttl !== undefined) {
-        await this.client
-          .multi(
-            entries.map(([key, value]) => ["set", key, value, "ex", this.ttl]),
-          )
-          .exec();
-      } else {
-        await this.client.mset(buffer);
-      }
-    } catch (e) {
-      logger.warn({ err: e }, "unable to save sticky buckets");
+    // per-key SETs so keys route correctly on cluster and failures surface
+    const results = await Promise.allSettled(
+      entries.map(([key, value]) =>
+        this.ttl !== undefined
+          ? client.set(key, value, "EX", this.ttl)
+          : client.set(key, value),
+      ),
+    );
+    const failed = entries.filter((_, i) => results[i].status === "rejected");
+    if (failed.length) {
+      const err = (
+        results.find((r) => r.status === "rejected") as PromiseRejectedResult
+      ).reason;
+      logger.warn(
+        { err, failedCount: failed.length },
+        "unable to save sticky buckets, requeueing",
+      );
+      // retry on next flush; newer writes win
+      this.writeBuffer = { ...Object.fromEntries(failed), ...this.writeBuffer };
     }
   }
 

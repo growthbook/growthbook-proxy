@@ -10,6 +10,12 @@ dotenv.config({ path: "./.env.local" });
 
 export const MAX_PAYLOAD_SIZE = "2mb";
 
+// "true"/"1" (case-insensitive) = true; unset/empty = defaultVal; anything else = false
+const envBool = (val: string | undefined, defaultVal = false): boolean =>
+  val === undefined || val === ""
+    ? defaultVal
+    : ["true", "1"].includes(val.toLowerCase());
+
 export default async () => {
   const context: Partial<Context> = {
     growthbookApiHost: (process.env.GROWTHBOOK_API_HOST ?? "").replace(
@@ -18,20 +24,17 @@ export default async () => {
     ),
     secretApiKey: process.env.SECRET_API_KEY,
     environment: process.env.NODE_ENV as Context["environment"],
-    enableAdmin: ["true", "1"].includes(process.env.ENABLE_ADMIN ?? "0"),
+    enableAdmin: envBool(process.env.ENABLE_ADMIN),
     adminKey: process.env.ADMIN_KEY,
-    multiOrg: ["true", "1"].includes(process.env.MULTI_ORG ?? "0"),
-    verboseDebugging: ["true", "1"].includes(
-      process.env.VERBOSE_DEBUGGING ?? "0",
-    ),
+    multiOrg: envBool(process.env.MULTI_ORG),
+    verboseDebugging: envBool(process.env.VERBOSE_DEBUGGING),
     maxPayloadSize: process.env.MAX_PAYLOAD_SIZE ?? MAX_PAYLOAD_SIZE,
     // SDK Connections settings:
-    createConnectionsFromEnv: ["true", "1"].includes(
-      process.env.CREATE_CONNECTIONS_FROM_ENV ?? "1",
+    createConnectionsFromEnv: envBool(
+      process.env.CREATE_CONNECTIONS_FROM_ENV,
+      true,
     ),
-    pollForConnections: ["true", "1"].includes(
-      process.env.POLL_FOR_CONNECTIONS ?? "1",
-    ),
+    pollForConnections: envBool(process.env.POLL_FOR_CONNECTIONS, true),
     connectionPollingFrequency: parseInt(
       process.env.CONNECTION_POLLING_FREQUENCY ?? "60000",
     ),
@@ -43,7 +46,7 @@ export default async () => {
         process.env.CACHE_EXPIRES_TTL === "never"
           ? "never"
           : parseInt(process.env.CACHE_EXPIRES_TTL || "3600"),
-      allowStale: ["true", "1"].includes(process.env.CACHE_ALLOW_STALE ?? "1"),
+      allowStale: envBool(process.env.CACHE_ALLOW_STALE, true),
       cacheRefreshStrategy: (process.env.CACHE_REFRESH_STRATEGY ||
         "schedule") as CacheRefreshStrategy,
       connectionUrl: process.env.CACHE_CONNECTION_URL,
@@ -52,11 +55,9 @@ export default async () => {
       databaseName: process.env.CACHE_DATABASE_NAME || undefined,
       collectionName: process.env.CACHE_COLLECTION_NAME || undefined,
       // Redis only - pub/sub:
-      publishPayloadToChannel: ["true", "1"].includes(
-        process.env.PUBLISH_PAYLOAD_TO_CHANNEL ?? "0",
-      ),
+      publishPayloadToChannel: envBool(process.env.PUBLISH_PAYLOAD_TO_CHANNEL),
       // Redis only - cluster:
-      useCluster: ["true", "1"].includes(process.env.USE_CLUSTER ?? "0"),
+      useCluster: envBool(process.env.USE_CLUSTER),
       clusterRootNodesJSON: process.env.CLUSTER_ROOT_NODES_JSON
         ? JSON.parse(process.env.CLUSTER_ROOT_NODES_JSON)
         : undefined,
@@ -64,18 +65,17 @@ export default async () => {
         ? JSON.parse(process.env.CLUSTER_OPTIONS_JSON)
         : undefined,
       // Redis only - sentinel:
-      useSentinel: ["true", "1"].includes(process.env.USE_SENTINEL ?? "0"),
+      useSentinel: envBool(process.env.USE_SENTINEL),
       sentinelConnectionOptionsJSON: process.env
         .SENTINEL_CONNECTION_OPTIONS_JSON
         ? JSON.parse(process.env.SENTINEL_CONNECTION_OPTIONS_JSON)
         : undefined,
     },
     // SSE settings:
-    enableEventStream: ["true", "1"].includes(
-      process.env.ENABLE_EVENT_STREAM ?? "1",
-    ),
-    enableEventStreamHeaders: ["true", "1"].includes(
-      process.env.ENABLE_EVENT_STREAM_HEADERS ?? "1",
+    enableEventStream: envBool(process.env.ENABLE_EVENT_STREAM, true),
+    enableEventStreamHeaders: envBool(
+      process.env.ENABLE_EVENT_STREAM_HEADERS,
+      true,
     ),
     eventStreamMaxDurationMs: parseInt(
       process.env.EVENT_STREAM_MAX_DURATION_MS ?? "60000",
@@ -84,21 +84,15 @@ export default async () => {
       process.env.EVENT_STREAM_PING_INTERVAL_MS ?? "30000",
     ),
     // Remote eval settings:
-    enableRemoteEval: ["true", "1"].includes(
-      process.env.ENABLE_REMOTE_EVAL ?? "1",
-    ),
+    enableRemoteEval: envBool(process.env.ENABLE_REMOTE_EVAL, true),
     // Sticky Bucket settings (for remote eval):
-    enableStickyBucketing: ["true", "1"].includes(
-      process.env.ENABLE_STICKY_BUCKETING ?? "0",
-    ),
+    enableStickyBucketing: envBool(process.env.ENABLE_STICKY_BUCKETING),
     stickyBucketSettings: {
       engine: (process.env.STICKY_BUCKET_ENGINE ||
         "none") as StickyBucketEngine,
       connectionUrl: process.env.STICKY_BUCKET_CONNECTION_URL,
       // Redis only - cluster:
-      useCluster: ["true", "1"].includes(
-        process.env.STICKY_BUCKET_USE_CLUSTER ?? "0",
-      ),
+      useCluster: envBool(process.env.STICKY_BUCKET_USE_CLUSTER),
       clusterRootNodesJSON: process.env.STICKY_BUCKET_CLUSTER_ROOT_NODES_JSON
         ? JSON.parse(process.env.STICKY_BUCKET_CLUSTER_ROOT_NODES_JSON)
         : undefined,
@@ -112,7 +106,7 @@ export default async () => {
   };
 
   // Express configuration consts:
-  const USE_HTTP2 = process.env.USE_HTTP2;
+  const USE_HTTP2 = envBool(process.env.USE_HTTP2);
   const HTTPS_CERT = process.env.HTTPS_CERT;
   const HTTPS_KEY = process.env.HTTPS_KEY;
 
