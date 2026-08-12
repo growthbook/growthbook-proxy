@@ -96,24 +96,24 @@ export class RedisStickyBucketService extends StickyBucketService {
 
   public async onEvaluate() {
     if (!this.client) return;
-    if (Object.keys(this.writeBuffer).length === 0) return;
-    if (this.ttl !== undefined) {
-      await this.client
-        .multi(
-          Object.entries(this.writeBuffer).map(([key, value]) => [
-            "set",
-            key,
-            value,
-            "ex",
-            this.ttl,
-          ]),
-        )
-        .exec();
-    } else {
-      this.client.mset(this.writeBuffer);
-    }
-
+    // claim the buffer synchronously so concurrent saveAssignments aren't lost
+    const buffer = this.writeBuffer;
     this.writeBuffer = {};
+    const entries = Object.entries(buffer);
+    if (entries.length === 0) return;
+    try {
+      if (this.ttl !== undefined) {
+        await this.client
+          .multi(
+            entries.map(([key, value]) => ["set", key, value, "ex", this.ttl]),
+          )
+          .exec();
+      } else {
+        await this.client.mset(buffer);
+      }
+    } catch (e) {
+      logger.warn({ err: e }, "unable to save sticky buckets");
+    }
   }
 
   public getClient() {

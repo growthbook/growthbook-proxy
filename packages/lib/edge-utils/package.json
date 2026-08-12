@@ -21,7 +21,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@growthbook/growthbook": "^1.6.5",
+    "@growthbook/growthbook": "^1.7.0",
     "node-html-parser": "^7.0.1",
     "pako": "^2.1.0"
   },

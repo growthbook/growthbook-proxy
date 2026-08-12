@@ -13,6 +13,11 @@ export default [
       "docs/**",
       "**/scripts/**",
       "**/generated/**",
+      "**/.wrangler/**",
+      // Fastly Compute build artifacts
+      "packages/lib/edge-fastly/**/bin/**",
+      "packages/lib/edge-fastly/**/build/**",
+      "packages/lib/edge-fastly/**/pkg/**",
     ],
   },
   js.configs.recommended,

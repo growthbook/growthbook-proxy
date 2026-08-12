@@ -34,7 +34,7 @@
       "prettier --write"
     ],
     "./**/*.{ts,tsx,js,jsx}": [
-      "eslint --fix --max-warnings 0 --cache --cache-strategy content"
+      "eslint --fix --max-warnings 0 --no-warn-ignored --cache --cache-strategy content"
     ]
   },
   "pnpm": {

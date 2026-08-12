@@ -21,7 +21,7 @@
     "cookie": "^1.0.2"
   },
   "devDependencies": {
-    "@growthbook/growthbook": "^1.6.5",
+    "@growthbook/growthbook": "^1.7.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.7.2"
   }

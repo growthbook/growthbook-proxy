@@ -6,6 +6,20 @@ import {
   FeatureDefinition,
   FeatureRule,
   AutoExperiment,
+  FeatureApiResponse,
+} from "@growthbook/growthbook";
+
+// Re-export so consumers can type payloads and author sticky bucket services
+// without depending on @growthbook/growthbook directly
+export { StickyBucketService } from "@growthbook/growthbook";
+export type {
+  FeatureApiResponse,
+  FeatureDefinition,
+  FeatureRule,
+  AutoExperiment,
+  Attributes,
+  StickyAssignmentsDocument,
+  StickyAttributeKey,
 } from "@growthbook/growthbook";
 
 export async function evaluateFeatures({
@@ -17,7 +31,7 @@ export async function evaluateFeatures({
   stickyBucketService = null,
   ctx,
 }: {
-  payload: any;
+  payload: FeatureApiResponse | null;
   attributes: Record<string, any>;
   forcedVariations?: Record<string, number>;
   forcedFeatures?: Map<string, any>;
@@ -36,6 +50,7 @@ export async function evaluateFeatures({
   const features = payload?.features;
   const experiments = payload?.experiments;
   const savedGroups = payload?.savedGroups;
+  const contextualBandits = payload?.contextualBandits;
   const context: GBContext = { attributes };
   if (features) {
     context.features = features;
@@ -45,6 +60,9 @@ export async function evaluateFeatures({
   }
   if (savedGroups) {
     context.savedGroups = savedGroups;
+  }
+  if (contextualBandits) {
+    context.contextualBandits = contextualBandits;
   }
   if (forcedVariations) {
     context.forcedVariations = forcedVariations;
@@ -148,11 +166,17 @@ export async function evaluateFeatures({
 
   stickyBucketService?.onEvaluate?.();
 
-  return {
-    ...payload,
+  // Only features and experiments needed. Everything else is evaluated and,
+  // in the case of contextual bandits, baked into the experiment.
+  const evaluatedPayload: FeatureApiResponse = {
     features: evaluatedFeatures,
     experiments: evaluatedExperiments,
   };
+  if (payload?.dateUpdated) {
+    evaluatedPayload.dateUpdated = payload.dateUpdated;
+  }
+
+  return evaluatedPayload;
 }
 
 function scrubExperiment(experiment: any, allowedVariation: number) {
