@@ -1,5 +1,4 @@
 import express from "express";
-import * as spdy from "spdy";
 import dotenv from "dotenv";
 import {
   CacheEngine,
@@ -135,6 +134,8 @@ export default async () => {
 
   // Start app
   if (USE_HTTP2) {
+    // Lazy-loaded: spdy crashes at import time on Node >= 23
+    const spdy = await import("spdy");
     server = spdy.createServer(
       {
         key: HTTPS_KEY,
