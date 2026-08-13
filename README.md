@@ -29,6 +29,13 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ### What's new
 
+**Version 1.4.0**
+
+- Updated the GrowthBook JS SDK to 1.7.0; remote evaluation now supports contextual bandits
+- Remote evaluation responses only include evaluated results (`features`, `experiments`, `dateUpdated`) — saved groups, bandit definitions, and encrypted fields are no longer passed through
+- More durable sticky bucket writes: cluster-safe, concurrent-safe, and failed writes are retried
+- Fixed startup on Node.js >= 23 (HTTP/2 via spdy still requires Node.js 22)
+
 **Version 1.3.3**
 
 - Fix Redis sticky bucket mget call when attributes are empty
@@ -219,6 +226,8 @@ Although we recommend terminating SSL using your load balancer, you can also con
 - `HTTPS_CERT` - The SSL certificate
 - `HTTPS_KEY` - The SSL key
 
+_Note: HTTP/2 support (via spdy) requires Node.js 22 or earlier. The official Docker image runs Node.js 22._
+
 If the GrowthBook app your proxy is connecting to is using a self-signed certificate, you can disable certificate verification by setting `NODE_TLS_REJECT_UNAUTHORIZED` to "0".
 
 ### Observability (OpenTelemetry)
@@ -246,7 +255,7 @@ The standard [OTEL\_\* Environment Variables](https://opentelemetry.io/docs/conc
   - `STICKY_BUCKET_USE_CLUSTER` - "true" or "1" to enable Redis cluster mode (default: `false`)
   - `STICKY_BUCKET_CLUSTER_ROOT_NODES_JSON` - JSON array of ClusterNode objects (ioredis)
   - `STICKY_BUCKET_CLUSTER_OPTIONS_JSON` - JSON object of ClusterOptions (ioredis)
-  - `STICKY_BUCKET_TTL` - Number of seconds before a sticky bucket document expires in Redis (default: `0` = never)
+  - `STICKY_BUCKET_TTL` - Number of seconds before a sticky bucket document expires in Redis. Omit to never expire (default)
 
 **Misc**
 
