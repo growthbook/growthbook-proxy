@@ -35,7 +35,6 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 - Remote evaluation responses only include evaluated results (`features`, `experiments`, `dateUpdated`) — saved groups, bandit definitions, and encrypted fields are no longer passed through
 - More durable sticky bucket writes: cluster-safe, concurrent-safe, and failed writes are retried
 - Fixed startup on Node.js >= 23 (HTTP/2 via spdy still requires Node.js 22)
-- Stricter boolean env var parsing: only "true"/"1" (case-insensitive) enable a flag
 
 **Version 1.3.3**
 
