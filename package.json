@@ -48,7 +48,8 @@
       "@protobufjs/utf8@1": "^1.1.1",
       "protobufjs@7": "^7.6.5",
       "@grpc/grpc-js@1": "^1.14.4",
-      "@opentelemetry/core@2": "^2.8.0"
+      "@opentelemetry/core@2": "^2.8.0",
+      "@opentelemetry/propagator-jaeger@2": "^2.9.0"
     }
   },
   "devDependencies": {
