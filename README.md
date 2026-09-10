@@ -274,3 +274,9 @@ The standard [OTEL\_\* Environment Variables](https://opentelemetry.io/docs/conc
 - `VERBOSE_DEBUGGING` - "true" or "1" to enable verbose debugging (default: `false`)
 - `CONNECTION_POLLING_FREQUENCY` - How frequently to refresh SDK connections (default: `60000` = 1 minute)
 - `MULTI_ORG` - "true" or "1" to enable multi-organization support (requires a compatible access token) (default: `false`)
+
+**Graceful shutdown**
+
+- `SHUTDOWN_DELAY_MS` - On SIGTERM/SIGINT, keep serving for this long while `/healthcheck` returns `503` so load balancers and Kubernetes stop routing traffic to the instance before it closes (default: `0` = close immediately)
+
+When running the Docker image, also set `PM2_KILL_TIMEOUT` to a value above `SHUTDOWN_DELAY_MS`; pm2 otherwise force-kills the process after 1600ms. On Kubernetes, make sure `terminationGracePeriodSeconds` covers the delay too, and use a readiness probe against `/healthcheck` so the `503` takes the pod out of rotation.
