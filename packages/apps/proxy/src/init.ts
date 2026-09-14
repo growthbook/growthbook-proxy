@@ -152,13 +152,11 @@ export default async () => {
     });
   }
 
-  // Behind a load balancer, the proxy's idle keep-alive timeout must be LONGER
-  // than the balancer's, or the proxy can close a pooled connection at the same
-  // moment the balancer dispatches a request onto it. The balancer reports that
-  // as a 502 with no response from the target. Node defaults keepAliveTimeout to
-  // 5s, which is shorter than common balancer defaults (an AWS ALB idles at 60s),
-  // so the target is always the side that closes first and the race is constant.
-  // Node requires headersTimeout to be greater than keepAliveTimeout.
+  // Configure HTTP/1.1 timeouts, including HTTP/1.1 connections accepted by the
+  // HTTP/2-enabled listener. These properties do not control HTTP/2 sessions.
+  // Behind a load balancer, keep the proxy's HTTP/1.1 idle keep-alive timeout
+  // longer than the balancer's to avoid closing a pooled connection while the
+  // balancer dispatches a request onto it, which can cause a 502.
   if (KEEP_ALIVE_TIMEOUT_MS && KEEP_ALIVE_TIMEOUT_MS > 0) {
     server.keepAliveTimeout = KEEP_ALIVE_TIMEOUT_MS;
   }

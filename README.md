@@ -172,14 +172,16 @@ The GrowthBook Proxy supports a number of configuration options available via en
 - `SECRET_API_KEY` - Create a secret API key in GrowthBook by going to **Settings -> API Keys**
 - `NODE_ENV` - Set to "production" to hide debug and informational log messages
 
-### Running behind a load balancer
+### Running behind a load balancer with HTTP/1.1
+
+These settings apply to HTTP/1.1 connections between the load balancer and the proxy, including HTTP/1.1 connections accepted when `USE_HTTP2=true`. They do not configure negotiated HTTP/2 sessions.
 
 - `KEEP_ALIVE_TIMEOUT_MS` - How long the proxy holds an idle keep-alive connection open (default: Node's `5000` = 5 seconds)
-- `HEADERS_TIMEOUT_MS` - How long the proxy waits for complete request headers. Must be greater than `KEEP_ALIVE_TIMEOUT_MS`.
+- `HEADERS_TIMEOUT_MS` - How long the proxy waits for complete HTTP/1.1 request headers.
 
-If the proxy runs behind a load balancer, set `KEEP_ALIVE_TIMEOUT_MS` **higher than the load balancer's idle timeout**. Otherwise the proxy may close a pooled connection at the same moment the balancer dispatches a request onto it, and the balancer reports a 502 with no response from the target. Node's 5 second default is shorter than common balancer defaults — an AWS ALB idles at 60 seconds — so without this the proxy is always the side that closes first, producing a steady background rate of 502s that no amount of scaling removes.
+If the load balancer connects to the proxy using HTTP/1.1, set `KEEP_ALIVE_TIMEOUT_MS` **higher than the load balancer's idle timeout**. Otherwise the proxy may close a pooled connection at the same moment the balancer dispatches a request onto it, and the balancer reports a 502 with no response from the target. Node's 5 second default is shorter than common balancer defaults — an AWS ALB idles at 60 seconds — so without this the proxy is always the side that closes first, producing a steady background rate of 502s that no amount of scaling removes.
 
-For a 60 second balancer idle timeout, `KEEP_ALIVE_TIMEOUT_MS=75000` and `HEADERS_TIMEOUT_MS=80000` leaves a comfortable margin.
+For a 60 second balancer idle timeout, `KEEP_ALIVE_TIMEOUT_MS=75000` leaves a comfortable margin. `HEADERS_TIMEOUT_MS` can remain at Node's default.
 
 ### Caching
 
