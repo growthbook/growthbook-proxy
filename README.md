@@ -172,6 +172,15 @@ The GrowthBook Proxy supports a number of configuration options available via en
 - `SECRET_API_KEY` - Create a secret API key in GrowthBook by going to **Settings -> API Keys**
 - `NODE_ENV` - Set to "production" to hide debug and informational log messages
 
+### Running behind a load balancer
+
+- `KEEP_ALIVE_TIMEOUT_MS` - How long the proxy holds an idle keep-alive connection open (default: Node's `5000` = 5 seconds)
+- `HEADERS_TIMEOUT_MS` - How long the proxy waits for complete request headers. Must be greater than `KEEP_ALIVE_TIMEOUT_MS`.
+
+If the proxy runs behind a load balancer, set `KEEP_ALIVE_TIMEOUT_MS` **higher than the load balancer's idle timeout**. Otherwise the proxy may close a pooled connection at the same moment the balancer dispatches a request onto it, and the balancer reports a 502 with no response from the target. Node's 5 second default is shorter than common balancer defaults — an AWS ALB idles at 60 seconds — so without this the proxy is always the side that closes first, producing a steady background rate of 502s that no amount of scaling removes.
+
+For a 60 second balancer idle timeout, `KEEP_ALIVE_TIMEOUT_MS=75000` and `HEADERS_TIMEOUT_MS=80000` leaves a comfortable margin.
+
 ### Caching
 
 By default, features are cached in memory in the GrowthBook Proxy; you may provide your own cache service via Redis or Mongo. To fully utilize the GrowthBook Proxy, we highly recommend using Redis, which is a prerequisite for real-time updates when your proxy is horizontally scaled (as proxy instances are kept in-sync using Redis pub/sub).

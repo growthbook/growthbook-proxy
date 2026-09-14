@@ -109,6 +109,12 @@ export default async () => {
   const USE_HTTP2 = envBool(process.env.USE_HTTP2);
   const HTTPS_CERT = process.env.HTTPS_CERT;
   const HTTPS_KEY = process.env.HTTPS_KEY;
+  const KEEP_ALIVE_TIMEOUT_MS = process.env.KEEP_ALIVE_TIMEOUT_MS
+    ? parseInt(process.env.KEEP_ALIVE_TIMEOUT_MS)
+    : undefined;
+  const HEADERS_TIMEOUT_MS = process.env.HEADERS_TIMEOUT_MS
+    ? parseInt(process.env.HEADERS_TIMEOUT_MS)
+    : undefined;
 
   function getPort() {
     if (process.env.PORT) {
@@ -144,6 +150,20 @@ export default async () => {
     server = app.listen(PROXY_PORT, () => {
       console.info(`GrowthBook proxy running over HTTP1.1, port ${PROXY_PORT}`);
     });
+  }
+
+  // Behind a load balancer, the proxy's idle keep-alive timeout must be LONGER
+  // than the balancer's, or the proxy can close a pooled connection at the same
+  // moment the balancer dispatches a request onto it. The balancer reports that
+  // as a 502 with no response from the target. Node defaults keepAliveTimeout to
+  // 5s, which is shorter than common balancer defaults (an AWS ALB idles at 60s),
+  // so the target is always the side that closes first and the race is constant.
+  // Node requires headersTimeout to be greater than keepAliveTimeout.
+  if (KEEP_ALIVE_TIMEOUT_MS && KEEP_ALIVE_TIMEOUT_MS > 0) {
+    server.keepAliveTimeout = KEEP_ALIVE_TIMEOUT_MS;
+  }
+  if (HEADERS_TIMEOUT_MS && HEADERS_TIMEOUT_MS > 0) {
+    server.headersTimeout = HEADERS_TIMEOUT_MS;
   }
 
   return { app, server, context };
