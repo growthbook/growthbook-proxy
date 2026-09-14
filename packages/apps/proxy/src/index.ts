@@ -41,4 +41,5 @@ function onClose(server: any, proxy: GrowthBookProxy) {
     console.info("HTTP server closed");
     process.exit(0);
   });
+  server.closeIdleConnections();
 }

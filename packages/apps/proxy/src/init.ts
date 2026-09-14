@@ -121,6 +121,12 @@ export default async () => {
   }
   const PROXY_PORT = getPort();
 
+  // Must exceed the fronting LB's idle timeout (ALB 60s, nginx 75s) or the LB
+  // reuses connections we already closed, causing spurious 502s.
+  const KEEP_ALIVE_TIMEOUT_MS = parseInt(
+    process.env.KEEP_ALIVE_TIMEOUT_MS ?? `${90_000}`,
+  );
+
   // Start Express
   const app = express();
   /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -145,6 +151,7 @@ export default async () => {
       console.info(`GrowthBook proxy running over HTTP1.1, port ${PROXY_PORT}`);
     });
   }
+  server.keepAliveTimeout = KEEP_ALIVE_TIMEOUT_MS;
 
   return { app, server, context };
 };
