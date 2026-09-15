@@ -109,9 +109,12 @@ export default async () => {
   const USE_HTTP2 = envBool(process.env.USE_HTTP2);
   const HTTPS_CERT = process.env.HTTPS_CERT;
   const HTTPS_KEY = process.env.HTTPS_KEY;
+
+  // Must exceed the fronting LB's idle timeout (ALB defaults to 60s, nginx defaults to 75s) or the LB
+  // reuses connections we already closed, causing spurious 502s.
   const KEEP_ALIVE_TIMEOUT_MS = process.env.KEEP_ALIVE_TIMEOUT_MS
     ? parseInt(process.env.KEEP_ALIVE_TIMEOUT_MS)
-    : undefined;
+    : 90_000;
   const HEADERS_TIMEOUT_MS = process.env.HEADERS_TIMEOUT_MS
     ? parseInt(process.env.HEADERS_TIMEOUT_MS)
     : undefined;
