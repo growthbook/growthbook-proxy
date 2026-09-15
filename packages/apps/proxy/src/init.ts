@@ -109,6 +109,12 @@ export default async () => {
   const USE_HTTP2 = envBool(process.env.USE_HTTP2);
   const HTTPS_CERT = process.env.HTTPS_CERT;
   const HTTPS_KEY = process.env.HTTPS_KEY;
+  const KEEP_ALIVE_TIMEOUT_MS = process.env.KEEP_ALIVE_TIMEOUT_MS
+    ? parseInt(process.env.KEEP_ALIVE_TIMEOUT_MS)
+    : undefined;
+  const HEADERS_TIMEOUT_MS = process.env.HEADERS_TIMEOUT_MS
+    ? parseInt(process.env.HEADERS_TIMEOUT_MS)
+    : undefined;
 
   function getPort() {
     if (process.env.PORT) {
@@ -120,12 +126,6 @@ export default async () => {
     return 3300;
   }
   const PROXY_PORT = getPort();
-
-  // Must exceed the fronting LB's idle timeout (ALB 60s, nginx 75s) or the LB
-  // reuses connections we already closed, causing spurious 502s.
-  const KEEP_ALIVE_TIMEOUT_MS = parseInt(
-    process.env.KEEP_ALIVE_TIMEOUT_MS ?? `${90_000}`,
-  );
 
   // Start Express
   const app = express();
@@ -151,7 +151,18 @@ export default async () => {
       console.info(`GrowthBook proxy running over HTTP1.1, port ${PROXY_PORT}`);
     });
   }
-  server.keepAliveTimeout = KEEP_ALIVE_TIMEOUT_MS;
+
+  // Configure HTTP/1.1 timeouts, including HTTP/1.1 connections accepted by the
+  // HTTP/2-enabled listener. These properties do not control HTTP/2 sessions.
+  // Behind a load balancer, keep the proxy's HTTP/1.1 idle keep-alive timeout
+  // longer than the balancer's to avoid closing a pooled connection while the
+  // balancer dispatches a request onto it, which can cause a 502.
+  if (KEEP_ALIVE_TIMEOUT_MS && KEEP_ALIVE_TIMEOUT_MS > 0) {
+    server.keepAliveTimeout = KEEP_ALIVE_TIMEOUT_MS;
+  }
+  if (HEADERS_TIMEOUT_MS && HEADERS_TIMEOUT_MS > 0) {
+    server.headersTimeout = HEADERS_TIMEOUT_MS;
+  }
 
   return { app, server, context };
 };
