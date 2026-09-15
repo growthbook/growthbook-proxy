@@ -45,13 +45,20 @@ async function getChecks(ctx: Context) {
   return checks;
 }
 
+// Set on shutdown so load balancers stop routing here before the server closes.
+let draining = false;
+export const startDraining = () => {
+  draining = true;
+};
+
 const getHealthChecks = async (req: Request, res: Response) => {
   const ctx = req.app.locals?.ctx;
 
   const build = getBuild();
   const checks = await getChecks(ctx);
-  res.status(200).json({
-    ok: true,
+  res.status(draining ? 503 : 200).json({
+    ok: !draining,
+    draining,
     proxyVersion: version,
     build,
     checks,
@@ -60,8 +67,9 @@ const getHealthChecks = async (req: Request, res: Response) => {
 
 const getHealth = async (req: Request, res: Response) => {
   const build = getBuild();
-  res.status(200).json({
-    ok: true,
+  res.status(draining ? 503 : 200).json({
+    ok: !draining,
+    draining,
     proxyVersion: version,
     build,
   });

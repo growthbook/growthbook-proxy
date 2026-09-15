@@ -48,6 +48,7 @@ export interface Context {
   environment?: "development" | "production";
   verboseDebugging?: boolean;
   maxPayloadSize?: string;
+  shutdownDelayMs?: number;
 }
 
 export type CacheEngine = "memory" | "redis" | "mongo";

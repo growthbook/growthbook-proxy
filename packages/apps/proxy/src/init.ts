@@ -29,6 +29,7 @@ export default async () => {
     multiOrg: envBool(process.env.MULTI_ORG),
     verboseDebugging: envBool(process.env.VERBOSE_DEBUGGING),
     maxPayloadSize: process.env.MAX_PAYLOAD_SIZE ?? MAX_PAYLOAD_SIZE,
+    shutdownDelayMs: parseInt(process.env.SHUTDOWN_DELAY_MS ?? "0") || 0,
     // SDK Connections settings:
     createConnectionsFromEnv: envBool(
       process.env.CREATE_CONNECTIONS_FROM_ENV,
