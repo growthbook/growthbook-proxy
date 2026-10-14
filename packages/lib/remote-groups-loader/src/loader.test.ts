@@ -72,20 +72,30 @@ class FakeRedis implements LoaderRedis {
   async scard(key: string) {
     return this.sets.get(key)?.size ?? 0;
   }
-  async expire() {
+  // Seconds until each key expires; keys without one are permanent
+  ttls = new Map<string, number>();
+
+  async expire(key: string, seconds: number) {
+    this.ttls.set(key, seconds);
     return 1;
   }
-  async persist() {
-    return 1;
+  async persist(key: string) {
+    return this.ttls.delete(key) ? 1 : 0;
   }
   async rename(key: string, newKey: string) {
     const set = this.sets.get(key);
     if (!set) throw new Error("ERR no such key");
     this.sets.delete(key);
     this.sets.set(newKey, set);
+    // RENAME keeps the key's expiry.
+    const ttl = this.ttls.get(key);
+    this.ttls.delete(key);
+    if (ttl === undefined) this.ttls.delete(newKey);
+    else this.ttls.set(newKey, ttl);
     return "OK" as const;
   }
   async unlink(key: string) {
+    this.ttls.delete(key);
     return this.sets.delete(key) || this.strings.delete(key) ? 1 : 0;
   }
 
@@ -555,5 +565,67 @@ describe("RemoteGroupsLoader", () => {
     expect([...redis.sets.keys()].filter((k) => k.includes("{grp_1}"))).toEqual(
       ["gb:group:{grp_1}:4"],
     );
+  });
+
+  it("leaves only expiring keys behind when a load stops", async () => {
+    const groups: Group[] = [
+      { id: "grp_1", attributeKey: "id", currentUpload: { version: 1 } },
+    ];
+    await mockApi(groups, { "grp_1/1": "a\n", "grp_1/2": "a\nb\n" });
+    const { redis, loader } = setup();
+    await loader.poll();
+    expect(redis.ttls.has("gb:group:{grp_1}:1")).toBe(false);
+
+    // Version 2 stops after adding b, before renaming its set into place.
+    groups[0].currentUpload = { version: 2 };
+    redis.failOn = (call) => call === "sadd gb:member:id:b grp_1";
+    await loader.poll();
+    expect(redis.ttls.get("gb:group:{grp_1}:2:loading")).toBe(24 * 60 * 60);
+    expect(redis.members("gb:group-pending:{grp_1}")).toEqual(["2:0:id"]);
+    expect(redis.ttls.get("gb:group-pending:{grp_1}")).toBe(7 * 24 * 60 * 60);
+    // The loaded version stays permanent.
+    expect(redis.ttls.has("gb:group:{grp_1}:1")).toBe(false);
+  });
+
+  it("logs and moves on when a stopped load's upload was deleted", async () => {
+    const groups: Group[] = [
+      { id: "grp_1", attributeKey: "id", currentUpload: { version: 1 } },
+    ];
+    const files: Record<string, string> = {
+      "grp_1/1": "a\n",
+      "grp_1/2": "a\nb\n",
+      "grp_1/3": "a\nc\n",
+    };
+    await mockApi(groups, files);
+    const error = jest.fn();
+    const redis = new FakeRedis();
+    const loader = createLoader({
+      apiHost,
+      apiKey: "secret_abc",
+      redis,
+      storeId: "redis-test",
+      logger: { ...quietLogger, error },
+    });
+    await loader.poll();
+
+    groups[0].currentUpload = { version: 2 };
+    redis.failOn = (call) => call === "hset gb:groups grp_1";
+    await loader.poll();
+
+    // Version 2's upload is deleted before version 3 loads.
+    redis.failOn = undefined;
+    delete files["grp_1/2"];
+    groups[0].currentUpload = { version: 3 };
+    await loader.poll();
+
+    expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "3" });
+    expect(redis.members("gb:member:id:c")).toEqual(["grp_1"]);
+    // b can't be found without the file, so it stays.
+    expect(redis.members("gb:member:id:b")).toEqual(["grp_1"]);
+    expect(error).toHaveBeenCalledWith(
+      { savedGroupId: "grp_1", version: 2 },
+      expect.stringContaining("upload was deleted"),
+    );
+    expect(redis.sets.has("gb:group-pending:{grp_1}")).toBe(false);
   });
 });

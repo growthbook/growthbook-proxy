@@ -36,8 +36,11 @@ export type LoaderOptions = {
   logger?: LoaderLogger;
 };
 
-/** A group version in Redis, loaded or partly loaded. */
+/** A group version in Redis. */
 type LoadedGroup = { version: number; attributeKey: string };
+
+/** A load that started changing member sets but didn't finish. */
+type PendingLoad = LoadedGroup & { numeric: boolean };
 
 /** A set of IDs and the attribute its member sets use. */
 type IdSet = { key: string; attributeKey: string };
@@ -49,6 +52,8 @@ const LOCK_RENEW_MS = 20 * 1000;
 const LOCK_SAFETY_MS = 10 * 1000;
 // A load that dies leaves its staging set behind until this expires.
 const STAGING_TTL_SECONDS = 24 * 60 * 60;
+// How long a stopped load can still be undone. The record is a few bytes.
+const PENDING_TTL_SECONDS = 7 * 24 * 60 * 60;
 const BATCH_SIZE = 1000;
 // The version recorded for a group with no upload: loaded, with no IDs. It
 // tells lookups the group was checked, unlike a group that isn't loaded yet.
@@ -230,44 +235,48 @@ export class RemoteGroupsLoader {
 
       // Loads that stopped partway may have added members no version has.
       // Retrying the same version and attribute adds the same members, but
-      // a different version or attribute needs them removed. For the same
-      // version, `staging` has been refilled with the same IDs.
+      // a different version or attribute needs them removed.
       const pending = await this.getPendingLoads(id);
-      const abandoned = pending
-        .filter(
-          (p) => p.version !== version || p.attributeKey !== group.attributeKey,
-        )
-        .flatMap((p) => pendingSets(id, p));
+      const abandoned = pending.filter(
+        (p) => p.version !== version || p.attributeKey !== group.attributeKey,
+      );
 
       // Record this load before changing member sets, so a later load can
       // undo its changes if it stops partway. Earlier stopped loads stay
       // recorded until this one finishes.
       assertActive();
-      await this.redis.persist(staging);
-      await this.redis.sadd(pendingKey(id), `${version}:${group.attributeKey}`);
+      await this.redis.sadd(
+        pendingKey(id),
+        `${version}:${upload.numeric ? 1 : 0}:${group.attributeKey}`,
+      );
+      await this.redis.expire(pendingKey(id), PENDING_TTL_SECONDS);
+      const next = { key: staging, attributeKey: group.attributeKey };
       await this.updateMembers(
         id,
         current && {
           key: groupKey(id, current.version),
           attributeKey: current.attributeKey,
         },
-        abandoned,
-        { key: staging, attributeKey: group.attributeKey },
+        next,
         assertActive,
       );
+      for (const p of abandoned) {
+        await this.undoLoad(id, p, next, assertActive);
+      }
       const rowCount = await this.redis.scard(staging);
 
-      // Put the set in place before recording the version, so a recorded
-      // version always has its set. Replaces the old set when only the
-      // attribute changed (same version, same IDs).
+      // Put the set in place and make it permanent before recording the
+      // version, so a recorded version always has its set. Replaces the old
+      // set when only the attribute changed (same version, same IDs).
       assertActive();
       await this.redis.rename(staging, groupKey(id, version));
+      await this.redis.persist(groupKey(id, version));
       await this.redis.hset(GROUPS_KEY, id, String(version));
       await this.redis.hset(GROUP_ATTRIBUTES_KEY, id, group.attributeKey);
       await this.redis.unlink(pendingKey(id));
       for (const p of pending) {
         if (p.version === version) continue;
-        for (const set of pendingSets(id, p)) await this.redis.unlink(set.key);
+        for (const key of pendingKeys(id, p)) await this.redis.unlink(key);
       }
       if (current && current.version !== version) {
         await this.redis.unlink(groupKey(id, current.version));
@@ -290,57 +299,106 @@ export class RemoteGroupsLoader {
   }
 
   /** Streams the upload into `staging`, which expires unless the load finishes. */
-  private async readUpload(
+  private readUpload(
     group: RemoteGroup,
     upload: NonNullable<RemoteGroup["currentUpload"]>,
     staging: string,
     assertActive: () => void,
   ) {
+    return this.readIds(
+      group.id,
+      { ...upload, attributeKey: group.attributeKey },
+      async (ids) => {
+        await this.redis.sadd(staging, ...ids);
+        await this.redis.expire(staging, STAGING_TTL_SECONDS);
+      },
+      assertActive,
+    );
+  }
+
+  /**
+   * Downloads a version's file and passes its IDs, as stored, in batches.
+   * The last batch only comes if the file is valid.
+   */
+  private async readIds(
+    id: string,
+    { version, attributeKey, numeric }: PendingLoad,
+    onBatch: (ids: string[]) => Promise<void>,
+    assertActive: () => void,
+  ) {
     let batch: string[] = [];
     const parser = new RemoteGroupCsvParser({
-      attributeKey: group.attributeKey,
-      numeric: upload.numeric,
-      onId: (id) => batch.push(id),
+      attributeKey,
+      numeric,
+      onId: (value) => batch.push(value),
     });
     const flush = async () => {
       if (!batch.length) return;
       const ids = batch;
       batch = [];
-      await this.redis.sadd(staging, ...ids);
-      await this.redis.expire(staging, STAGING_TTL_SECONDS);
+      assertActive();
+      await onBatch(ids);
     };
 
-    const body = await this.api.downloadUpload(group.id, upload.version);
+    const body = await this.api.downloadUpload(id, version);
     try {
       for await (const chunk of body) {
         parser.push(chunk);
         if (parser.stopped) break;
-        if (batch.length >= BATCH_SIZE) {
-          assertActive();
-          await flush();
-        }
+        if (batch.length >= BATCH_SIZE) await flush();
       }
     } finally {
       body.destroy();
     }
     const result = parser.end();
-    if (result.type === "valid") {
-      assertActive();
-      await flush();
-    }
+    if (result.type === "valid") await flush();
     return result;
   }
 
   /**
+   * Removes members a stopped load added: re-reads its upload and removes
+   * the group from IDs that aren't in `next` (every ID without `next`). If
+   * the upload was deleted, its members can't be found, so they stay.
+   */
+  private async undoLoad(
+    id: string,
+    stopped: PendingLoad,
+    next: IdSet | undefined,
+    assertActive: () => void,
+  ) {
+    const keep =
+      next && next.attributeKey === stopped.attributeKey ? next : undefined;
+    try {
+      await this.readIds(
+        id,
+        stopped,
+        async (ids) => {
+          const removed = keep ? await this.notIn(keep.key, ids) : ids;
+          await Promise.all(
+            removed.map((m) =>
+              this.redis.srem(memberKey(stopped.attributeKey, m), id),
+            ),
+          );
+        },
+        assertActive,
+      );
+    } catch (e) {
+      if (!(e instanceof ApiError && e.status === 404)) throw e;
+      this.logger.error(
+        { savedGroupId: id, version: stopped.version },
+        "Can't undo a stopped load because its upload was deleted; members it added may remain until the group is deleted",
+      );
+    }
+  }
+
+  /**
    * Adds the group to the member sets of IDs in `next` but not `previous`,
-   * and removes it from those in `previous` or `abandoned` (a load that
-   * stopped partway) but not `next`. Every ID moves when the attribute
-   * changed.
+   * and removes it from those in `previous` but not `next`. Every ID moves
+   * when the attribute changed.
    */
   private async updateMembers(
     id: string,
     previous: IdSet | undefined,
-    abandoned: IdSet[],
     next: IdSet,
     assertActive: () => void,
   ) {
@@ -357,18 +415,16 @@ export class RemoteGroupsLoader {
       );
     });
 
-    for (const old of previous ? [previous, ...abandoned] : abandoned) {
-      const sameAttribute = old.attributeKey === next.attributeKey;
-      await this.scan(old.key, async (ids) => {
-        assertActive();
-        const removed = sameAttribute ? await this.notIn(next.key, ids) : ids;
-        await Promise.all(
-          removed.map((m) =>
-            this.redis.srem(memberKey(old.attributeKey, m), id),
-          ),
-        );
-      });
-    }
+    if (!previous) return;
+    await this.scan(previous.key, async (ids) => {
+      assertActive();
+      const removed = unchanged ? await this.notIn(next.key, ids) : ids;
+      await Promise.all(
+        removed.map((m) =>
+          this.redis.srem(memberKey(previous.attributeKey, m), id),
+        ),
+      );
+    });
   }
 
   /**
@@ -383,18 +439,22 @@ export class RemoteGroupsLoader {
   ) {
     const loaded = (await this.getLoadedGroups()).get(id);
     const pending = await this.getPendingLoads(id);
-    const sets: IdSet[] = [];
-    if (loaded) sets.push({ key: groupKey(id, loaded.version), ...loaded });
-    for (const p of pending) sets.push(...pendingSets(id, p));
-
-    for (const set of sets) {
-      await this.scan(set.key, async (ids) => {
+    if (loaded) {
+      await this.scan(groupKey(id, loaded.version), async (ids) => {
         assertActive();
         await Promise.all(
-          ids.map((m) => this.redis.srem(memberKey(set.attributeKey, m), id)),
+          ids.map((m) =>
+            this.redis.srem(memberKey(loaded.attributeKey, m), id),
+          ),
         );
       });
     }
+    for (const p of pending)
+      await this.undoLoad(id, p, undefined, assertActive);
+    const keys = [
+      ...(loaded ? [groupKey(id, loaded.version)] : []),
+      ...pending.flatMap((p) => pendingKeys(id, p)),
+    ];
     if (emptyAttributeKey) {
       await this.redis.hset(GROUPS_KEY, id, String(EMPTY_VERSION));
       await this.redis.hset(GROUP_ATTRIBUTES_KEY, id, emptyAttributeKey);
@@ -403,23 +463,23 @@ export class RemoteGroupsLoader {
       await this.redis.hdel(GROUP_ATTRIBUTES_KEY, id);
     }
     await this.redis.unlink(pendingKey(id));
-    for (const set of sets) await this.redis.unlink(set.key);
+    for (const key of keys) await this.redis.unlink(key);
     this.invalidVersions.delete(id);
-    if (sets.length || !emptyAttributeKey) {
+    if (keys.length || !emptyAttributeKey) {
       this.logger.info({ savedGroupId: id }, "Cleared remote group");
     }
   }
 
-  private async getPendingLoads(id: string): Promise<LoadedGroup[]> {
-    const pending: LoadedGroup[] = [];
+  private async getPendingLoads(id: string): Promise<PendingLoad[]> {
+    const pending: PendingLoad[] = [];
     await this.scan(pendingKey(id), async (values) => {
       for (const value of values) {
-        // Versions are numbers, so the first ":" ends one; attributes may
-        // have more.
-        const split = value.indexOf(":");
+        // `<version>:<0|1>:<attribute>`; attributes may contain ":".
+        const [version, numeric] = value.split(":", 2);
         pending.push({
-          version: Number(value.slice(0, split)),
-          attributeKey: value.slice(split + 1),
+          version: Number(version),
+          numeric: numeric === "1",
+          attributeKey: value.slice(version.length + numeric.length + 2),
         });
       }
     });
@@ -542,15 +602,11 @@ export class RemoteGroupsLoader {
 }
 
 /**
- * Where a partial load's IDs can be: its staging set, or its final set if it
- * stopped after the rename but before recording the version.
+ * Keys a stopped load may have left: its staging set, or its final set if
+ * it stopped after the rename but before recording the version.
  */
-function pendingSets(id: string, pending: LoadedGroup): IdSet[] {
-  const { version, attributeKey } = pending;
-  return [
-    { key: stagingKey(id, version), attributeKey },
-    { key: groupKey(id, version), attributeKey },
-  ];
+function pendingKeys(id: string, { version }: LoadedGroup): string[] {
+  return [stagingKey(id, version), groupKey(id, version)];
 }
 
 /** Whether the group needs loading or clearing in this store. */

@@ -48,8 +48,9 @@ export const stagingKey = (id: string, version: number) =>
 export const lockKey = (id: string) => `gb:lock:{${id}}`;
 /**
  * Loads of the group that started changing member sets but didn't finish,
- * as `<version>:<attribute>`. Their sets are kept until a later load or
- * clear of the group undoes their changes.
+ * as `<version>:<1 if numeric else 0>:<attribute>`. A later load or clear
+ * of the group re-reads each one's upload to undo its changes. Expires, so
+ * nothing is left behind if no load ever comes.
  */
 export const pendingKey = (id: string) => `gb:group-pending:{${id}}`;
 export const memberKey = (attributeKey: string, id: string) =>
