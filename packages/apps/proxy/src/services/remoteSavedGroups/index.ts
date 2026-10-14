@@ -7,9 +7,11 @@ import {
 } from "@growthbook/growthbook";
 import {
   createLoader,
+  blockRulesUsingGroups,
   createRedisClient,
   getConditionRemoteGroupIds,
   getRemoteGroupEntries,
+  getUnloadedGroupIds,
   readGroupAttributes,
   RemoteGroupsLoader,
 } from "@growthbook/remote-groups-loader";
@@ -84,51 +86,68 @@ function getGroupAttributes(): Promise<Record<string, string>> {
   return groupAttributes.value;
 }
 
-const conditionGroupIds = new WeakMap<FeatureApiResponse, string[]>();
-const withEntries = new WeakMap<
+// The remote groups each payload uses: in conditions, and in v2 entries
+const usedGroups = new WeakMap<
+  FeatureApiResponse,
+  { conditionIds: string[]; entryIds: string[] }
+>();
+const prepared = new WeakMap<
   FeatureApiResponse,
   { attributes: Record<string, string>; payload: FeatureApiResponse }
 >();
 
 /**
- * Remote-eval payloads have no `remote` entries today: GrowthBook strips
- * references v2 for remote evaluation, so remote groups are only checked in
- * `__gb_remoteGroupIds` conditions. This adds entries for those groups, using
- * the attributes the loader recorded in Redis, so the resolver knows what to
- * look up. Payloads that already have entries are returned as they are.
+ * Prepares a payload's remote groups for remote evaluation, using the groups
+ * the loader recorded in Redis:
+ * - Adds `remote` entries for groups only checked in `__gb_remoteGroupIds`
+ *   conditions, so the resolver knows what to look up. Remote-eval payloads
+ *   have none today: GrowthBook strips references v2 for remote evaluation.
+ * - Makes rules using a group that isn't loaded in this store never match,
+ *   so "not in group" can't match everyone while a group isn't loaded.
  */
-export async function addRemoteGroupEntries(
+export async function prepareRemoteGroups(
   payload: FeatureApiResponse | null,
 ): Promise<FeatureApiResponse | null> {
-  if (!payload || getRemoteSavedGroups(payload.savedGroups).length) {
-    return payload;
+  if (!payload) return payload;
+  let used = usedGroups.get(payload);
+  if (!used) {
+    used = {
+      conditionIds: getConditionRemoteGroupIds([
+        payload.features,
+        payload.experiments,
+      ]),
+      entryIds: getRemoteSavedGroups(payload.savedGroups).map((g) => g.id),
+    };
+    usedGroups.set(payload, used);
   }
-  let ids = conditionGroupIds.get(payload);
-  if (!ids) {
-    ids = getConditionRemoteGroupIds([payload.features, payload.experiments]);
-    conditionGroupIds.set(payload, ids);
-  }
+  const ids = [...new Set([...used.conditionIds, ...used.entryIds])];
   if (!ids.length) return payload;
 
   let attributes: Record<string, string>;
   try {
     attributes = await withTimeout(getGroupAttributes(), lookupTimeoutMs);
   } catch (err) {
-    // Without entries nothing is looked up, so remote rules fail closed.
+    // Treated as no group loaded, so every remote rule fails closed.
     logger.warn({ err }, "Could not read remote saved group attributes");
-    return payload;
+    return blockRulesUsingGroups(payload, ids);
   }
-  const cached = withEntries.get(payload);
+  const cached = prepared.get(payload);
   if (cached?.attributes === attributes) return cached.payload;
 
-  const result = {
-    ...payload,
-    savedGroups: {
-      ...payload.savedGroups,
-      ...getRemoteGroupEntries(ids, attributes),
-    },
-  };
-  withEntries.set(payload, { attributes, payload: result });
+  const withEntries = used.entryIds.length
+    ? payload
+    : {
+        ...payload,
+        savedGroups: {
+          ...payload.savedGroups,
+          ...getRemoteGroupEntries(used.conditionIds, attributes),
+        },
+      };
+  const result = blockRulesUsingGroups(
+    withEntries,
+    getUnloadedGroupIds(ids, attributes),
+  );
+  prepared.set(payload, { attributes, payload: result });
   return result;
 }
 

@@ -10,8 +10,10 @@ export type { RedisClientSettings } from "./client";
 export type { LoaderRedis } from "./redis";
 export { GROUPS_KEY, GROUP_ATTRIBUTES_KEY, groupKey, memberKey } from "./redis";
 export {
+  blockRulesUsingGroups,
   getConditionRemoteGroupIds,
   getRemoteGroupEntries,
+  getUnloadedGroupIds,
   readGroupAttributes,
 } from "./entries";
 export type { RemoteGroupEntry } from "./entries";

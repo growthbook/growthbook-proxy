@@ -39,6 +39,12 @@ export interface LoaderRedis {
 export const GROUPS_KEY = "gb:groups";
 /** Each loaded group's attribute, to find its member sets when it changes. */
 export const GROUP_ATTRIBUTES_KEY = "gb:group-attributes";
+/**
+ * A load that has started changing member sets but not finished:
+ * `<version>:<attribute>`. Its set is kept until the next load or clear of
+ * the group undoes or completes its changes.
+ */
+export const PENDING_LOADS_KEY = "gb:group-pending";
 
 // `{id}` is a hash tag, so a group's sets and lock share a Cluster slot.
 export const groupKey = (id: string, version: number) =>

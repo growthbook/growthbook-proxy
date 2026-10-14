@@ -9,6 +9,8 @@ class FakeRedis implements LoaderRedis {
   hashes = new Map<string, Map<string, string>>();
   sets = new Map<string, Set<string>>();
   calls: string[] = [];
+  /** Makes a matching `sadd` or `hset` call fail, like a dropped connection. */
+  failOn?: (call: string) => boolean;
 
   async get(key: string) {
     return this.strings.get(key) ?? null;
@@ -27,6 +29,7 @@ class FakeRedis implements LoaderRedis {
     return Object.fromEntries(this.hashes.get(key) ?? []);
   }
   async hset(key: string, field: string, value: string) {
+    if (this.failOn?.(`hset ${key} ${field}`)) throw new Error("Redis failed");
     const hash = this.hashes.get(key) ?? new Map();
     hash.set(field, value);
     this.hashes.set(key, hash);
@@ -36,6 +39,9 @@ class FakeRedis implements LoaderRedis {
     return this.hashes.get(key)?.delete(field) ? 1 : 0;
   }
   async sadd(key: string, ...members: string[]) {
+    if (this.failOn?.(`sadd ${key} ${members.join(",")}`)) {
+      throw new Error("Redis failed");
+    }
     this.calls.push(`sadd ${key} ${members.join(",")}`);
     const set = this.sets.get(key) ?? new Set();
     members.forEach((m) => set.add(m));
@@ -96,6 +102,8 @@ async function mockApi(
   groups: Group[],
   files: Record<string, string>,
   reportStatus = 200,
+  // What the list returns, when it's older than each group's own endpoint
+  listed: Group[] = groups,
 ) {
   const reports: { url: string; body: { status: { type: string } } }[] = [];
   const fileRequests: { url: string; auth: string | undefined }[] = [];
@@ -105,10 +113,20 @@ async function mockApi(
       res.setHeader("Content-Type", "application/json");
       return res.end(
         JSON.stringify({
-          savedGroups: groups.map((g) => ({ ...g, type: "remote" })),
+          savedGroups: listed.map((g) => ({ ...g, type: "remote" })),
           hasMore: false,
           nextOffset: null,
         }),
+      );
+    }
+    const single = url.match(/^\/api\/v1\/saved-groups\/([^/?]+)$/);
+    if (single) {
+      const group = groups.find((g) => g.id === decodeURIComponent(single[1]));
+      res.writeHead(group ? 200 : 404, { "Content-Type": "application/json" });
+      return res.end(
+        JSON.stringify(
+          group ? { savedGroup: { ...group, type: "remote" } } : {},
+        ),
       );
     }
     const file = url.match(/saved-groups\/(.+)\/uploads\/(\d+)\/file$/);
@@ -158,6 +176,7 @@ function setup(redis = new FakeRedis()) {
 }
 
 afterEach(async () => {
+  jest.restoreAllMocks();
   const running = server;
   if (running) await new Promise((resolve) => running.close(resolve));
   server = undefined;
@@ -283,7 +302,7 @@ describe("RemoteGroupsLoader", () => {
     expect(await redis.hgetall("gb:groups")).toEqual({});
   });
 
-  it("clears groups without an upload or no longer listed", async () => {
+  it("empties groups without an upload and removes deleted ones", async () => {
     const groups: Group[] = [
       { id: "grp_1", attributeKey: "id", currentUpload: { version: 1 } },
       { id: "grp_2", attributeKey: "id", currentUpload: { version: 1 } },
@@ -300,7 +319,26 @@ describe("RemoteGroupsLoader", () => {
     expect(redis.members("gb:member:id:a")).toEqual([]);
     expect(redis.members("gb:member:id:b")).toEqual([]);
     expect(redis.sets.size).toBe(0);
-    expect(await redis.hgetall("gb:groups")).toEqual({});
+    // grp_1 still exists, with no IDs; grp_2 was deleted.
+    expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "0" });
+    expect(await redis.hgetall("gb:group-attributes")).toEqual({ grp_1: "id" });
+  });
+
+  it("records a new group with no upload as loaded and empty", async () => {
+    const groups: Group[] = [
+      { id: "grp_1", attributeKey: "id", currentUpload: null },
+    ];
+    await mockApi(groups, { "grp_1/1": "a\n" });
+    const { redis, loader } = setup();
+    await loader.poll();
+    expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "0" });
+    expect(await redis.hgetall("gb:group-attributes")).toEqual({ grp_1: "id" });
+
+    // Its first upload loads as usual.
+    groups[0].currentUpload = { version: 1 };
+    await loader.poll();
+    expect(redis.members("gb:member:id:a")).toEqual(["grp_1"]);
+    expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "1" });
   });
 
   it("moves IDs when the group's attribute changes", async () => {
@@ -378,5 +416,103 @@ describe("RemoteGroupsLoader", () => {
     expect(() =>
       createLoader({ ...options, storeId: "x".repeat(100) }),
     ).not.toThrow();
+  });
+
+  it("removes members a stopped load added when another version loads", async () => {
+    const groups: Group[] = [
+      { id: "grp_1", attributeKey: "id", currentUpload: { version: 1 } },
+    ];
+    await mockApi(groups, {
+      "grp_1/1": "a\n",
+      "grp_2/1": "",
+      "grp_1/2": "a\nb\n",
+      "grp_1/3": "a\nc\n",
+    });
+    const { redis, loader } = setup();
+    await loader.poll();
+
+    // Version 2 adds b, then Redis fails before the load finishes.
+    groups[0].currentUpload = { version: 2 };
+    redis.failOn = (call) => call === "hset gb:groups grp_1";
+    await loader.poll();
+    expect(redis.members("gb:member:id:b")).toEqual(["grp_1"]);
+    expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "1" });
+
+    // GrowthBook moves on to version 3 before a retry.
+    redis.failOn = undefined;
+    groups[0].currentUpload = { version: 3 };
+    await loader.poll();
+    expect(redis.members("gb:member:id:a")).toEqual(["grp_1"]);
+    expect(redis.members("gb:member:id:b")).toEqual([]);
+    expect(redis.members("gb:member:id:c")).toEqual(["grp_1"]);
+    expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "3" });
+    expect(await redis.hgetall("gb:group-pending")).toEqual({});
+    expect(
+      [...redis.sets.keys()].filter((k) => k.startsWith("gb:group:")),
+    ).toEqual(["gb:group:{grp_1}:3"]);
+  });
+
+  it("only records a version once its set is in place", async () => {
+    const groups: Group[] = [
+      { id: "grp_1", attributeKey: "id", currentUpload: { version: 1 } },
+    ];
+    await mockApi(groups, { "grp_1/1": "a\nb\n" });
+    const { redis, loader } = setup();
+    redis.failOn = (call) => call === "hset gb:groups grp_1";
+    await loader.poll();
+    expect(await redis.hgetall("gb:groups")).toEqual({});
+    expect(redis.members("gb:group:{grp_1}:1")).toEqual(["a", "b"]);
+
+    // The next poll finishes the load.
+    redis.failOn = undefined;
+    await loader.poll();
+    expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "1" });
+    expect(redis.members("gb:member:id:b")).toEqual(["grp_1"]);
+  });
+
+  it("stops loading once the lock can't be renewed in time", async () => {
+    const { reports } = await mockApi(
+      [{ id: "grp_1", attributeKey: "id", currentUpload: { version: 1 } }],
+      { "grp_1/1": "a\nb\n" },
+    );
+    const { redis, loader } = setup();
+    // The lock was taken, then no renewal succeeded for 55 seconds by the
+    // time the download is written to Redis.
+    const start = Date.now();
+    const sadd = redis.sadd.bind(redis);
+    jest.spyOn(redis, "sadd").mockImplementation(async (...args) => {
+      jest.spyOn(Date, "now").mockReturnValue(start + 55 * 1000);
+      return sadd(...args);
+    });
+    await loader.poll();
+    expect(redis.members("gb:member:id:a")).toEqual([]);
+    expect(await redis.hgetall("gb:groups")).toEqual({});
+    expect(reports.map((r) => r.body.status.type)).toEqual(["loading"]);
+  });
+
+  it("doesn't load an older version than the group's current one", async () => {
+    const latest: Group[] = [
+      { id: "grp_1", attributeKey: "id", currentUpload: { version: 2 } },
+    ];
+    const stale: Group[] = [
+      { id: "grp_1", attributeKey: "id", currentUpload: { version: 1 } },
+    ];
+    const { fileRequests } = await mockApi(
+      latest,
+      { "grp_1/1": "a\n", "grp_1/2": "b\n" },
+      200,
+      stale,
+    );
+    const { redis, loader } = setup();
+    // Another loader already loaded version 2.
+    await redis.hset("gb:groups", "grp_1", "2");
+    await redis.hset("gb:group-attributes", "grp_1", "id");
+    await redis.sadd("gb:group:{grp_1}:2", "b");
+    await redis.sadd("gb:member:id:b", "grp_1");
+
+    await loader.poll();
+    expect(fileRequests).toHaveLength(0);
+    expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "2" });
+    expect(redis.members("gb:member:id:a")).toEqual([]);
   });
 });

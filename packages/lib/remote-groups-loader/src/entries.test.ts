@@ -1,4 +1,9 @@
-import { getConditionRemoteGroupIds, getRemoteGroupEntries } from "./entries";
+import {
+  blockRulesUsingGroups,
+  getConditionRemoteGroupIds,
+  getRemoteGroupEntries,
+  getUnloadedGroupIds,
+} from "./entries";
 
 describe("getConditionRemoteGroupIds", () => {
   it("finds group IDs in __gb_remoteGroupIds conditions anywhere", () => {
@@ -70,5 +75,65 @@ describe("getRemoteGroupEntries", () => {
 
   it("skips derived groups whose source isn't loaded", () => {
     expect(getRemoteGroupEntries(["grp_2:org"], {})).toEqual({});
+  });
+});
+
+describe("getUnloadedGroupIds", () => {
+  it("finds groups and derived groups whose source isn't loaded", () => {
+    expect(
+      getUnloadedGroupIds(["grp_1", "grp_1:org", "grp_2", "grp_2:org"], {
+        grp_1: "id",
+      }),
+    ).toEqual(["grp_2", "grp_2:org"]);
+  });
+});
+
+describe("blockRulesUsingGroups", () => {
+  const payload = {
+    features: {
+      vip: {
+        defaultValue: false,
+        rules: [
+          {
+            condition: { __gb_remoteGroupIds: { $nin: ["grp_2"] } },
+            force: true,
+          },
+          { condition: { country: "US" }, force: true },
+        ],
+      },
+      v2: {
+        defaultValue: false,
+        rules: [
+          { condition: { $not: { $savedGroup: { id: "grp_2:org" } } } },
+          { condition: { $savedGroup: { id: "grp_1" } } },
+        ],
+      },
+      plain: { defaultValue: 1 },
+    },
+    experiments: [
+      { key: "exp", condition: { __gb_remoteGroupIds: { $in: ["grp_2"] } } },
+    ],
+  };
+
+  it("makes rules using the groups never match and leaves others", () => {
+    const result = blockRulesUsingGroups(payload, ["grp_2", "grp_2:org"]);
+    const never = { $not: {} };
+    expect(result.features.vip.rules[0]).toEqual({
+      condition: never,
+      force: true,
+    });
+    expect(result.features.vip.rules[1]).toBe(payload.features.vip.rules[1]);
+    expect(result.features.v2.rules[0].condition).toEqual(never);
+    expect(result.features.v2.rules[1]).toBe(payload.features.v2.rules[1]);
+    expect(result.features.plain).toBe(payload.features.plain);
+    expect(result.experiments[0]).toEqual({ key: "exp", condition: never });
+    // The cached payload isn't changed.
+    expect(payload.features.vip.rules[0].condition).toEqual({
+      __gb_remoteGroupIds: { $nin: ["grp_2"] },
+    });
+  });
+
+  it("returns the payload as is when no groups are blocked", () => {
+    expect(blockRulesUsingGroups(payload, [])).toBe(payload);
   });
 });

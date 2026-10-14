@@ -35,6 +35,8 @@ import { startDraining } from "./controllers/healthController";
   process.exit(1);
 });
 
+const LOADER_STOP_TIMEOUT_MS = 5000;
+
 let closing = false;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function onClose(server: any, proxy: GrowthBookProxy, delayMs = 0) {
@@ -48,10 +50,15 @@ function onClose(server: any, proxy: GrowthBookProxy, delayMs = 0) {
   setTimeout(() => {
     proxy.services.eventStreamManager?.closeAll();
     proxy.services.cacheRefreshScheduler?.stop();
-    proxy.services.remoteGroupsLoader?.stop();
+    // The loader stops at its next batch and releases its locks; wait for
+    // that, up to a limit, so a replacement doesn't find groups locked.
+    const loaderStopped = Promise.race([
+      proxy.services.remoteGroupsLoader?.stop(),
+      new Promise((resolve) => setTimeout(resolve, LOADER_STOP_TIMEOUT_MS)),
+    ]);
     server.close(() => {
       console.info("HTTP server closed");
-      process.exit(0);
+      loaderStopped.finally(() => process.exit(0));
     });
     server.closeIdleConnections();
   }, delayMs);

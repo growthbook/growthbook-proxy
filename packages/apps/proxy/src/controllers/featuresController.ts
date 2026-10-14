@@ -10,7 +10,7 @@ import readThroughCacheMiddleware from "../middleware/cache/readThroughCacheMidd
 import { featuresCache } from "../services/cache";
 import { stickyBucketService } from "../services/stickyBucket";
 import {
-  addRemoteGroupEntries,
+  prepareRemoteGroups,
   savedGroupResolver,
 } from "../services/remoteSavedGroups";
 import { registrar } from "../services/registrar";
@@ -186,7 +186,7 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
     });
   }
 
-  if (savedGroupResolver) payload = await addRemoteGroupEntries(payload);
+  if (savedGroupResolver) payload = await prepareRemoteGroups(payload);
   else warnIfRemoteSavedGroupsOff(payload);
 
   payload = await evaluateFeatures({

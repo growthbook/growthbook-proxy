@@ -66,6 +66,92 @@ export function getRemoteGroupEntries(
   return entries;
 }
 
+/**
+ * The remote group IDs a payload's remote entries or conditions use whose
+ * group isn't loaded in this store. A derived ID depends on its source group.
+ */
+export function getUnloadedGroupIds(
+  ids: string[],
+  groupAttributes: Record<string, string>,
+): string[] {
+  return ids.filter((id) => {
+    const split = id.indexOf(":");
+    return !groupAttributes[split === -1 ? id : id.slice(0, split)];
+  });
+}
+
+type RuleLike = { condition?: unknown; parentConditions?: unknown };
+type PayloadLike = {
+  features?: Record<string, { defaultValue?: unknown; rules?: RuleLike[] }>;
+  experiments?: RuleLike[];
+};
+
+// A condition that's always false: `{}` matches everyone, so its negation
+// matches no one, whatever attributes a client sends.
+const NEVER_MATCHES = { $not: {} };
+
+/**
+ * Makes every feature rule and experiment that uses one of `groupIds` never
+ * match, so a group that isn't loaded can't make "not in group" match
+ * everyone. Other rules are unchanged.
+ */
+export function blockRulesUsingGroups<T extends PayloadLike>(
+  payload: T,
+  groupIds: string[],
+): T {
+  if (!groupIds.length) return payload;
+  const blocked = new Set(groupIds);
+  const block = <R extends RuleLike>(rule: R): R =>
+    getRuleGroupIds(rule).some((id) => blocked.has(id))
+      ? Object.assign({}, rule, { condition: NEVER_MATCHES })
+      : rule;
+
+  const features = payload.features && { ...payload.features };
+  for (const key in features) {
+    const feature = features[key];
+    if (feature.rules) {
+      features[key] = Object.assign({}, feature, {
+        rules: feature.rules.map(block),
+      });
+    }
+  }
+  return Object.assign({}, payload, {
+    features,
+    experiments: payload.experiments?.map(block),
+  });
+}
+
+/** Saved group IDs a rule's conditions use, in any payload format. */
+function getRuleGroupIds(rule: RuleLike): string[] {
+  const ids: string[] = [];
+  const collect = (value: unknown) => {
+    if (typeof value === "string") ids.push(value);
+    else if (Array.isArray(value)) value.forEach(collect);
+    else if (value && typeof value === "object") {
+      Object.values(value).forEach(collect);
+    }
+  };
+  const walk = (value: unknown) => {
+    if (Array.isArray(value)) {
+      value.forEach(walk);
+    } else if (value && typeof value === "object") {
+      for (const [key, child] of Object.entries(value)) {
+        if (key === REMOTE_GROUP_IDS_ATTRIBUTE || key === "$savedGroups") {
+          collect(child);
+        } else if (key === "$savedGroup") {
+          if (child && typeof child === "object" && "id" in child) {
+            if (typeof child.id === "string") ids.push(child.id);
+          }
+        } else {
+          walk(child);
+        }
+      }
+    }
+  };
+  walk([rule.condition, rule.parentConditions]);
+  return ids;
+}
+
 /** Each loaded group's attribute, as recorded by the loader. */
 export function readGroupAttributes(
   redis: Pick<LoaderRedis, "hgetall">,

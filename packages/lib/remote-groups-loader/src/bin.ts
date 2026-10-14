@@ -18,7 +18,9 @@ if (storeIdProblem) {
 }
 
 const redis = createRedisClient({
-  connectionUrl: env.REMOTE_SAVED_GROUPS_CONNECTION_URL,
+  connectionUrl:
+    env.REMOTE_SAVED_GROUPS_CONNECTION_URL ||
+    (env.CACHE_ENGINE === "redis" ? env.CACHE_CONNECTION_URL : undefined),
   useCluster: ["true", "1"].includes(
     (env.REMOTE_SAVED_GROUPS_USE_CLUSTER ?? "").toLowerCase(),
   ),
