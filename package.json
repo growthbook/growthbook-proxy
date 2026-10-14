@@ -15,7 +15,7 @@
     "lint:ci": "eslint './**/*.{ts,tsx,js,jsx}' --max-warnings 0 --cache --cache-strategy content",
     "build:clean": "pnpm -r build:clean",
     "build:deps": "pnpm --filter @growthbook/proxy-eval --filter @growthbook/edge-utils build",
-    "build:deps:proxy": "pnpm --filter @growthbook/proxy-eval build",
+    "build:deps:proxy": "pnpm --filter @growthbook/proxy-eval --filter @growthbook/remote-groups-loader build",
     "build:apps": "pnpm --filter @growthbook/proxy --filter @growthbook/edge-cloudflare --filter @growthbook/edge-lambda --filter @growthbook/edge-express build",
     "build": "pnpm build:deps && pnpm build:apps",
     "build:proxy": "pnpm build:deps:proxy && pnpm --filter @growthbook/proxy build",

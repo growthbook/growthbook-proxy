@@ -5,6 +5,7 @@ import {
   Context,
   StickyBucketEngine,
   CacheRefreshStrategy,
+  RemoteSavedGroupsEngine,
 } from "./types";
 dotenv.config({ path: "./.env.local" });
 
@@ -103,6 +104,28 @@ export default async () => {
       ttl: process.env.STICKY_BUCKET_TTL
         ? parseInt(process.env.STICKY_BUCKET_TTL)
         : undefined,
+    },
+    // Remote saved group settings (lookups for remote eval, and the loader):
+    enableRemoteSavedGroups: envBool(process.env.ENABLE_REMOTE_SAVED_GROUPS),
+    remoteSavedGroupsSettings: {
+      engine: (process.env.REMOTE_SAVED_GROUPS_ENGINE ||
+        "redis") as RemoteSavedGroupsEngine,
+      connectionUrl:
+        process.env.REMOTE_SAVED_GROUPS_CONNECTION_URL ||
+        (process.env.CACHE_ENGINE === "redis"
+          ? process.env.CACHE_CONNECTION_URL
+          : undefined),
+      useCluster: envBool(process.env.REMOTE_SAVED_GROUPS_USE_CLUSTER),
+      clusterRootNodesJSON: process.env
+        .REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON
+        ? JSON.parse(process.env.REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON)
+        : undefined,
+      timeoutMs: parseInt(process.env.REMOTE_SAVED_GROUPS_TIMEOUT_MS ?? "1000"),
+      runLoader: envBool(process.env.REMOTE_SAVED_GROUPS_LOADER, true),
+      pollIntervalMs: parseInt(
+        process.env.REMOTE_SAVED_GROUPS_POLL_INTERVAL_MS ?? "300000",
+      ),
+      loaderOnly: envBool(process.env.REMOTE_SAVED_GROUPS_LOADER_ONLY),
     },
   };
 

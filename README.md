@@ -268,6 +268,22 @@ The standard [OTEL\_\* Environment Variables](https://opentelemetry.io/docs/conc
   - `STICKY_BUCKET_CLUSTER_OPTIONS_JSON` - JSON object of ClusterOptions (ioredis)
   - `STICKY_BUCKET_TTL` - Number of seconds before a sticky bucket document expires in Redis. Omit to never expire (default)
 
+**Remote Saved Groups**
+
+Remote saved groups keep their IDs out of the SDK payload. The Proxy loads uploaded groups into Redis and looks up each user's groups before remote evaluation. Lookups need SDK connections on an SDK version that supports remote saved groups. Requires Redis 6.2 or later.
+
+- `ENABLE_REMOTE_SAVED_GROUPS` - "true" or "1" to enable remote saved groups (default: `false`)
+  - `REMOTE_SAVED_GROUPS_ENGINE` - Only `redis` is supported (default: `redis`)
+  - `REMOTE_SAVED_GROUPS_CONNECTION_URL` - The URL of your Redis Database (default: `CACHE_CONNECTION_URL` when `CACHE_ENGINE` is `redis`)
+  - `REMOTE_SAVED_GROUPS_USE_CLUSTER` - "true" or "1" to enable Redis cluster mode (default: `false`)
+  - `REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON` - JSON array of ClusterNode objects (ioredis)
+  - `REMOTE_SAVED_GROUPS_TIMEOUT_MS` - How long a user's group lookup may take before remote evaluation treats them as in no remote groups (default: `1000`)
+  - `REMOTE_SAVED_GROUPS_LOADER` - "true" or "1" to load uploaded groups into Redis from this instance. Instances sharing a Redis take turns (default: `true`)
+  - `REMOTE_SAVED_GROUPS_POLL_INTERVAL_MS` - How often the loader checks for new uploads (default: `300000` = 5 minutes)
+  - `REMOTE_SAVED_GROUPS_LOADER_ONLY` - "true" or "1" to only run the loader, with no proxying or evaluation, e.g. next to your Redis for backends and edge apps without a Proxy (default: `false`)
+
+The loader calls GrowthBook's API with `SECRET_API_KEY`. To report load status back to GrowthBook, the key needs permission to publish saved groups.
+
 **Misc**
 
 - `MAX_PAYLOAD_SIZE` - The maximum size of a request body (default: `"2mb"`)

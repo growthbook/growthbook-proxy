@@ -48,6 +48,7 @@ function onClose(server: any, proxy: GrowthBookProxy, delayMs = 0) {
   setTimeout(() => {
     proxy.services.eventStreamManager?.closeAll();
     proxy.services.cacheRefreshScheduler?.stop();
+    proxy.services.remoteGroupsLoader?.stop();
     server.close(() => {
       console.info("HTTP server closed");
       process.exit(0);
