@@ -1,4 +1,4 @@
-import { Cluster, ClusterNode, Redis } from "ioredis";
+import { Cluster, Redis } from "ioredis";
 import {
   FeatureApiResponse,
   getRemoteSavedGroups,
@@ -16,18 +16,13 @@ import {
 import { Context } from "../../types";
 import logger from "../logger";
 
-export interface RemoteSavedGroupsSettings {
-  connectionUrl?: string;
-  useCluster?: boolean;
-  clusterRootNodesJSON?: ClusterNode[];
-  /** How long a lookup may take before the user is evaluated as in no remote groups. */
-  timeoutMs?: number;
-  /** Whether this instance runs the loader. */
-  runLoader?: boolean;
-  pollIntervalMs?: number;
-  /** Only run the loader: no proxying or evaluation. */
-  loaderOnly?: boolean;
-}
+import {
+  checkRemoteSavedGroupsSettings,
+  RemoteSavedGroupsSettings,
+  runsLoader,
+} from "./settings";
+
+export type { RemoteSavedGroupsSettings };
 
 /** Looks up users' remote saved groups for remote evaluation. */
 export let savedGroupResolver: SavedGroupResolver | null = null;
@@ -38,6 +33,7 @@ let lookupTimeoutMs = 1000;
 export const initializeRemoteSavedGroups = (context: Context) => {
   const settings = context.remoteSavedGroupsSettings;
   if (!settings || settings.engine !== "redis") return;
+  checkRemoteSavedGroupsSettings(settings);
 
   const redis = createRedisClient({
     connectionUrl: settings.connectionUrl,
@@ -56,11 +52,12 @@ export const initializeRemoteSavedGroups = (context: Context) => {
     logger.info("Remote saved groups enabled");
   }
 
-  if (settings.runLoader || settings.loaderOnly) {
+  if (runsLoader(settings)) {
     remoteGroupsLoader = createLoader({
       apiHost: context.growthbookApiHost,
       apiKey: context.secretApiKey,
       redis,
+      storeId: settings.storeId ?? "",
       pollIntervalMs: settings.pollIntervalMs,
       logger,
     });

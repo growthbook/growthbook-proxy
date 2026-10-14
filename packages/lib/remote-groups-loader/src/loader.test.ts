@@ -151,13 +151,15 @@ function setup(redis = new FakeRedis()) {
     apiHost,
     apiKey: "secret_abc",
     redis,
+    storeId: "redis-test",
     logger: quietLogger,
   });
   return { redis, loader };
 }
 
 afterEach(async () => {
-  await new Promise((resolve) => server?.close(resolve));
+  const running = server;
+  if (running) await new Promise((resolve) => running.close(resolve));
   server = undefined;
 });
 
@@ -174,7 +176,6 @@ describe("RemoteGroupsLoader", () => {
     expect(redis.members("gb:member:id:a")).toEqual(["grp_1"]);
     expect(redis.members("gb:member:id:c")).toEqual(["grp_1"]);
     expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "1" });
-    expect(redis.strings.get("gb:store-id")).toBeTruthy();
     expect(redis.strings.has("gb:lock:{grp_1}")).toBe(false);
     // The signed URL is fetched without the API key
     expect(fileRequests).toEqual([
@@ -345,6 +346,7 @@ describe("RemoteGroupsLoader", () => {
       apiHost,
       apiKey: "secret_readonly",
       redis,
+      storeId: "redis-test",
       logger: { ...quietLogger, warn },
     });
     await loader.poll();
@@ -352,14 +354,29 @@ describe("RemoteGroupsLoader", () => {
     expect(warn).toHaveBeenCalledTimes(1);
   });
 
-  it("shares one store ID between loaders on the same Redis", async () => {
+  it("reports with the configured store ID", async () => {
     const { reports } = await mockApi(
       [{ id: "grp_1", attributeKey: "id", currentUpload: { version: 1 } }],
       { "grp_1/1": "a\n" },
     );
-    const redis = new FakeRedis();
-    redis.strings.set("gb:store-id", "store-1");
-    await setup(redis).loader.poll();
-    expect(reports[0].body).toMatchObject({ storeId: "store-1" });
+    const { loader } = setup();
+    await loader.poll();
+    expect(reports.map((r) => r.body)).toEqual([
+      { storeId: "redis-test", status: { type: "loading" } },
+      { storeId: "redis-test", status: { type: "loaded", rowCount: 1 } },
+    ]);
+  });
+
+  it("requires a store ID of 1 to 100 characters", () => {
+    const options = { apiHost, apiKey: "secret_abc", redis: new FakeRedis() };
+    expect(() => createLoader({ ...options, storeId: "" })).toThrow(
+      "Invalid store ID: it's required",
+    );
+    expect(() =>
+      createLoader({ ...options, storeId: "x".repeat(101) }),
+    ).toThrow("longer than 100 characters");
+    expect(() =>
+      createLoader({ ...options, storeId: "x".repeat(100) }),
+    ).not.toThrow();
   });
 });

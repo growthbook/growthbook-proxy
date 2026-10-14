@@ -8,7 +8,6 @@ import {
   LoaderRedis,
   lockKey,
   memberKey,
-  STORE_ID_KEY,
   stagingKey,
 } from "./redis";
 
@@ -25,6 +24,12 @@ export type LoaderOptions = {
   /** A GrowthBook secret API key. Reporting loads needs publish access. */
   apiKey: string;
   redis: LoaderRedis;
+  /**
+   * Identifies the data store in GrowthBook's load reports, such as
+   * `redis-us-east`. One per Redis: loaders sharing a Redis (or a Redis
+   * Cluster) use the same ID, and each Redis gets a different one.
+   */
+  storeId: string;
   /** How often to check for new uploads. Defaults to 5 minutes. */
   pollIntervalMs?: number;
   logger?: LoaderLogger;
@@ -62,7 +67,7 @@ export class RemoteGroupsLoader {
   private readonly redis: LoaderRedis;
   private readonly pollIntervalMs: number;
   private readonly logger: LoaderLogger;
-  private storeId: string | null = null;
+  private readonly storeId: string;
   // Versions this loader found invalid, so they're not downloaded again
   private readonly invalidVersions = new Map<string, number>();
   private warnedReportAccess = false;
@@ -75,10 +80,14 @@ export class RemoteGroupsLoader {
     apiHost,
     apiKey,
     redis,
+    storeId,
     pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
     logger = consoleLogger,
   }: LoaderOptions) {
     this.api = new GrowthBookApi(apiHost, apiKey);
+    const problem = getStoreIdProblem(storeId);
+    if (problem) throw new Error(`Invalid store ID: ${problem}`);
+    this.storeId = storeId;
     this.redis = redis;
     this.pollIntervalMs = pollIntervalMs;
     this.logger = logger;
@@ -103,7 +112,7 @@ export class RemoteGroupsLoader {
 
   /** Brings every group up to date once. */
   async poll(): Promise<void> {
-    const storeId = await this.getStoreId();
+    const storeId = this.storeId;
     const groups = await this.api.listRemoteGroups();
     const loaded = await this.getLoadedGroups();
     const listed = new Set(groups.map((g) => g.id));
@@ -376,15 +385,6 @@ export class RemoteGroupsLoader {
     }
   }
 
-  private async getStoreId() {
-    if (!this.storeId) {
-      await this.redis.set(STORE_ID_KEY, randomUUID(), "NX");
-      this.storeId = await this.redis.get(STORE_ID_KEY);
-      if (!this.storeId) throw new Error(`Could not read ${STORE_ID_KEY}`);
-    }
-    return this.storeId;
-  }
-
   private async getLoadedGroups(): Promise<Map<string, LoadedGroup>> {
     const versions = await this.redis.hgetall(GROUPS_KEY);
     const attributes = await this.redis.hgetall(GROUP_ATTRIBUTES_KEY);
@@ -442,6 +442,18 @@ function isLoaded(group: RemoteGroup, loaded: LoadedGroup | undefined) {
     loaded.version === group.currentUpload?.version &&
     loaded.attributeKey === group.attributeKey
   );
+}
+
+/** GrowthBook's limit on a store ID's length. */
+export const MAX_STORE_ID_LENGTH = 100;
+
+/** Why `storeId` can't be used as a store ID, or null if it can. */
+export function getStoreIdProblem(storeId: string | undefined): string | null {
+  if (!storeId) return "it's required, such as redis-us-east";
+  if (storeId.length > MAX_STORE_ID_LENGTH) {
+    return `it's longer than ${MAX_STORE_ID_LENGTH} characters`;
+  }
+  return null;
 }
 
 export function createLoader(options: LoaderOptions): RemoteGroupsLoader {

@@ -278,6 +278,7 @@ Remote saved groups keep their IDs out of the SDK payload. The Proxy loads uploa
   - `REMOTE_SAVED_GROUPS_USE_CLUSTER` - "true" or "1" to enable Redis cluster mode (default: `false`)
   - `REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON` - JSON array of ClusterNode objects (ioredis)
   - `REMOTE_SAVED_GROUPS_TIMEOUT_MS` - How long a user's group lookup may take before remote evaluation treats them as in no remote groups (default: `1000`)
+  - `REMOTE_SAVED_GROUPS_STORE_ID` - Identifies this Redis in GrowthBook's load reports, such as `redis-us-east` (1 to 100 characters). Required when this instance runs the loader. Use one ID per Redis: replicas sharing a Redis (or a Redis Cluster) use the same ID, and each Redis gets a different one
   - `REMOTE_SAVED_GROUPS_LOADER` - "true" or "1" to load uploaded groups into Redis from this instance. Instances sharing a Redis take turns (default: `true`)
   - `REMOTE_SAVED_GROUPS_POLL_INTERVAL_MS` - How often the loader checks for new uploads (default: `300000` = 5 minutes)
   - `REMOTE_SAVED_GROUPS_LOADER_ONLY` - "true" or "1" to only run the loader, with no proxying or evaluation, e.g. next to your Redis for backends and edge apps without a Proxy (default: `false`)

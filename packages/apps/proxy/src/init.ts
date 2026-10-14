@@ -126,6 +126,7 @@ export default async () => {
         process.env.REMOTE_SAVED_GROUPS_POLL_INTERVAL_MS ?? "300000",
       ),
       loaderOnly: envBool(process.env.REMOTE_SAVED_GROUPS_LOADER_ONLY),
+      storeId: process.env.REMOTE_SAVED_GROUPS_STORE_ID,
     },
   };
 

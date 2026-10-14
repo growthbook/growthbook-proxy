@@ -4,8 +4,6 @@
  * `SMISMEMBER` needs Redis 6.2 or later.
  */
 export interface LoaderRedis {
-  get(key: string): Promise<string | null>;
-  set(key: string, value: string, nx: "NX"): Promise<"OK" | null>;
   set(
     key: string,
     value: string,
@@ -37,8 +35,6 @@ export interface LoaderRedis {
   unlink(key: string): Promise<number>;
 }
 
-/** Identifies this Redis in load reports, shared by every loader using it. */
-export const STORE_ID_KEY = "gb:store-id";
 /** Each loaded group's version. */
 export const GROUPS_KEY = "gb:groups";
 /** Each loaded group's attribute, to find its member sets when it changes. */

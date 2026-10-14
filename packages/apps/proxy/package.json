@@ -21,6 +21,7 @@
     "type-check": "tsc --pretty --noEmit",
     "start": "node dist/index.js",
     "start:with-tracing": "node --require ./dist/tracing.js dist/index.js",
+    "test": "jest",
     "dev": "concurrently 'tsc --watch' 'nodemon -q dist/index.js | pnpm pino-pretty'"
   },
   "//": [
@@ -49,6 +50,9 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.6",
     "@types/express-serve-static-core": "^5.1.1",

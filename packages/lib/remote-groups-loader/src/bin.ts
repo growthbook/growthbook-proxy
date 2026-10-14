@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { createLoader } from "./loader";
+import { createLoader, getStoreIdProblem } from "./loader";
 import { createRedisClient } from "./client";
 
 // Runs the loader on its own, with the same settings as the GrowthBook Proxy.
@@ -8,6 +8,12 @@ const apiHost = env.GROWTHBOOK_API_HOST;
 const apiKey = env.SECRET_API_KEY;
 if (!apiHost || !apiKey) {
   console.error("GROWTHBOOK_API_HOST and SECRET_API_KEY are required");
+  process.exit(1);
+}
+const storeId = env.REMOTE_SAVED_GROUPS_STORE_ID ?? "";
+const storeIdProblem = getStoreIdProblem(storeId);
+if (storeIdProblem) {
+  console.error(`REMOTE_SAVED_GROUPS_STORE_ID: ${storeIdProblem}`);
   process.exit(1);
 }
 
@@ -24,6 +30,7 @@ const loader = createLoader({
   apiHost,
   apiKey,
   redis,
+  storeId,
   pollIntervalMs: env.REMOTE_SAVED_GROUPS_POLL_INTERVAL_MS
     ? parseInt(env.REMOTE_SAVED_GROUPS_POLL_INTERVAL_MS)
     : undefined,
