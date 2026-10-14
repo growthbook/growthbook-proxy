@@ -9,7 +9,7 @@ class FakeRedis implements LoaderRedis {
   hashes = new Map<string, Map<string, string>>();
   sets = new Map<string, Set<string>>();
   calls: string[] = [];
-  /** Makes a matching `sadd` or `hset` call fail, like a dropped connection. */
+  /** Makes a matching `sadd`, `srem` or `hset` call fail, like a dropped connection. */
   failOn?: (call: string) => boolean;
 
   async get(key: string) {
@@ -49,6 +49,9 @@ class FakeRedis implements LoaderRedis {
     return members.length;
   }
   async srem(key: string, ...members: string[]) {
+    if (this.failOn?.(`srem ${key} ${members.join(",")}`)) {
+      throw new Error("Redis failed");
+    }
     this.calls.push(`srem ${key} ${members.join(",")}`);
     const set = this.sets.get(key);
     members.forEach((m) => set?.delete(m));
@@ -446,7 +449,7 @@ describe("RemoteGroupsLoader", () => {
     expect(redis.members("gb:member:id:b")).toEqual([]);
     expect(redis.members("gb:member:id:c")).toEqual(["grp_1"]);
     expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "3" });
-    expect(await redis.hgetall("gb:group-pending")).toEqual({});
+    expect(redis.sets.has("gb:group-pending:{grp_1}")).toBe(false);
     expect(
       [...redis.sets.keys()].filter((k) => k.startsWith("gb:group:")),
     ).toEqual(["gb:group:{grp_1}:3"]);
@@ -514,5 +517,43 @@ describe("RemoteGroupsLoader", () => {
     expect(fileRequests).toHaveLength(0);
     expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "2" });
     expect(redis.members("gb:member:id:a")).toEqual([]);
+  });
+
+  it("undoes several loads that stopped in a row", async () => {
+    const groups: Group[] = [
+      { id: "grp_1", attributeKey: "id", currentUpload: { version: 1 } },
+    ];
+    await mockApi(groups, {
+      "grp_1/1": "a\n",
+      "grp_1/2": "a\nb\n",
+      "grp_1/3": "a\nc\n",
+      "grp_1/4": "a\nd\n",
+    });
+    const { redis, loader } = setup();
+    await loader.poll();
+
+    // Version 2 adds b, then stops before recording the version.
+    groups[0].currentUpload = { version: 2 };
+    redis.failOn = (call) => call === "hset gb:groups grp_1";
+    await loader.poll();
+
+    // Version 3 adds c, then stops while removing version 2's b.
+    groups[0].currentUpload = { version: 3 };
+    redis.failOn = (call) => call === "srem gb:member:id:b grp_1";
+    await loader.poll();
+    expect(redis.members("gb:member:id:b")).toEqual(["grp_1"]);
+    expect(redis.members("gb:member:id:c")).toEqual(["grp_1"]);
+
+    // Version 4 removes both stopped loads' members.
+    redis.failOn = undefined;
+    groups[0].currentUpload = { version: 4 };
+    await loader.poll();
+    expect(redis.members("gb:member:id:a")).toEqual(["grp_1"]);
+    expect(redis.members("gb:member:id:b")).toEqual([]);
+    expect(redis.members("gb:member:id:c")).toEqual([]);
+    expect(redis.members("gb:member:id:d")).toEqual(["grp_1"]);
+    expect([...redis.sets.keys()].filter((k) => k.includes("{grp_1}"))).toEqual(
+      ["gb:group:{grp_1}:4"],
+    );
   });
 });
