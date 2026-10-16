@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { RemoteGroupCsvParser } from "@growthbook/remote-saved-groups";
+import { RemoteGroupCsvParser } from "@growthbook/remote-saved-groups-csv-parser";
 import { ApiError, GrowthBookApi, LoadStatus, RemoteGroup } from "./api";
 import {
   GROUP_ATTRIBUTES_KEY,

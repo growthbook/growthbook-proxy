@@ -346,9 +346,9 @@ importers:
 
   packages/lib/remote-groups-loader:
     dependencies:
-      '@growthbook/remote-saved-groups':
-        specifier: github:growthbook/growthbook#e39a543ad0d11a7864d25603b3b933b654a103c4&path:/packages/remote-saved-groups
-        version: https://codeload.github.com/growthbook/growthbook/tar.gz/e39a543ad0d11a7864d25603b3b933b654a103c4#path:/packages/remote-saved-groups
+      '@growthbook/remote-saved-groups-csv-parser':
+        specifier: github:growthbook/growthbook#8892b0306f836268fe4507da02cd13b576eaea8f&path:/packages/remote-saved-groups-csv-parser
+        version: https://codeload.github.com/growthbook/growthbook/tar.gz/8892b0306f836268fe4507da02cd13b576eaea8f#path:/packages/remote-saved-groups-csv-parser
       ioredis:
         specifier: ^5.4.1
         version: 5.10.0
@@ -804,8 +804,8 @@ packages:
     version: 1.8.1
     engines: {node: '>=10'}
 
-  '@growthbook/remote-saved-groups@https://codeload.github.com/growthbook/growthbook/tar.gz/e39a543ad0d11a7864d25603b3b933b654a103c4#path:/packages/remote-saved-groups':
-    resolution: {path: /packages/remote-saved-groups, tarball: https://codeload.github.com/growthbook/growthbook/tar.gz/e39a543ad0d11a7864d25603b3b933b654a103c4}
+  '@growthbook/remote-saved-groups-csv-parser@https://codeload.github.com/growthbook/growthbook/tar.gz/8892b0306f836268fe4507da02cd13b576eaea8f#path:/packages/remote-saved-groups-csv-parser':
+    resolution: {path: /packages/remote-saved-groups-csv-parser, tarball: https://codeload.github.com/growthbook/growthbook/tar.gz/8892b0306f836268fe4507da02cd13b576eaea8f}
     version: 0.1.0
     engines: {node: '>=18'}
 
@@ -5177,7 +5177,7 @@ snapshots:
     dependencies:
       dom-mutator: 0.6.0
 
-  '@growthbook/remote-saved-groups@https://codeload.github.com/growthbook/growthbook/tar.gz/e39a543ad0d11a7864d25603b3b933b654a103c4#path:/packages/remote-saved-groups': {}
+  '@growthbook/remote-saved-groups-csv-parser@https://codeload.github.com/growthbook/growthbook/tar.gz/8892b0306f836268fe4507da02cd13b576eaea8f#path:/packages/remote-saved-groups-csv-parser': {}
 
   '@grpc/grpc-js@1.14.5':
     dependencies:

@@ -25,10 +25,10 @@
     "test": "jest"
   },
   "//": [
-    "@growthbook/remote-saved-groups: unreleased, from a pinned main-repo commit. Switch to npm once published."
+    "@growthbook/remote-saved-groups-csv-parser: unreleased, from a pinned main-repo commit. Switch to npm once published."
   ],
   "dependencies": {
-    "@growthbook/remote-saved-groups": "github:growthbook/growthbook#e39a543ad0d11a7864d25603b3b933b654a103c4&path:/packages/remote-saved-groups",
+    "@growthbook/remote-saved-groups-csv-parser": "github:growthbook/growthbook#8892b0306f836268fe4507da02cd13b576eaea8f&path:/packages/remote-saved-groups-csv-parser",
     "ioredis": "^5.4.1"
   },
   "devDependencies": {

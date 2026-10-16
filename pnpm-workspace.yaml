@@ -5,7 +5,7 @@ packages:
 onlyBuiltDependencies:
   # Git dependencies on the GrowthBook monorepo, built by their prepare scripts
   - "@growthbook/growthbook"
-  - "@growthbook/remote-saved-groups"
+  - "@growthbook/remote-saved-groups-csv-parser"
   - esbuild
   - protobufjs
   - sharp
