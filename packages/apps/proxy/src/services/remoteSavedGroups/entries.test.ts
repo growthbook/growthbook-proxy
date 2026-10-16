@@ -3,7 +3,7 @@ import {
   getConditionRemoteGroupIds,
   getRemoteGroupEntries,
   getUnloadedGroupIds,
-  withLaterDateUpdated,
+  withGroupsDateUpdated,
 } from "./entries";
 
 describe("getConditionRemoteGroupIds", () => {
@@ -139,30 +139,56 @@ describe("blockRulesUsingGroups", () => {
   });
 });
 
-describe("withLaterDateUpdated", () => {
+describe("withGroupsDateUpdated", () => {
   const payload = { dateUpdated: "2026-10-01T00:00:00.000Z", features: {} };
+  const date = (p: { dateUpdated?: string }) => Date.parse(p.dateUpdated ?? "");
 
-  it("moves dateUpdated forward when groups changed later", () => {
-    expect(
-      withLaterDateUpdated(payload, "2026-10-16T12:00:00.000Z").dateUpdated,
-    ).toBe("2026-10-16T12:00:00.000Z");
+  it("is at or just after the later date", () => {
+    const result = withGroupsDateUpdated(payload, "2026-10-16T12:00:00.000Z");
+    const later = Date.parse("2026-10-16T12:00:00.000Z");
+    expect(date(result)).toBeGreaterThanOrEqual(later);
+    expect(date(result)).toBeLessThan(later + 60 * 1000);
     expect(payload.dateUpdated).toBe("2026-10-01T00:00:00.000Z");
   });
 
-  it("keeps the payload when it's newer, or nothing changed", () => {
-    expect(withLaterDateUpdated(payload, "2026-09-01T00:00:00.000Z")).toBe(
-      payload,
+  it("changes when a feature edit older than the group change arrives", () => {
+    const groups = "2026-10-16T12:00:00.000Z";
+    const before = withGroupsDateUpdated(
+      { dateUpdated: "2026-10-16T11:59:30.123Z" },
+      groups,
     );
-    expect(withLaterDateUpdated(payload, null)).toBe(payload);
-    expect(withLaterDateUpdated(payload, "not a date")).toBe(payload);
+    const after = withGroupsDateUpdated(
+      { dateUpdated: "2026-10-16T11:59:50.456Z" },
+      groups,
+    );
+    expect(after.dateUpdated).not.toBe(before.dateUpdated);
   });
 
-  it("sets dateUpdated when the payload has none", () => {
+  it("changes when the groups change", () => {
+    const first = withGroupsDateUpdated(payload, "2026-10-16T12:00:00.000Z");
+    const second = withGroupsDateUpdated(payload, "2026-10-16T12:05:00.000Z");
+    expect(second.dateUpdated).not.toBe(first.dateUpdated);
+  });
+
+  it("is the same for the same inputs", () => {
+    expect(
+      withGroupsDateUpdated(payload, "2026-10-16T12:00:00.000Z").dateUpdated,
+    ).toBe(
+      withGroupsDateUpdated(payload, "2026-10-16T12:00:00.000Z").dateUpdated,
+    );
+  });
+
+  it("keeps the payload when no group change is recorded", () => {
+    expect(withGroupsDateUpdated(payload, null)).toBe(payload);
+    expect(withGroupsDateUpdated(payload, "not a date")).toBe(payload);
+  });
+
+  it("uses the group change when the payload has no date", () => {
     const noDate: { dateUpdated?: string; features: object } = {
       features: {},
     };
     expect(
-      withLaterDateUpdated(noDate, "2026-10-16T12:00:00.000Z").dateUpdated,
+      withGroupsDateUpdated(noDate, "2026-10-16T12:00:00.000Z").dateUpdated,
     ).toBe("2026-10-16T12:00:00.000Z");
   });
 });

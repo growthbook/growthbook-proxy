@@ -4,7 +4,7 @@ import { ApiError, GrowthBookApi, LoadStatus, RemoteGroup } from "./api";
 import {
   GROUP_ATTRIBUTES_KEY,
   GROUPS_KEY,
-  UPDATED_AT_KEY,
+  UPDATED_AT_FIELD,
   groupKey,
   LoaderRedis,
   lockKey,
@@ -63,6 +63,8 @@ const EMPTY_VERSION = 0;
 // Renews or releases the lock only while this loader still holds it.
 const RENEW_LOCK_SCRIPT = `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("pexpire", KEYS[1], ARGV[2]) else return 0 end`;
 const RELEASE_LOCK_SCRIPT = `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end`;
+// Removes a group's attribute and records the change time in one step.
+const REMOVE_ATTRIBUTE_SCRIPT = `redis.call("hdel", KEYS[1], ARGV[1]) return redis.call("hset", KEYS[1], ARGV[2], ARGV[3])`;
 
 class LoadAbortedError extends Error {}
 
@@ -176,7 +178,10 @@ export class RemoteGroupsLoader {
       // The list may be minutes old, and another loader may have loaded a
       // newer version since, so re-read both before changing anything.
       const latest = await this.api.getRemoteGroup(group.id);
-      const current = (await this.getLoadedGroups()).get(group.id);
+      const recorded = (await this.getLoadedGroups()).get(group.id);
+      // A version recorded without its attribute was being cleared; its
+      // members are already gone.
+      const current = recorded?.attributeKey ? recorded : undefined;
       if (!latest) {
         await this.clearGroup(group.id, assertActive);
         return;
@@ -272,8 +277,11 @@ export class RemoteGroupsLoader {
       assertActive();
       await this.redis.rename(staging, groupKey(id, version));
       await this.redis.persist(groupKey(id, version));
+      // The attribute and change time go first, in one command: if this
+      // stops before the version is recorded, the next poll loads it again
+      // and records a new change time.
+      await this.recordAttribute(id, group.attributeKey);
       await this.redis.hset(GROUPS_KEY, id, String(version));
-      await this.redis.hset(GROUP_ATTRIBUTES_KEY, id, group.attributeKey);
       await this.redis.unlink(pendingKey(id));
       for (const p of pending) {
         if (p.version === version) continue;
@@ -282,7 +290,6 @@ export class RemoteGroupsLoader {
       if (current && current.version !== version) {
         await this.redis.unlink(groupKey(id, current.version));
       }
-      await this.redis.set(UPDATED_AT_KEY, new Date().toISOString());
       this.invalidVersions.delete(id);
       this.logger.info(
         { savedGroupId: id, version, rowCount },
@@ -456,19 +463,27 @@ export class RemoteGroupsLoader {
     const keys = [
       ...(loaded ? [groupKey(id, loaded.version)] : []),
       ...pending.flatMap((p) => pendingKeys(id, p)),
+      pendingKey(id),
     ];
-    if (emptyAttributeKey) {
-      await this.redis.hset(GROUPS_KEY, id, String(EMPTY_VERSION));
-      await this.redis.hset(GROUP_ATTRIBUTES_KEY, id, emptyAttributeKey);
-    } else {
-      await this.redis.hdel(GROUPS_KEY, id);
-      await this.redis.hdel(GROUP_ATTRIBUTES_KEY, id);
-    }
-    await this.redis.unlink(pendingKey(id));
+    // Sets go first, so a clear that stops partway leaves no large keys,
+    // and the next poll finishes it from the recorded version.
     for (const key of keys) await this.redis.unlink(key);
-    await this.redis.set(UPDATED_AT_KEY, new Date().toISOString());
+    if (emptyAttributeKey) {
+      await this.recordAttribute(id, emptyAttributeKey);
+      await this.redis.hset(GROUPS_KEY, id, String(EMPTY_VERSION));
+    } else {
+      await this.redis.eval(
+        REMOVE_ATTRIBUTE_SCRIPT,
+        1,
+        GROUP_ATTRIBUTES_KEY,
+        id,
+        UPDATED_AT_FIELD,
+        new Date().toISOString(),
+      );
+      await this.redis.hdel(GROUPS_KEY, id);
+    }
     this.invalidVersions.delete(id);
-    if (keys.length || !emptyAttributeKey) {
+    if (loaded || pending.length || !emptyAttributeKey) {
       this.logger.info({ savedGroupId: id }, "Cleared remote group");
     }
   }
@@ -553,15 +568,30 @@ export class RemoteGroupsLoader {
     }
   }
 
+  /** Records a group's attribute and the change time in one command. */
+  private async recordAttribute(id: string, attributeKey: string) {
+    await this.redis.hset(
+      GROUP_ATTRIBUTES_KEY,
+      id,
+      attributeKey,
+      UPDATED_AT_FIELD,
+      new Date().toISOString(),
+    );
+  }
+
+  /**
+   * Groups with a recorded version. One whose attribute is missing (empty)
+   * stopped partway through being cleared.
+   */
   private async getLoadedGroups(): Promise<Map<string, LoadedGroup>> {
     const versions = await this.redis.hgetall(GROUPS_KEY);
     const attributes = await this.redis.hgetall(GROUP_ATTRIBUTES_KEY);
     const loaded = new Map<string, LoadedGroup>();
     for (const [id, version] of Object.entries(versions)) {
-      const attributeKey = attributes[id];
-      if (attributeKey) {
-        loaded.set(id, { version: Number(version), attributeKey });
-      }
+      loaded.set(id, {
+        version: Number(version),
+        attributeKey: attributes[id] ?? "",
+      });
     }
     return loaded;
   }

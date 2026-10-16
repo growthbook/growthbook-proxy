@@ -150,22 +150,29 @@ function getRuleGroupIds(rule: RuleLike): string[] {
   return ids;
 }
 
+// How far past the later date the combined date can be
+const DATE_SPREAD_MS = 60 * 1000;
+
 /**
- * The payload with `dateUpdated` moved forward to `updatedAt` (when group
- * members last changed) if that's later. SDKs ignore a refetched payload
- * whose `dateUpdated` hasn't changed, so without this they'd keep results
- * from before a group changed.
+ * The payload with a `dateUpdated` that changes whenever the payload's own
+ * date or `updatedAt` (when group members last changed) does. SDKs ignore a
+ * refetched payload whose `dateUpdated` is unchanged, so it can't just be
+ * the later of the two: a feature edit older than a group change would then
+ * keep the same date. It's the later date plus an offset of up to a minute
+ * taken from the earlier one, so it stays a valid, current date. The same
+ * inputs give the same date on every Proxy.
  */
-export function withLaterDateUpdated<T extends { dateUpdated?: string }>(
+export function withGroupsDateUpdated<T extends { dateUpdated?: string }>(
   payload: T,
   updatedAt: string | null,
 ): T {
-  if (!updatedAt) return payload;
-  const changed = Date.parse(updatedAt);
+  const changed = updatedAt ? Date.parse(updatedAt) : NaN;
   if (Number.isNaN(changed)) return payload;
-  const current = payload.dateUpdated ? Date.parse(payload.dateUpdated) : NaN;
-  if (!Number.isNaN(current) && current >= changed) return payload;
+  const own = payload.dateUpdated ? Date.parse(payload.dateUpdated) : NaN;
+  const [later, earlier] = Number.isNaN(own)
+    ? [changed, 0]
+    : [Math.max(own, changed), Math.min(own, changed)];
   return Object.assign({}, payload, {
-    dateUpdated: new Date(changed).toISOString(),
+    dateUpdated: new Date(later + (earlier % DATE_SPREAD_MS)).toISOString(),
   });
 }

@@ -20,20 +20,47 @@ class FakeRedis implements LoaderRedis {
     this.strings.set(key, value);
     return "OK" as const;
   }
-  async eval(script: string, _n: number, key: string, token: string) {
-    if (this.strings.get(key) !== token) return 0;
-    if (script.includes("del")) this.strings.delete(key);
+  async eval(
+    script: string,
+    _n: number,
+    key: string,
+    ...args: (string | number)[]
+  ) {
+    // Removing a group's attribute and recording the change time
+    if (script.includes('"hdel"')) {
+      const [field, timeField, time] = args.map(String);
+      this.hashes.get(key)?.delete(field);
+      return this.hset(key, timeField, time);
+    }
+    // Renewing or releasing a lock
+    if (this.strings.get(key) !== args[0]) return 0;
+    if (script.includes('"del"')) this.strings.delete(key);
     return 1;
   }
   async hgetall(key: string) {
     return Object.fromEntries(this.hashes.get(key) ?? []);
   }
-  async hset(key: string, field: string, value: string) {
-    if (this.failOn?.(`hset ${key} ${field}`)) throw new Error("Redis failed");
+  async hset(key: string, ...fieldsAndValues: string[]) {
+    if (this.failOn?.(`hset ${key} ${fieldsAndValues[0]}`)) {
+      throw new Error("Redis failed");
+    }
     const hash = this.hashes.get(key) ?? new Map();
-    hash.set(field, value);
+    for (let i = 0; i < fieldsAndValues.length; i += 2) {
+      hash.set(fieldsAndValues[i], fieldsAndValues[i + 1]);
+    }
     this.hashes.set(key, hash);
-    return 1;
+    return fieldsAndValues.length / 2;
+  }
+
+  /** Each group's recorded attribute, without the change time. */
+  async attributes() {
+    const attributes = await this.hgetall("gb:group-attributes");
+    delete attributes.__updatedAt;
+    return attributes;
+  }
+
+  async updatedAt() {
+    return (await this.hgetall("gb:group-attributes")).__updatedAt;
   }
   async hdel(key: string, field: string) {
     return this.hashes.get(key)?.delete(field) ? 1 : 0;
@@ -334,7 +361,7 @@ describe("RemoteGroupsLoader", () => {
     expect(redis.sets.size).toBe(0);
     // grp_1 still exists, with no IDs; grp_2 was deleted.
     expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "0" });
-    expect(await redis.hgetall("gb:group-attributes")).toEqual({ grp_1: "id" });
+    expect(await redis.attributes()).toEqual({ grp_1: "id" });
   });
 
   it("records a new group with no upload as loaded and empty", async () => {
@@ -345,7 +372,7 @@ describe("RemoteGroupsLoader", () => {
     const { redis, loader } = setup();
     await loader.poll();
     expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "0" });
-    expect(await redis.hgetall("gb:group-attributes")).toEqual({ grp_1: "id" });
+    expect(await redis.attributes()).toEqual({ grp_1: "id" });
 
     // Its first upload loads as usual.
     groups[0].currentUpload = { version: 1 };
@@ -629,25 +656,64 @@ describe("RemoteGroupsLoader", () => {
     expect(redis.sets.has("gb:group-pending:{grp_1}")).toBe(false);
   });
 
-  it("records when members last changed", async () => {
+  it("records when members last changed, together with the attribute", async () => {
+    const groups: Group[] = [
+      { id: "grp_1", attributeKey: "id", currentUpload: { version: 1 } },
+    ];
+    await mockApi(groups, { "grp_1/1": "a\n", "grp_1/2": "b\n" });
+    const { redis, loader } = setup();
+    await loader.poll();
+    const loadedAt = await redis.updatedAt();
+    expect(Date.parse(loadedAt ?? "")).not.toBeNaN();
+
+    // Nothing changed, so nothing is written.
+    await loader.poll();
+    expect(await redis.updatedAt()).toBe(loadedAt);
+
+    // A load that stops after recording the attribute but before the
+    // version is loaded again, and records a new time.
+    groups[0].currentUpload = { version: 2 };
+    const times = jest.spyOn(Date.prototype, "toISOString");
+    times.mockReturnValue("2030-01-01T00:00:00.000Z");
+    redis.failOn = (call) => call === "hset gb:groups grp_1";
+    await loader.poll();
+    expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "1" });
+    redis.failOn = undefined;
+    times.mockReturnValue("2030-01-02T00:00:00.000Z");
+    await loader.poll();
+    expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "2" });
+    expect(await redis.updatedAt()).toBe("2030-01-02T00:00:00.000Z");
+
+    // Removing the group records a new time too.
+    groups.pop();
+    times.mockReturnValue("2030-01-03T00:00:00.000Z");
+    await loader.poll();
+    expect(await redis.attributes()).toEqual({});
+    expect(await redis.updatedAt()).toBe("2030-01-03T00:00:00.000Z");
+  });
+
+  it("finishes a clear that stopped after removing the attribute", async () => {
     const groups: Group[] = [
       { id: "grp_1", attributeKey: "id", currentUpload: { version: 1 } },
     ];
     await mockApi(groups, { "grp_1/1": "a\n" });
     const { redis, loader } = setup();
     await loader.poll();
-    const loadedAt = redis.strings.get("gb:updated-at");
-    expect(Date.parse(loadedAt ?? "")).not.toBeNaN();
 
-    // Nothing changed, so nothing is written.
+    // The group is deleted; the clear stops before removing its version.
+    groups.pop();
+    const hdel = redis.hdel.bind(redis);
+    jest.spyOn(redis, "hdel").mockImplementationOnce(async () => {
+      throw new Error("Redis failed");
+    });
     await loader.poll();
-    expect(redis.strings.get("gb:updated-at")).toBe(loadedAt);
+    expect(await redis.hgetall("gb:groups")).toEqual({ grp_1: "1" });
+    expect(await redis.attributes()).toEqual({});
+    expect(redis.members("gb:member:id:a")).toEqual([]);
 
-    groups[0].currentUpload = null;
-    jest
-      .spyOn(Date.prototype, "toISOString")
-      .mockReturnValue("2030-01-01T00:00:00.000Z");
+    jest.spyOn(redis, "hdel").mockImplementation(hdel);
     await loader.poll();
-    expect(redis.strings.get("gb:updated-at")).toBe("2030-01-01T00:00:00.000Z");
+    expect(await redis.hgetall("gb:groups")).toEqual({});
+    expect(redis.sets.size).toBe(0);
   });
 });

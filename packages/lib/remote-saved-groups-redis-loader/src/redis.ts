@@ -4,7 +4,6 @@
  * `SMISMEMBER` needs Redis 6.2 or later.
  */
 export interface LoaderRedis {
-  set(key: string, value: string): Promise<"OK" | null>;
   set(
     key: string,
     value: string,
@@ -18,7 +17,7 @@ export interface LoaderRedis {
     ...args: (string | number)[]
   ): Promise<unknown>;
   hgetall(key: string): Promise<Record<string, string>>;
-  hset(key: string, field: string, value: string): Promise<number>;
+  hset(key: string, ...fieldsAndValues: string[]): Promise<number>;
   hdel(key: string, field: string): Promise<number>;
   sadd(key: string, ...members: string[]): Promise<number>;
   srem(key: string, ...members: string[]): Promise<number>;
@@ -39,12 +38,16 @@ export interface LoaderRedis {
 /** Each loaded group's version. */
 export const GROUPS_KEY = "gb:groups";
 /**
- * When any group's members last changed (ISO date). Lookups report it as the
- * evaluated payload's `dateUpdated`, so SDKs don't discard changed results.
+ * Each loaded group's attribute, to find its member sets when it changes.
+ * Lookups treat a group without one as not loaded.
  */
-export const UPDATED_AT_KEY = "gb:updated-at";
-/** Each loaded group's attribute, to find its member sets when it changes. */
 export const GROUP_ATTRIBUTES_KEY = "gb:group-attributes";
+/**
+ * A field in `GROUP_ATTRIBUTES_KEY`: when any group's members last changed
+ * (ISO date). It's written in the same command as the group's attribute, so
+ * a group never changes without it. Group IDs never start with `__`.
+ */
+export const UPDATED_AT_FIELD = "__updatedAt";
 
 // `{id}` is a hash tag, so a group's sets and lock share a Cluster slot.
 export const groupKey = (id: string, version: number) =>

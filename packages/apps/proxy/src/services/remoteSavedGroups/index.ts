@@ -10,7 +10,7 @@ import {
   createRedisClient,
   GROUP_ATTRIBUTES_KEY,
   RemoteGroupsLoader,
-  UPDATED_AT_KEY,
+  UPDATED_AT_FIELD,
   warnIfRedisCanEvict,
 } from "@growthbook/remote-saved-groups-redis-loader";
 import { Context } from "../../types";
@@ -20,7 +20,7 @@ import {
   getConditionRemoteGroupIds,
   getRemoteGroupEntries,
   getUnloadedGroupIds,
-  withLaterDateUpdated,
+  withGroupsDateUpdated,
 } from "./entries";
 import {
   checkRemoteSavedGroupsSettings,
@@ -100,10 +100,11 @@ function getGroupState(): Promise<GroupState> {
   const redis = lookupClient;
   if (!redis) return Promise.resolve({ attributes: {}, updatedAt: null });
   if (!groupState || groupState.expires < Date.now()) {
-    const value = Promise.all([
-      redis.hgetall(GROUP_ATTRIBUTES_KEY),
-      redis.get(UPDATED_AT_KEY),
-    ]).then(([attributes, updatedAt]) => ({ attributes, updatedAt }));
+    // One read, so the attributes and change time always match.
+    const value = redis.hgetall(GROUP_ATTRIBUTES_KEY).then((hash) => {
+      const { [UPDATED_AT_FIELD]: updatedAt = null, ...attributes } = hash;
+      return { attributes, updatedAt };
+    });
     groupState = { value, expires: Date.now() + GROUP_STATE_TTL_MS };
     // A failed read is retried on the next request.
     value.catch(() => (groupState = null));
@@ -129,8 +130,8 @@ const prepared = new WeakMap<
  *   have none today: GrowthBook strips references v2 for remote evaluation.
  * - Makes rules using a group that isn't loaded in this store never match,
  *   so "not in group" can't match everyone while a group isn't loaded.
- * - Moves `dateUpdated` forward when group members changed after the
- *   payload, since SDKs ignore a refetch with an unchanged `dateUpdated`.
+ * - Sets a `dateUpdated` that changes whenever the payload or the groups
+ *   change, since SDKs ignore a refetch with an unchanged `dateUpdated`.
  */
 export async function prepareRemoteGroups(
   payload: FeatureApiResponse | null,
@@ -170,7 +171,7 @@ export async function prepareRemoteGroups(
           ...getRemoteGroupEntries(used.conditionIds, state.attributes),
         },
       };
-  const result = withLaterDateUpdated(
+  const result = withGroupsDateUpdated(
     blockRulesUsingGroups(
       withEntries,
       getUnloadedGroupIds(ids, state.attributes),

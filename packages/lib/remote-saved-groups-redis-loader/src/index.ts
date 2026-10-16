@@ -11,7 +11,7 @@ export type { LoaderRedis } from "./redis";
 export {
   GROUPS_KEY,
   GROUP_ATTRIBUTES_KEY,
-  UPDATED_AT_KEY,
+  UPDATED_AT_FIELD,
   groupKey,
   memberKey,
 } from "./redis";
