@@ -7,6 +7,26 @@ export type RedisClientSettings = {
   clusterOptions?: ClusterOptions;
 };
 
+/**
+ * Why the settings don't name a Redis, or null if they do. There's no
+ * default: remote saved groups need their own Redis with `noeviction`,
+ * rather than a cache's.
+ */
+export function getRedisSettingsProblem({
+  connectionUrl,
+  useCluster = false,
+  clusterRootNodes,
+}: RedisClientSettings): string | null {
+  if (useCluster) {
+    return clusterRootNodes?.length
+      ? null
+      : "REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON is required with REMOTE_SAVED_GROUPS_USE_CLUSTER";
+  }
+  return connectionUrl
+    ? null
+    : "REMOTE_SAVED_GROUPS_CONNECTION_URL is required: a Redis with maxmemory-policy noeviction, separate from caches";
+}
+
 /** An ioredis client for the loader and `redisResolver`. */
 export function createRedisClient({
   connectionUrl,

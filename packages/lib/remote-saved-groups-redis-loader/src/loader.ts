@@ -4,6 +4,7 @@ import { ApiError, GrowthBookApi, LoadStatus, RemoteGroup } from "./api";
 import {
   GROUP_ATTRIBUTES_KEY,
   GROUPS_KEY,
+  UPDATED_AT_KEY,
   groupKey,
   LoaderRedis,
   lockKey,
@@ -281,6 +282,7 @@ export class RemoteGroupsLoader {
       if (current && current.version !== version) {
         await this.redis.unlink(groupKey(id, current.version));
       }
+      await this.redis.set(UPDATED_AT_KEY, new Date().toISOString());
       this.invalidVersions.delete(id);
       this.logger.info(
         { savedGroupId: id, version, rowCount },
@@ -464,6 +466,7 @@ export class RemoteGroupsLoader {
     }
     await this.redis.unlink(pendingKey(id));
     for (const key of keys) await this.redis.unlink(key);
+    await this.redis.set(UPDATED_AT_KEY, new Date().toISOString());
     this.invalidVersions.delete(id);
     if (keys.length || !emptyAttributeKey) {
       this.logger.info({ savedGroupId: id }, "Cleared remote group");

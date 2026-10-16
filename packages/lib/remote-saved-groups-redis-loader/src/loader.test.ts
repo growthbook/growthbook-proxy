@@ -628,4 +628,26 @@ describe("RemoteGroupsLoader", () => {
     );
     expect(redis.sets.has("gb:group-pending:{grp_1}")).toBe(false);
   });
+
+  it("records when members last changed", async () => {
+    const groups: Group[] = [
+      { id: "grp_1", attributeKey: "id", currentUpload: { version: 1 } },
+    ];
+    await mockApi(groups, { "grp_1/1": "a\n" });
+    const { redis, loader } = setup();
+    await loader.poll();
+    const loadedAt = redis.strings.get("gb:updated-at");
+    expect(Date.parse(loadedAt ?? "")).not.toBeNaN();
+
+    // Nothing changed, so nothing is written.
+    await loader.poll();
+    expect(redis.strings.get("gb:updated-at")).toBe(loadedAt);
+
+    groups[0].currentUpload = null;
+    jest
+      .spyOn(Date.prototype, "toISOString")
+      .mockReturnValue("2030-01-01T00:00:00.000Z");
+    await loader.poll();
+    expect(redis.strings.get("gb:updated-at")).toBe("2030-01-01T00:00:00.000Z");
+  });
 });

@@ -1,5 +1,8 @@
 import { ClusterNode } from "ioredis";
-import { getStoreIdProblem } from "@growthbook/remote-groups-loader";
+import {
+  getRedisSettingsProblem,
+  getStoreIdProblem,
+} from "@growthbook/remote-saved-groups-redis-loader";
 
 export interface RemoteSavedGroupsSettings {
   connectionUrl?: string;
@@ -24,10 +27,19 @@ export function runsLoader(settings: RemoteSavedGroupsSettings): boolean {
   return !!(settings.runLoader || settings.loaderOnly);
 }
 
-/** Throws at startup when the loader would run with an invalid store ID. */
+/**
+ * Throws at startup when settings are missing: the Redis to use, and the
+ * store ID when this instance runs the loader.
+ */
 export function checkRemoteSavedGroupsSettings(
   settings: RemoteSavedGroupsSettings,
 ): void {
+  const redisProblem = getRedisSettingsProblem({
+    connectionUrl: settings.connectionUrl,
+    useCluster: settings.useCluster,
+    clusterRootNodes: settings.clusterRootNodesJSON,
+  });
+  if (redisProblem) throw new Error(redisProblem);
   if (!runsLoader(settings)) return;
   const problem = getStoreIdProblem(settings.storeId);
   if (problem) {

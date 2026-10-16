@@ -26,13 +26,13 @@
   },
   "//": [
     "@growthbook/growthbook: sdk-js 1.8.1 (unreleased) from a pinned main-repo commit. Switch to npm once published.",
-    "@growthbook/remote-groups-loader: workspace package, not on npm yet. Publish before the next npm release of the Proxy."
+    "@growthbook/remote-saved-groups-redis-loader: workspace package, not on npm yet. Publish before the next npm release of the Proxy."
   ],
   "dependencies": {
     "@growthbook/growthbook": "github:growthbook/growthbook#e39a543ad0d11a7864d25603b3b933b654a103c4&path:/packages/sdk-js",
     "pm2": "^6.0.14",
     "@growthbook/proxy-eval": "workspace:*",
-    "@growthbook/remote-groups-loader": "workspace:*",
+    "@growthbook/remote-saved-groups-redis-loader": "workspace:*",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.79.0",
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.221.0",

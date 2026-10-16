@@ -1,6 +1,6 @@
 import { Express } from "express";
 import { HttpLogger } from "pino-http";
-import type { RemoteGroupsLoader } from "@growthbook/remote-groups-loader";
+import type { RemoteGroupsLoader } from "@growthbook/remote-saved-groups-redis-loader";
 import { Connection, Registrar } from "./services/registrar";
 import { EventStreamManager } from "./services/eventStreamManager";
 import { FeaturesCache, CacheSettings } from "./services/cache";

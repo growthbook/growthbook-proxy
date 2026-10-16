@@ -4,8 +4,8 @@ import {
   type FeatureApiResponse,
 } from "@growthbook/proxy-eval";
 import { getRemoteSavedGroups } from "@growthbook/growthbook";
-import { getConditionRemoteGroupIds } from "@growthbook/remote-groups-loader";
 import { z } from "zod";
+import { getConditionRemoteGroupIds } from "../services/remoteSavedGroups/entries";
 import readThroughCacheMiddleware from "../middleware/cache/readThroughCacheMiddleware";
 import { featuresCache } from "../services/cache";
 import { stickyBucketService } from "../services/stickyBucket";

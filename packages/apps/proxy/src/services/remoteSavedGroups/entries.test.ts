@@ -3,6 +3,7 @@ import {
   getConditionRemoteGroupIds,
   getRemoteGroupEntries,
   getUnloadedGroupIds,
+  withLaterDateUpdated,
 } from "./entries";
 
 describe("getConditionRemoteGroupIds", () => {
@@ -135,5 +136,33 @@ describe("blockRulesUsingGroups", () => {
 
   it("returns the payload as is when no groups are blocked", () => {
     expect(blockRulesUsingGroups(payload, [])).toBe(payload);
+  });
+});
+
+describe("withLaterDateUpdated", () => {
+  const payload = { dateUpdated: "2026-10-01T00:00:00.000Z", features: {} };
+
+  it("moves dateUpdated forward when groups changed later", () => {
+    expect(
+      withLaterDateUpdated(payload, "2026-10-16T12:00:00.000Z").dateUpdated,
+    ).toBe("2026-10-16T12:00:00.000Z");
+    expect(payload.dateUpdated).toBe("2026-10-01T00:00:00.000Z");
+  });
+
+  it("keeps the payload when it's newer, or nothing changed", () => {
+    expect(withLaterDateUpdated(payload, "2026-09-01T00:00:00.000Z")).toBe(
+      payload,
+    );
+    expect(withLaterDateUpdated(payload, null)).toBe(payload);
+    expect(withLaterDateUpdated(payload, "not a date")).toBe(payload);
+  });
+
+  it("sets dateUpdated when the payload has none", () => {
+    const noDate: { dateUpdated?: string; features: object } = {
+      features: {},
+    };
+    expect(
+      withLaterDateUpdated(noDate, "2026-10-16T12:00:00.000Z").dateUpdated,
+    ).toBe("2026-10-16T12:00:00.000Z");
   });
 });

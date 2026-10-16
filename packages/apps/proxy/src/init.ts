@@ -110,11 +110,8 @@ export default async () => {
     remoteSavedGroupsSettings: {
       engine: (process.env.REMOTE_SAVED_GROUPS_ENGINE ||
         "redis") as RemoteSavedGroupsEngine,
-      connectionUrl:
-        process.env.REMOTE_SAVED_GROUPS_CONNECTION_URL ||
-        (process.env.CACHE_ENGINE === "redis"
-          ? process.env.CACHE_CONNECTION_URL
-          : undefined),
+      // No default: remote saved groups need their own Redis, not a cache's.
+      connectionUrl: process.env.REMOTE_SAVED_GROUPS_CONNECTION_URL,
       useCluster: envBool(process.env.REMOTE_SAVED_GROUPS_USE_CLUSTER),
       clusterRootNodesJSON: process.env
         .REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON

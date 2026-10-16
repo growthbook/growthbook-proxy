@@ -4,6 +4,7 @@
  * `SMISMEMBER` needs Redis 6.2 or later.
  */
 export interface LoaderRedis {
+  set(key: string, value: string): Promise<"OK" | null>;
   set(
     key: string,
     value: string,
@@ -37,6 +38,11 @@ export interface LoaderRedis {
 
 /** Each loaded group's version. */
 export const GROUPS_KEY = "gb:groups";
+/**
+ * When any group's members last changed (ISO date). Lookups report it as the
+ * evaluated payload's `dateUpdated`, so SDKs don't discard changed results.
+ */
+export const UPDATED_AT_KEY = "gb:updated-at";
 /** Each loaded group's attribute, to find its member sets when it changes. */
 export const GROUP_ATTRIBUTES_KEY = "gb:group-attributes";
 

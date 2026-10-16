@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { createLoader, getStoreIdProblem } from "./loader";
-import { createRedisClient } from "./client";
+import { createRedisClient, getRedisSettingsProblem } from "./client";
+import { warnIfRedisCanEvict } from "./eviction";
 
 // Runs the loader on its own, with the same settings as the GrowthBook Proxy.
 const env = process.env;
@@ -17,17 +18,21 @@ if (storeIdProblem) {
   process.exit(1);
 }
 
-const redis = createRedisClient({
-  connectionUrl:
-    env.REMOTE_SAVED_GROUPS_CONNECTION_URL ||
-    (env.CACHE_ENGINE === "redis" ? env.CACHE_CONNECTION_URL : undefined),
+const redisSettings = {
+  connectionUrl: env.REMOTE_SAVED_GROUPS_CONNECTION_URL,
   useCluster: ["true", "1"].includes(
     (env.REMOTE_SAVED_GROUPS_USE_CLUSTER ?? "").toLowerCase(),
   ),
   clusterRootNodes: env.REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON
     ? JSON.parse(env.REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON)
     : undefined,
-});
+};
+const redisProblem = getRedisSettingsProblem(redisSettings);
+if (redisProblem) {
+  console.error(redisProblem);
+  process.exit(1);
+}
+const redis = createRedisClient(redisSettings);
 const loader = createLoader({
   apiHost,
   apiKey,
@@ -36,6 +41,11 @@ const loader = createLoader({
   pollIntervalMs: env.REMOTE_SAVED_GROUPS_POLL_INTERVAL_MS
     ? parseInt(env.REMOTE_SAVED_GROUPS_POLL_INTERVAL_MS)
     : undefined,
+});
+void warnIfRedisCanEvict(redis, {
+  info: (obj, msg) => console.info(msg, obj),
+  warn: (obj, msg) => console.warn(msg, obj),
+  error: (obj, msg) => console.error(msg, obj),
 });
 loader.start();
 

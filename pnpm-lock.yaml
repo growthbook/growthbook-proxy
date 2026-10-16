@@ -72,9 +72,9 @@ importers:
       '@growthbook/proxy-eval':
         specifier: workspace:*
         version: link:../../lib/eval
-      '@growthbook/remote-groups-loader':
+      '@growthbook/remote-saved-groups-redis-loader':
         specifier: workspace:*
-        version: link:../../lib/remote-groups-loader
+        version: link:../../lib/remote-saved-groups-redis-loader
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.0
@@ -344,7 +344,7 @@ importers:
         specifier: ^5.8.2
         version: 5.8.2
 
-  packages/lib/remote-groups-loader:
+  packages/lib/remote-saved-groups-redis-loader:
     dependencies:
       '@growthbook/remote-saved-groups-csv-parser':
         specifier: github:growthbook/growthbook#8892b0306f836268fe4507da02cd13b576eaea8f&path:/packages/remote-saved-groups-csv-parser

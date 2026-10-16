@@ -7,17 +7,21 @@ import {
 } from "@growthbook/growthbook";
 import {
   createLoader,
-  blockRulesUsingGroups,
   createRedisClient,
+  GROUP_ATTRIBUTES_KEY,
+  RemoteGroupsLoader,
+  UPDATED_AT_KEY,
+  warnIfRedisCanEvict,
+} from "@growthbook/remote-saved-groups-redis-loader";
+import { Context } from "../../types";
+import logger from "../logger";
+import {
+  blockRulesUsingGroups,
   getConditionRemoteGroupIds,
   getRemoteGroupEntries,
   getUnloadedGroupIds,
-  readGroupAttributes,
-  RemoteGroupsLoader,
-} from "@growthbook/remote-groups-loader";
-import { Context } from "../../types";
-import logger from "../logger";
-
+  withLaterDateUpdated,
+} from "./entries";
 import {
   checkRemoteSavedGroupsSettings,
   RemoteSavedGroupsSettings,
@@ -29,7 +33,7 @@ export type { RemoteSavedGroupsSettings };
 /** Looks up users' remote saved groups for remote evaluation. */
 export let savedGroupResolver: SavedGroupResolver | null = null;
 export let remoteGroupsLoader: RemoteGroupsLoader | null = null;
-let redisClient: Redis | Cluster | null = null;
+let lookupClient: Redis | Cluster | null = null;
 let lookupTimeoutMs = 1000;
 
 export const initializeRemoteSavedGroups = (context: Context) => {
@@ -37,24 +41,32 @@ export const initializeRemoteSavedGroups = (context: Context) => {
   if (!settings || settings.engine !== "redis") return;
   checkRemoteSavedGroupsSettings(settings);
 
-  const redis = createRedisClient({
+  const redisSettings = {
     connectionUrl: settings.connectionUrl,
     useCluster: settings.useCluster,
     clusterRootNodes: settings.clusterRootNodesJSON,
-  });
-  redis.on("error", (err) =>
-    logger.warn({ err }, "Remote saved groups Redis error"),
-  );
-  redisClient = redis;
+  };
+  const connect = (purpose: string) => {
+    const client = createRedisClient(redisSettings);
+    client.on("error", (err) =>
+      logger.warn({ err }, `Remote saved groups Redis error (${purpose})`),
+    );
+    return client;
+  };
 
   if (!settings.loaderOnly) {
+    const redis = connect("lookups");
+    lookupClient = redis;
     const resolve = redisResolver({ sMembers: (key) => redis.smembers(key) });
     lookupTimeoutMs = settings.timeoutMs ?? 1000;
     savedGroupResolver = (args) => withTimeout(resolve(args), lookupTimeoutMs);
+    void warnIfRedisCanEvict(redis, logger);
     logger.info("Remote saved groups enabled");
   }
 
   if (runsLoader(settings)) {
+    // Its own connection, so its bulk writes don't queue ahead of lookups.
+    const redis = connect("loader");
     remoteGroupsLoader = createLoader({
       apiHost: context.growthbookApiHost,
       apiKey: context.secretApiKey,
@@ -63,27 +75,40 @@ export const initializeRemoteSavedGroups = (context: Context) => {
       pollIntervalMs: settings.pollIntervalMs,
       logger,
     });
+    if (settings.loaderOnly) void warnIfRedisCanEvict(redis, logger);
     remoteGroupsLoader.start();
     logger.info("Remote saved groups loader started");
   }
 };
 
-// How long the loader's group attributes are reused before reading them again
-const GROUP_ATTRIBUTES_TTL_MS = 30 * 1000;
-let groupAttributes: {
-  value: Promise<Record<string, string>>;
+/** What the loader recorded about the groups in Redis. */
+type GroupState = {
+  /** Each loaded group's attribute */
+  attributes: Record<string, string>;
+  /** When any group's members last changed */
+  updatedAt: string | null;
+};
+
+// How long the loader's group state is reused before reading it again
+const GROUP_STATE_TTL_MS = 30 * 1000;
+let groupState: {
+  value: Promise<GroupState>;
   expires: number;
 } | null = null;
 
-function getGroupAttributes(): Promise<Record<string, string>> {
-  if (!redisClient) return Promise.resolve({});
-  if (!groupAttributes || groupAttributes.expires < Date.now()) {
-    const value = readGroupAttributes(redisClient);
-    groupAttributes = { value, expires: Date.now() + GROUP_ATTRIBUTES_TTL_MS };
+function getGroupState(): Promise<GroupState> {
+  const redis = lookupClient;
+  if (!redis) return Promise.resolve({ attributes: {}, updatedAt: null });
+  if (!groupState || groupState.expires < Date.now()) {
+    const value = Promise.all([
+      redis.hgetall(GROUP_ATTRIBUTES_KEY),
+      redis.get(UPDATED_AT_KEY),
+    ]).then(([attributes, updatedAt]) => ({ attributes, updatedAt }));
+    groupState = { value, expires: Date.now() + GROUP_STATE_TTL_MS };
     // A failed read is retried on the next request.
-    value.catch(() => (groupAttributes = null));
+    value.catch(() => (groupState = null));
   }
-  return groupAttributes.value;
+  return groupState.value;
 }
 
 // The remote groups each payload uses: in conditions, and in v2 entries
@@ -93,17 +118,19 @@ const usedGroups = new WeakMap<
 >();
 const prepared = new WeakMap<
   FeatureApiResponse,
-  { attributes: Record<string, string>; payload: FeatureApiResponse }
+  { state: GroupState; payload: FeatureApiResponse }
 >();
 
 /**
- * Prepares a payload's remote groups for remote evaluation, using the groups
- * the loader recorded in Redis:
+ * Prepares a payload's remote groups for remote evaluation, using what the
+ * loader recorded in Redis:
  * - Adds `remote` entries for groups only checked in `__gb_remoteGroupIds`
  *   conditions, so the resolver knows what to look up. Remote-eval payloads
  *   have none today: GrowthBook strips references v2 for remote evaluation.
  * - Makes rules using a group that isn't loaded in this store never match,
  *   so "not in group" can't match everyone while a group isn't loaded.
+ * - Moves `dateUpdated` forward when group members changed after the
+ *   payload, since SDKs ignore a refetch with an unchanged `dateUpdated`.
  */
 export async function prepareRemoteGroups(
   payload: FeatureApiResponse | null,
@@ -123,16 +150,16 @@ export async function prepareRemoteGroups(
   const ids = [...new Set([...used.conditionIds, ...used.entryIds])];
   if (!ids.length) return payload;
 
-  let attributes: Record<string, string>;
+  let state: GroupState;
   try {
-    attributes = await withTimeout(getGroupAttributes(), lookupTimeoutMs);
+    state = await withTimeout(getGroupState(), lookupTimeoutMs);
   } catch (err) {
     // Treated as no group loaded, so every remote rule fails closed.
     logger.warn({ err }, "Could not read remote saved group attributes");
     return blockRulesUsingGroups(payload, ids);
   }
   const cached = prepared.get(payload);
-  if (cached?.attributes === attributes) return cached.payload;
+  if (cached?.state === state) return cached.payload;
 
   const withEntries = used.entryIds.length
     ? payload
@@ -140,14 +167,17 @@ export async function prepareRemoteGroups(
         ...payload,
         savedGroups: {
           ...payload.savedGroups,
-          ...getRemoteGroupEntries(used.conditionIds, attributes),
+          ...getRemoteGroupEntries(used.conditionIds, state.attributes),
         },
       };
-  const result = blockRulesUsingGroups(
-    withEntries,
-    getUnloadedGroupIds(ids, attributes),
+  const result = withLaterDateUpdated(
+    blockRulesUsingGroups(
+      withEntries,
+      getUnloadedGroupIds(ids, state.attributes),
+    ),
+    state.updatedAt,
   );
-  prepared.set(payload, { attributes, payload: result });
+  prepared.set(payload, { state, payload: result });
   return result;
 }
 

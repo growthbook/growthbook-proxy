@@ -1,4 +1,4 @@
-import { GROUP_ATTRIBUTES_KEY, LoaderRedis } from "./redis";
+import { REMOTE_GROUP_IDS_ATTRIBUTE } from "@growthbook/growthbook";
 
 /** A remote saved group as SDK payloads describe it (`savedGroupReferencesRemote`). */
 export type RemoteGroupEntry = {
@@ -6,8 +6,6 @@ export type RemoteGroupEntry = {
   attributeKey: string;
   valuesFrom?: string;
 };
-
-const REMOTE_GROUP_IDS_ATTRIBUTE = "__gb_remoteGroupIds";
 
 /**
  * The remote group IDs a payload's conditions check, like `grp_vip` in
@@ -152,9 +150,22 @@ function getRuleGroupIds(rule: RuleLike): string[] {
   return ids;
 }
 
-/** Each loaded group's attribute, as recorded by the loader. */
-export function readGroupAttributes(
-  redis: Pick<LoaderRedis, "hgetall">,
-): Promise<Record<string, string>> {
-  return redis.hgetall(GROUP_ATTRIBUTES_KEY);
+/**
+ * The payload with `dateUpdated` moved forward to `updatedAt` (when group
+ * members last changed) if that's later. SDKs ignore a refetched payload
+ * whose `dateUpdated` hasn't changed, so without this they'd keep results
+ * from before a group changed.
+ */
+export function withLaterDateUpdated<T extends { dateUpdated?: string }>(
+  payload: T,
+  updatedAt: string | null,
+): T {
+  if (!updatedAt) return payload;
+  const changed = Date.parse(updatedAt);
+  if (Number.isNaN(changed)) return payload;
+  const current = payload.dateUpdated ? Date.parse(payload.dateUpdated) : NaN;
+  if (!Number.isNaN(current) && current >= changed) return payload;
+  return Object.assign({}, payload, {
+    dateUpdated: new Date(changed).toISOString(),
+  });
 }

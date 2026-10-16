@@ -1,5 +1,5 @@
 {
-  "name": "@growthbook/remote-groups-loader",
+  "name": "@growthbook/remote-saved-groups-redis-loader",
   "description": "Loads GrowthBook remote saved groups into Redis",
   "version": "0.1.0",
   "private": true,
@@ -7,13 +7,13 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "remote-groups-loader": "dist/bin.js"
+    "remote-saved-groups-redis-loader": "dist/bin.js"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/growthbook/growthbook-proxy.git",
-    "directory": "packages/lib/remote-groups-loader"
+    "directory": "packages/lib/remote-saved-groups-redis-loader"
   },
   "author": "GrowthBook",
   "scripts": {
