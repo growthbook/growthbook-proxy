@@ -268,6 +268,37 @@ The standard [OTEL\_\* Environment Variables](https://opentelemetry.io/docs/conc
   - `STICKY_BUCKET_CLUSTER_OPTIONS_JSON` - JSON object of ClusterOptions (ioredis)
   - `STICKY_BUCKET_TTL` - Number of seconds before a sticky bucket document expires in Redis. Omit to never expire (default)
 
+**Remote Saved Groups**
+
+Remote saved groups keep their IDs out of the SDK payload. The Proxy loads uploaded groups into Redis and looks up each user's groups before remote evaluation.
+
+Redis requirements:
+
+- Redis 6.2 or later.
+- `maxmemory-policy noeviction`. An evicted key silently removes users from a group, and "not in group" rules then match them. The Proxy logs a warning at startup if it can read a different policy.
+- Its own Redis, separate from the feature cache and sticky buckets. Caches usually evict keys, the groups can use a lot of memory, and large loads can slow other reads.
+
+Settings:
+
+- `ENABLE_REMOTE_SAVED_GROUPS` - "true" or "1" to enable remote saved groups (default: `false`)
+  - `REMOTE_SAVED_GROUPS_ENGINE` - Only `redis` is supported (default: `redis`)
+  - `REMOTE_SAVED_GROUPS_CONNECTION_URL` - The URL of the Redis for remote saved groups. Required unless using Redis Cluster
+  - `REMOTE_SAVED_GROUPS_USE_CLUSTER` - "true" or "1" to enable Redis cluster mode (default: `false`)
+  - `REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON` - JSON array of ClusterNode objects (ioredis). Required with cluster mode
+  - `REMOTE_SAVED_GROUPS_TIMEOUT_MS` - How long a user's group lookup may take before remote evaluation treats them as in no remote groups (default: `1000`)
+  - `REMOTE_SAVED_GROUPS_STORE_ID` - Identifies this Redis in GrowthBook's load reports, such as `redis-us-east` (1 to 100 characters). Required when this instance runs the loader. Use one ID per Redis: replicas sharing a Redis (or a Redis Cluster) use the same ID, and each Redis gets a different one
+  - `REMOTE_SAVED_GROUPS_LOADER` - "true" or "1" to load uploaded groups into Redis from this instance. Instances sharing a Redis take turns (default: `true`)
+  - `REMOTE_SAVED_GROUPS_POLL_INTERVAL_MS` - How often the loader checks for new uploads (default: `300000` = 5 minutes)
+  - `REMOTE_SAVED_GROUPS_LOADER_ONLY` - "true" or "1" to only run the loader, with no proxying or evaluation, e.g. next to your Redis for backends and edge apps without a Proxy (default: `false`)
+
+The loader calls GrowthBook's API with `SECRET_API_KEY`. To report load status back to GrowthBook, the key needs permission to publish saved groups.
+
+How changes reach users:
+
+- A new upload takes effect after the loader's next poll and load. While a version loads, each user matches either the old or the new version.
+- Rules that use a group not yet loaded into this Redis don't match anyone, so "not in group" can't match everyone before the group is loaded.
+- Clients pick up membership changes on their next refresh. Remote evaluation reports a newer `dateUpdated` once a group changes, so SDKs don't keep stale results. Streaming (SSE) clients aren't notified of membership changes yet.
+
 **Misc**
 
 - `MAX_PAYLOAD_SIZE` - The maximum size of a request body (default: `"2mb"`)

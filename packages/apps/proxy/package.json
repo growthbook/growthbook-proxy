@@ -21,12 +21,18 @@
     "type-check": "tsc --pretty --noEmit",
     "start": "node dist/index.js",
     "start:with-tracing": "node --require ./dist/tracing.js dist/index.js",
+    "test": "jest",
     "dev": "concurrently 'tsc --watch' 'nodemon -q dist/index.js | pnpm pino-pretty'"
   },
+  "//": [
+    "@growthbook/growthbook: sdk-js 1.8.1 (unreleased) from a pinned main-repo commit. Switch to npm once published.",
+    "@growthbook/remote-saved-groups-redis-loader: workspace package, not on npm yet. Publish before the next npm release of the Proxy."
+  ],
   "dependencies": {
-    "@growthbook/growthbook": "^1.7.0",
+    "@growthbook/growthbook": "github:growthbook/growthbook#e39a543ad0d11a7864d25603b3b933b654a103c4&path:/packages/sdk-js",
     "pm2": "^6.0.14",
-    "@growthbook/proxy-eval": "1.2.0",
+    "@growthbook/proxy-eval": "workspace:*",
+    "@growthbook/remote-saved-groups-redis-loader": "workspace:*",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.79.0",
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.221.0",
@@ -44,6 +50,9 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.6",
     "@types/express-serve-static-core": "^5.1.1",

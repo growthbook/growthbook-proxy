@@ -19,6 +19,10 @@ import { Context, GrowthBookProxy } from "./types";
 import logger, { initializeLogger } from "./services/logger";
 import { initializeStickyBucketService } from "./services/stickyBucket";
 import { healthRouter } from "./controllers/healthController";
+import {
+  initializeRemoteSavedGroups,
+  remoteGroupsLoader,
+} from "./services/remoteSavedGroups";
 
 export { Context, GrowthBookProxy, CacheEngine } from "./types";
 
@@ -45,6 +49,7 @@ const defaultContext: Context = {
   enableEventStreamHeaders: true,
   enableRemoteEval: true,
   enableStickyBucketing: false,
+  enableRemoteSavedGroups: false,
   proxyAllRequests: false,
 };
 
@@ -59,6 +64,28 @@ export const growthBookProxy = async (
 
   // initialize
   initializeLogger(ctx);
+  if (ctx.enableRemoteSavedGroups) initializeRemoteSavedGroups(ctx);
+
+  // Standalone loader: only the health check is served.
+  if (
+    ctx.enableRemoteSavedGroups &&
+    ctx.remoteSavedGroupsSettings?.loaderOnly
+  ) {
+    if (ctx.enableHealthCheck) app.use("/healthcheck", healthRouter);
+    return {
+      app,
+      context: ctx,
+      services: {
+        featuresCache,
+        registrar,
+        eventStreamManager,
+        logger,
+        remoteGroupsLoader,
+      },
+      version,
+    };
+  }
+
   await initializeRegistrar(ctx);
   if (ctx.enableCache) await initializeCache(ctx);
   if (ctx.enableRemoteEval && ctx.enableStickyBucketing) {
@@ -88,6 +115,7 @@ export const growthBookProxy = async (
       registrar,
       eventStreamManager,
       logger,
+      remoteGroupsLoader,
     },
     version,
   };

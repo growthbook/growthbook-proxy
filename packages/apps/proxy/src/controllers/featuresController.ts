@@ -3,10 +3,16 @@ import {
   evaluateFeatures,
   type FeatureApiResponse,
 } from "@growthbook/proxy-eval";
+import { getRemoteSavedGroups } from "@growthbook/growthbook";
 import { z } from "zod";
+import { getConditionRemoteGroupIds } from "../services/remoteSavedGroups/entries";
 import readThroughCacheMiddleware from "../middleware/cache/readThroughCacheMiddleware";
 import { featuresCache } from "../services/cache";
 import { stickyBucketService } from "../services/stickyBucket";
+import {
+  prepareRemoteGroups,
+  savedGroupResolver,
+} from "../services/remoteSavedGroups";
 import { registrar } from "../services/registrar";
 import { apiKeyMiddleware } from "../middleware/apiKeyMiddleware";
 import webhookVerificationMiddleware from "../middleware/webhookVerificationMiddleware";
@@ -180,6 +186,9 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
     });
   }
 
+  if (savedGroupResolver) payload = await prepareRemoteGroups(payload);
+  else warnIfRemoteSavedGroupsOff(payload);
+
   payload = await evaluateFeatures({
     payload,
     attributes,
@@ -187,11 +196,34 @@ const getEvaluatedFeatures = async (req: Request, res: Response) => {
     forcedFeatures: forcedFeaturesMap,
     url,
     stickyBucketService,
+    savedGroupResolver: savedGroupResolver ?? undefined,
+    onSavedGroupResolverError: (err) =>
+      logger.warn({ err }, "Remote saved group lookup failed"),
     ctx: req.app.locals?.ctx,
   });
 
   return res.status(200).json(payload);
 };
+
+let warnedRemoteSavedGroups = false;
+const checkedPayloads = new WeakSet<object>();
+/** Warns once when rules use remote saved groups but the setting is off. */
+function warnIfRemoteSavedGroupsOff(payload: FeatureApiResponse | null) {
+  if (warnedRemoteSavedGroups || !payload || checkedPayloads.has(payload)) {
+    return;
+  }
+  checkedPayloads.add(payload);
+  if (
+    !getRemoteSavedGroups(payload.savedGroups).length &&
+    !getConditionRemoteGroupIds([payload.features, payload.experiments]).length
+  ) {
+    return;
+  }
+  warnedRemoteSavedGroups = true;
+  logger.warn(
+    "Rules use remote saved groups, but ENABLE_REMOTE_SAVED_GROUPS is off, so users are in none of them",
+  );
+}
 
 const postFeatures = async (req: Request, res: Response) => {
   try {

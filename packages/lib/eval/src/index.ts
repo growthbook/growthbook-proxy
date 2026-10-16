@@ -7,6 +7,10 @@ import {
   FeatureRule,
   AutoExperiment,
   FeatureApiResponse,
+  SavedGroupResolver,
+  REMOTE_GROUP_IDS_ATTRIBUTE,
+  resolveRemoteGroupIds,
+  getRemoteSavedGroups,
 } from "@growthbook/growthbook";
 
 // Re-export so consumers can type payloads and author sticky bucket services
@@ -20,6 +24,8 @@ export type {
   Attributes,
   StickyAssignmentsDocument,
   StickyAttributeKey,
+  SavedGroupResolver,
+  RemoteSavedGroup,
 } from "@growthbook/growthbook";
 
 export async function evaluateFeatures({
@@ -29,6 +35,8 @@ export async function evaluateFeatures({
   forcedFeatures,
   url,
   stickyBucketService = null,
+  savedGroupResolver,
+  onSavedGroupResolverError,
   ctx,
 }: {
   payload: FeatureApiResponse | null;
@@ -42,6 +50,10 @@ export async function evaluateFeatures({
         onEvaluate?: () => Promise<void>;
       })
     | null;
+  /** Looks up the user's remote saved groups before evaluating. */
+  savedGroupResolver?: SavedGroupResolver;
+  /** Called when `savedGroupResolver` throws; the user is then in no remote groups. */
+  onSavedGroupResolverError?: (err: unknown) => void;
   ctx?: any;
 }) {
   const evaluatedFeatures: Record<string, FeatureDefinition> = {};
@@ -72,6 +84,26 @@ export async function evaluateFeatures({
   }
   if (stickyBucketService) {
     context.stickyBucketService = stickyBucketService;
+  }
+  if (savedGroupResolver) {
+    // With a resolver, remote groups come only from it, never the request.
+    const userAttributes = { ...attributes };
+    delete userAttributes[REMOTE_GROUP_IDS_ATTRIBUTE];
+    context.attributes = userAttributes;
+    // Payloads for SDK versions without remote group lookups have no remote
+    // entries to look up. Leaving the IDs unset keeps their rules failing,
+    // where `[]` would match every "not in group" rule.
+    if (getRemoteSavedGroups(savedGroups).length) {
+      try {
+        context.remoteGroupIds = await resolveRemoteGroupIds(
+          userAttributes,
+          savedGroups,
+          savedGroupResolver,
+        );
+      } catch (e) {
+        onSavedGroupResolverError?.(e);
+      }
+    }
   }
 
   if (features || experiments) {
