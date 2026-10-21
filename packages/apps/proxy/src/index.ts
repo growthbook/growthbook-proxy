@@ -1,3 +1,4 @@
+import "./distrustRoots";
 import init from "./init";
 import { GrowthBookProxy, growthBookProxy } from "./app";
 import logger from "./services/logger";
