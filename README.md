@@ -286,6 +286,7 @@ Settings:
   - `REMOTE_SAVED_GROUPS_USE_CLUSTER` - "true" or "1" to enable Redis cluster mode (default: `false`)
   - `REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON` - JSON array of ClusterNode objects (ioredis). Required with cluster mode
   - `REMOTE_SAVED_GROUPS_TIMEOUT_MS` - How long a user's group lookup may take before remote evaluation treats them as in no remote groups (default: `1000`)
+  - `REMOTE_SAVED_GROUPS_UPDATE_CHECK_INTERVAL_MS` - How often this instance checks Redis for membership changes, to tell streaming (SSE) remote evaluation clients to refetch. `0` turns it off (default: `5000` = 5 seconds)
   - `REMOTE_SAVED_GROUPS_STORE_ID` - Identifies this Redis in GrowthBook's load reports, such as `redis-us-east` (1 to 100 characters). Required when this instance runs the loader. Use one ID per Redis: replicas sharing a Redis (or a Redis Cluster) use the same ID, and each Redis gets a different one
   - `REMOTE_SAVED_GROUPS_LOADER` - "true" or "1" to load uploaded groups into Redis from this instance. Instances sharing a Redis take turns (default: `true`)
   - `REMOTE_SAVED_GROUPS_POLL_INTERVAL_MS` - How often the loader checks for new uploads (default: `300000` = 5 minutes)
@@ -297,7 +298,7 @@ How changes reach users:
 
 - A new upload takes effect after the loader's next poll and load. While a version loads, each user matches either the old or the new version.
 - Rules that use a group not yet loaded into this Redis don't match anyone, so "not in group" can't match everyone before the group is loaded.
-- Clients pick up membership changes on their next refresh. Remote evaluation reports a newer `dateUpdated` once a group changes, so SDKs don't keep stale results. Streaming (SSE) clients aren't notified of membership changes yet.
+- Clients pick up membership changes on their next refresh. Remote evaluation reports a newer `dateUpdated` once a group changes, so SDKs don't keep stale results. Streaming (SSE) remote evaluation clients whose features use remote groups are told to refetch within a few seconds of a change, wherever the loader runs.
 
 **Misc**
 

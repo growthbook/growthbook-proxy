@@ -48,6 +48,7 @@ function onClose(server: any, proxy: GrowthBookProxy, delayMs = 0) {
   }
   // Keep serving while load balancers notice the 503 and stop routing traffic here.
   setTimeout(() => {
+    proxy.services.remoteGroupUpdateWatcher?.stop();
     proxy.services.eventStreamManager?.closeAll();
     proxy.services.cacheRefreshScheduler?.stop();
     // The loader stops at its next batch and releases its locks; wait for

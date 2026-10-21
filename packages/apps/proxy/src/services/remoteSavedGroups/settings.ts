@@ -13,6 +13,11 @@ export interface RemoteSavedGroupsSettings {
   /** Whether this instance runs the loader. */
   runLoader?: boolean;
   pollIntervalMs?: number;
+  /**
+   * How often to check Redis for member changes, to tell streaming
+   * remote-eval clients to refetch. 0 turns the check off.
+   */
+  updateCheckIntervalMs?: number;
   /** Only run the loader: no proxying or evaluation. */
   loaderOnly?: boolean;
   /**
@@ -40,6 +45,12 @@ export function checkRemoteSavedGroupsSettings(
     clusterRootNodes: settings.clusterRootNodesJSON,
   });
   if (redisProblem) throw new Error(redisProblem);
+  const interval = settings.updateCheckIntervalMs;
+  if (interval !== undefined && !(interval >= 0)) {
+    throw new Error(
+      "REMOTE_SAVED_GROUPS_UPDATE_CHECK_INTERVAL_MS: expected milliseconds, or 0 to turn it off",
+    );
+  }
   if (!runsLoader(settings)) return;
   const problem = getStoreIdProblem(settings.storeId);
   if (problem) {

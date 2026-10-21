@@ -66,6 +66,13 @@ export class SSEManager {
     return counts;
   }
 
+  /** The connections that have streaming subscribers. */
+  public getSubscribedApiKeys(): string[] {
+    return [...this.scopedChannels.values()]
+      .filter(({ channel }) => channel.getSubscriberCount() > 0)
+      .map(({ apiKey }) => apiKey);
+  }
+
   public publish({
     apiKey,
     event,
@@ -115,6 +122,20 @@ export class SSEManager {
       payload = "";
     }
     scopedChannel.channel.publish(payload, event);
+  }
+
+  /**
+   * Tells a connection's subscribers to refetch, though its payload hasn't
+   * changed, like when remote saved group memberships change. Only for
+   * connections that already have a channel.
+   */
+  public publishBeacon(apiKey: string) {
+    const scopedChannel = this.scopedChannels.get(apiKey);
+    if (!scopedChannel) return;
+    if (this.appContext?.verboseDebugging) {
+      logger.info({ apiKey }, "EventStreamManager.publishBeacon");
+    }
+    scopedChannel.channel.publish("", "features-updated");
   }
 
   public closeAll() {

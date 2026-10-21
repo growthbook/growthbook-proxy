@@ -122,6 +122,9 @@ export default async () => {
       pollIntervalMs: parseInt(
         process.env.REMOTE_SAVED_GROUPS_POLL_INTERVAL_MS ?? "300000",
       ),
+      updateCheckIntervalMs: parseInt(
+        process.env.REMOTE_SAVED_GROUPS_UPDATE_CHECK_INTERVAL_MS ?? "5000",
+      ),
       loaderOnly: envBool(process.env.REMOTE_SAVED_GROUPS_LOADER_ONLY),
       storeId: process.env.REMOTE_SAVED_GROUPS_STORE_ID,
     },

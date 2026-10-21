@@ -6,6 +6,7 @@ import { EventStreamManager } from "./services/eventStreamManager";
 import { FeaturesCache, CacheSettings } from "./services/cache";
 import { StickyBucketSettings } from "./services/stickyBucket";
 import { RemoteSavedGroupsSettings } from "./services/remoteSavedGroups";
+import type { RemoteGroupUpdateWatcher } from "./services/remoteSavedGroups/updates";
 import { CacheRefreshScheduler } from "./services/cache/scheduler";
 
 export interface GrowthBookProxy {
@@ -18,6 +19,7 @@ export interface GrowthBookProxy {
     eventStreamManager: EventStreamManager;
     logger: HttpLogger["logger"];
     remoteGroupsLoader?: RemoteGroupsLoader | null;
+    remoteGroupUpdateWatcher?: RemoteGroupUpdateWatcher | null;
   };
   version: string;
 }

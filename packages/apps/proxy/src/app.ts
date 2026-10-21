@@ -22,6 +22,7 @@ import { healthRouter } from "./controllers/healthController";
 import {
   initializeRemoteSavedGroups,
   remoteGroupsLoader,
+  remoteGroupUpdateWatcher,
 } from "./services/remoteSavedGroups";
 
 export { Context, GrowthBookProxy, CacheEngine } from "./types";
@@ -116,6 +117,7 @@ export const growthBookProxy = async (
       eventStreamManager,
       logger,
       remoteGroupsLoader,
+      remoteGroupUpdateWatcher,
     },
     version,
   };

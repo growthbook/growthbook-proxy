@@ -60,4 +60,13 @@ describe("checkRemoteSavedGroupsSettings", () => {
       checkRemoteSavedGroupsSettings({ ...redis, runLoader: false }),
     ).not.toThrow();
   });
+
+  it("rejects an update check interval that isn't a number", () => {
+    expect(() =>
+      checkRemoteSavedGroupsSettings({ ...redis, updateCheckIntervalMs: NaN }),
+    ).toThrow("REMOTE_SAVED_GROUPS_UPDATE_CHECK_INTERVAL_MS");
+    expect(() =>
+      checkRemoteSavedGroupsSettings({ ...redis, updateCheckIntervalMs: 0 }),
+    ).not.toThrow();
+  });
 });

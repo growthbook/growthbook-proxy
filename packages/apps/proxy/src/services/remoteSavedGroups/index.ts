@@ -14,7 +14,10 @@ import {
   warnIfRedisCanEvict,
 } from "@growthbook/remote-saved-groups-redis-loader";
 import { Context } from "../../types";
+import { featuresCache } from "../cache";
+import { eventStreamManager } from "../eventStreamManager";
 import logger from "../logger";
+import { registrar } from "../registrar";
 import {
   blockRulesUsingGroups,
   getConditionRemoteGroupIds,
@@ -27,12 +30,15 @@ import {
   RemoteSavedGroupsSettings,
   runsLoader,
 } from "./settings";
+import { notifyRemoteEvalClients, RemoteGroupUpdateWatcher } from "./updates";
 
 export type { RemoteSavedGroupsSettings };
 
 /** Looks up users' remote saved groups for remote evaluation. */
 export let savedGroupResolver: SavedGroupResolver | null = null;
 export let remoteGroupsLoader: RemoteGroupsLoader | null = null;
+/** Tells streaming remote-eval clients when remote group members change. */
+export let remoteGroupUpdateWatcher: RemoteGroupUpdateWatcher | null = null;
 let lookupClient: Redis | Cluster | null = null;
 let lookupTimeoutMs = 1000;
 
@@ -61,6 +67,20 @@ export const initializeRemoteSavedGroups = (context: Context) => {
     lookupTimeoutMs = settings.timeoutMs ?? 1000;
     savedGroupResolver = (args) => withTimeout(resolve(args), lookupTimeoutMs);
     void warnIfRedisCanEvict(redis, logger);
+    const intervalMs = settings.updateCheckIntervalMs ?? 5000;
+    if (intervalMs > 0) {
+      remoteGroupUpdateWatcher = new RemoteGroupUpdateWatcher({
+        readUpdatedAt: () =>
+          withTimeout(
+            redis.hget(GROUP_ATTRIBUTES_KEY, UPDATED_AT_FIELD),
+            lookupTimeoutMs,
+          ),
+        onChange: onRemoteGroupsChanged,
+        intervalMs,
+        logger,
+      });
+      remoteGroupUpdateWatcher.start();
+    }
     logger.info("Remote saved groups enabled");
   }
 
@@ -112,11 +132,54 @@ function getGroupState(): Promise<GroupState> {
   return groupState.value;
 }
 
+/**
+ * Refreshes the group state, then tells streaming remote-eval clients to
+ * refetch, so their next fetch gets the new `dateUpdated`.
+ */
+async function onRemoteGroupsChanged(): Promise<void> {
+  groupState = null;
+  await withTimeout(getGroupState(), lookupTimeoutMs);
+  const sse = eventStreamManager;
+  if (!sse) return;
+  const connections = registrar.getAllConnections();
+  await notifyRemoteEvalClients({
+    apiKeys: sse.getSubscribedApiKeys(),
+    isRemoteEval: (apiKey) => !!connections[apiKey]?.remoteEvalEnabled,
+    // A read that times out counts as not cached, so the beacon still goes.
+    getPayload: async (apiKey) =>
+      (
+        await withTimeout(
+          Promise.resolve(featuresCache?.get(apiKey)),
+          lookupTimeoutMs,
+        )
+      )?.payload as FeatureApiResponse | undefined,
+    usesRemoteGroups: (payload) => {
+      const { conditionIds, entryIds } = getUsedGroups(payload);
+      return conditionIds.length + entryIds.length > 0;
+    },
+    publishBeacon: (apiKey) => sse.publishBeacon(apiKey),
+  });
+}
+
+type UsedGroups = { conditionIds: string[]; entryIds: string[] };
 // The remote groups each payload uses: in conditions, and in v2 entries
-const usedGroups = new WeakMap<
-  FeatureApiResponse,
-  { conditionIds: string[]; entryIds: string[] }
->();
+const usedGroups = new WeakMap<FeatureApiResponse, UsedGroups>();
+
+function getUsedGroups(payload: FeatureApiResponse): UsedGroups {
+  let used = usedGroups.get(payload);
+  if (!used) {
+    used = {
+      conditionIds: getConditionRemoteGroupIds([
+        payload.features,
+        payload.experiments,
+      ]),
+      entryIds: getRemoteSavedGroups(payload.savedGroups).map((g) => g.id),
+    };
+    usedGroups.set(payload, used);
+  }
+  return used;
+}
+
 const prepared = new WeakMap<
   FeatureApiResponse,
   { state: GroupState; payload: FeatureApiResponse }
@@ -137,17 +200,7 @@ export async function prepareRemoteGroups(
   payload: FeatureApiResponse | null,
 ): Promise<FeatureApiResponse | null> {
   if (!payload) return payload;
-  let used = usedGroups.get(payload);
-  if (!used) {
-    used = {
-      conditionIds: getConditionRemoteGroupIds([
-        payload.features,
-        payload.experiments,
-      ]),
-      entryIds: getRemoteSavedGroups(payload.savedGroups).map((g) => g.id),
-    };
-    usedGroups.set(payload, used);
-  }
+  const used = getUsedGroups(payload);
   const ids = [...new Set([...used.conditionIds, ...used.entryIds])];
   if (!ids.length) return payload;
 
