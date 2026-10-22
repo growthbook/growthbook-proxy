@@ -146,6 +146,24 @@ describe("evaluateFeatures with a saved group resolver", () => {
     );
   });
 
+  it("leaves out dateUpdated when the lookup fails", async () => {
+    const dated = { ...payload, dateUpdated: "2026-01-01T00:00:00.000Z" };
+    const ok = await evaluateFeatures({
+      payload: dated,
+      attributes: { id: "member" },
+      savedGroupResolver: resolver,
+    });
+    expect(ok.dateUpdated).toBe(dated.dateUpdated);
+    const failed = await evaluateFeatures({
+      payload: dated,
+      attributes: { id: "member" },
+      savedGroupResolver: async () => {
+        throw new Error("Redis is down");
+      },
+    });
+    expect(failed.dateUpdated).toBeUndefined();
+  });
+
   it("passes only the attributes remote groups use, and the groups", async () => {
     const spy = jest.fn(resolver);
     await evaluate(

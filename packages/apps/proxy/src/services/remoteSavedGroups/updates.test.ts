@@ -17,26 +17,24 @@ function makeWatcher(reads: (string | null | Error)[]) {
 }
 
 describe("RemoteGroupUpdateWatcher", () => {
-  it("calls onChange when the change time changes", async () => {
-    const { watcher, onChange } = makeWatcher(["t1", "t2"]);
-    await watcher.check();
+  it("calls onChange on the first read, then when the time changes", async () => {
+    const { watcher, onChange } = makeWatcher(["t1", "t1", "t2", "t2"]);
     await watcher.check();
     expect(onChange).toHaveBeenCalledTimes(1);
-  });
-
-  it("doesn't call onChange on the first read, or when unchanged", async () => {
-    const { watcher, onChange } = makeWatcher(["t1", "t1", "t1"]);
+    await watcher.check();
+    expect(onChange).toHaveBeenCalledTimes(1);
     await watcher.check();
     await watcher.check();
-    await watcher.check();
-    expect(onChange).not.toHaveBeenCalled();
+    expect(onChange).toHaveBeenCalledTimes(2);
   });
 
   it("treats the first change time after no upload as a change", async () => {
-    const { watcher, onChange } = makeWatcher([null, "t1"]);
+    const { watcher, onChange } = makeWatcher([null, null, "t1"]);
     await watcher.check();
     await watcher.check();
     expect(onChange).toHaveBeenCalledTimes(1);
+    await watcher.check();
+    expect(onChange).toHaveBeenCalledTimes(2);
   });
 
   it("logs a failed read and checks again next time", async () => {
@@ -48,32 +46,32 @@ describe("RemoteGroupUpdateWatcher", () => {
     await watcher.check();
     await watcher.check();
     expect(logger.warn).toHaveBeenCalledTimes(1);
-    expect(onChange).not.toHaveBeenCalled();
-    await watcher.check();
     expect(onChange).toHaveBeenCalledTimes(1);
+    await watcher.check();
+    expect(onChange).toHaveBeenCalledTimes(2);
   });
 
   it("logs a failed onChange and tries again next time", async () => {
-    const { watcher, onChange, logger } = makeWatcher(["t1", "t2", "t2"]);
+    const { watcher, onChange, logger } = makeWatcher(["t1", "t1"]);
     onChange.mockRejectedValueOnce(new Error("boom"));
-    await watcher.check();
     await expect(watcher.check()).resolves.toBeUndefined();
     expect(logger.warn).toHaveBeenCalledTimes(1);
     await watcher.check();
     expect(onChange).toHaveBeenCalledTimes(2);
   });
 
-  it("checks on a timer until stopped", async () => {
+  it("checks right away, then on a timer until stopped", async () => {
     jest.useFakeTimers();
     try {
       const { watcher, onChange } = makeWatcher(["t1", "t2", "t3"]);
       watcher.start();
-      await jest.advanceTimersByTimeAsync(5000);
-      await jest.advanceTimersByTimeAsync(5000);
+      await jest.advanceTimersByTimeAsync(0);
       expect(onChange).toHaveBeenCalledTimes(1);
+      await jest.advanceTimersByTimeAsync(5000);
+      expect(onChange).toHaveBeenCalledTimes(2);
       watcher.stop();
       await jest.advanceTimersByTimeAsync(5000);
-      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenCalledTimes(2);
     } finally {
       jest.useRealTimers();
     }

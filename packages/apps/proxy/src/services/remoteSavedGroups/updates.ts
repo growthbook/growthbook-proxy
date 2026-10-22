@@ -4,7 +4,7 @@ type Logger = { warn(obj: object, msg: string): void };
 export type RemoteGroupUpdateWatcherOptions = {
   /** Reads when remote group members last changed, as the loader recorded. */
   readUpdatedAt: () => Promise<string | null>;
-  /** Called after the change time changes, but not on the first read. */
+  /** Called on the first read, and after the change time changes. */
   onChange: () => Promise<void>;
   intervalMs: number;
   logger: Logger;
@@ -18,8 +18,9 @@ export type RemoteGroupUpdateWatcherOptions = {
 export class RemoteGroupUpdateWatcher {
   private readonly options: RemoteGroupUpdateWatcherOptions;
   private timer: ReturnType<typeof setTimeout> | null = null;
-  private lastUpdatedAt: string | null = null;
-  private hasRead = false;
+  // undefined until the first read, which also notifies: a group may have
+  // changed after clients fetched during startup.
+  private lastUpdatedAt: string | null | undefined = undefined;
   private stopped = true;
 
   constructor(options: RemoteGroupUpdateWatcherOptions) {
@@ -29,7 +30,7 @@ export class RemoteGroupUpdateWatcher {
   start(): void {
     if (!this.stopped) return;
     this.stopped = false;
-    this.schedule();
+    this.schedule(0);
   }
 
   stop(): void {
@@ -50,12 +51,7 @@ export class RemoteGroupUpdateWatcher {
       );
       return;
     }
-    const changed = this.hasRead && updatedAt !== this.lastUpdatedAt;
-    this.hasRead = true;
-    if (!changed) {
-      this.lastUpdatedAt = updatedAt;
-      return;
-    }
+    if (updatedAt === this.lastUpdatedAt) return;
     try {
       await this.options.onChange();
       this.lastUpdatedAt = updatedAt;
@@ -68,12 +64,12 @@ export class RemoteGroupUpdateWatcher {
     }
   }
 
-  private schedule() {
+  private schedule(delayMs: number) {
     this.timer = setTimeout(() => {
       this.check().finally(() => {
-        if (!this.stopped) this.schedule();
+        if (!this.stopped) this.schedule(this.options.intervalMs);
       });
-    }, this.options.intervalMs);
+    }, delayMs);
   }
 }
 

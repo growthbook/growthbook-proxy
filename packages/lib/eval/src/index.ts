@@ -52,7 +52,10 @@ export async function evaluateFeatures({
     | null;
   /** Looks up the user's remote saved groups before evaluating. */
   savedGroupResolver?: SavedGroupResolver;
-  /** Called when `savedGroupResolver` throws; the user is then in no remote groups. */
+  /**
+   * Called when `savedGroupResolver` throws. The user is then in no remote
+   * groups, and the result has no `dateUpdated`.
+   */
   onSavedGroupResolverError?: (err: unknown) => void;
   ctx?: any;
 }) {
@@ -85,6 +88,7 @@ export async function evaluateFeatures({
   if (stickyBucketService) {
     context.stickyBucketService = stickyBucketService;
   }
+  let lookupFailed = false;
   if (savedGroupResolver) {
     // With a resolver, remote groups come only from it, never the request.
     const userAttributes = { ...attributes };
@@ -101,6 +105,7 @@ export async function evaluateFeatures({
           savedGroupResolver,
         );
       } catch (e) {
+        lookupFailed = true;
         onSavedGroupResolverError?.(e);
       }
     }
@@ -204,7 +209,9 @@ export async function evaluateFeatures({
     features: evaluatedFeatures,
     experiments: evaluatedExperiments,
   };
-  if (payload?.dateUpdated) {
+  // Without a dateUpdated after a failed lookup, SDKs accept the next
+  // correct response instead of skipping it as unchanged.
+  if (payload?.dateUpdated && !lookupFailed) {
     evaluatedPayload.dateUpdated = payload.dateUpdated;
   }
 

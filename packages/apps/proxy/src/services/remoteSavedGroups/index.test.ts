@@ -89,6 +89,7 @@ describe("remote group change beacons", () => {
     expect(before?.dateUpdated?.startsWith("2026-01-01")).toBe(true);
 
     hash.__updatedAt = "2026-02-01T00:00:00.000Z";
+    publishBeacon.mockClear();
     // What a client refetching right after the beacon would get
     const seen: (string | undefined)[] = [];
     publishBeacon.mockImplementation(async (apiKey: string) => {

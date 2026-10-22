@@ -285,7 +285,7 @@ Settings:
   - `REMOTE_SAVED_GROUPS_CONNECTION_URL` - The URL of the Redis for remote saved groups. Required unless using Redis Cluster
   - `REMOTE_SAVED_GROUPS_USE_CLUSTER` - "true" or "1" to enable Redis cluster mode (default: `false`)
   - `REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON` - JSON array of ClusterNode objects (ioredis). Required with cluster mode
-  - `REMOTE_SAVED_GROUPS_TIMEOUT_MS` - How long a user's group lookup may take before remote evaluation treats them as in no remote groups (default: `1000`)
+  - `REMOTE_SAVED_GROUPS_TIMEOUT_MS` - How long a user's group lookup may take before remote evaluation treats them as in no remote groups. That response has no `dateUpdated`, so SDKs accept the next correct one (default: `1000`)
   - `REMOTE_SAVED_GROUPS_UPDATE_CHECK_INTERVAL_MS` - How often this instance checks Redis for membership changes, to tell streaming (SSE) remote evaluation clients to refetch. `0` turns it off (default: `5000` = 5 seconds)
   - `REMOTE_SAVED_GROUPS_STORE_ID` - Identifies this Redis in GrowthBook's load reports, such as `redis-us-east` (1 to 100 characters). Required when this instance runs the loader. Use one ID per Redis: replicas sharing a Redis (or a Redis Cluster) use the same ID, and each Redis gets a different one
   - `REMOTE_SAVED_GROUPS_LOADER` - "true" or "1" to load uploaded groups into Redis from this instance. Instances sharing a Redis take turns (default: `true`)
