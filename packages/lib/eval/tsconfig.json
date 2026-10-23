@@ -16,7 +16,6 @@
     "strictPropertyInitialization": true,
     "incremental": true
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts"]
 }
