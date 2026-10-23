@@ -33,9 +33,7 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 - HTTP/1.1 keep-alive timeout now defaults to 90 seconds instead of Node's 5, so the proxy no longer closes pooled load balancer connections first and causes 502s. Configure it with `KEEP_ALIVE_TIMEOUT_MS`, and the header timeout with `HEADERS_TIMEOUT_MS`
 - Added `SHUTDOWN_DELAY_MS` for graceful shutdown. On SIGTERM/SIGINT, `/healthcheck` returns `503` while the proxy keeps serving for the delay
-- Distrust the `emSign ECC Root CA - G3` root after the eMudhra intermediate CA compromise
-- The Docker image runs Node.js 22.23.4 from the October 2026 security release, including the fix for CVE-2026-111497
-- Dependency security updates
+- Security updates (including distruting eMudhra certificates + Node October security release)
 
 **Version 1.4.0**
 
