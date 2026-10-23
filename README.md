@@ -29,6 +29,12 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ### What's new
 
+**Version 1.5.0**
+
+- HTTP/1.1 keep-alive timeout now defaults to 90 seconds instead of Node's 5, so the proxy no longer closes pooled load balancer connections first and causes 502s. Configure it with `KEEP_ALIVE_TIMEOUT_MS`, and the header timeout with `HEADERS_TIMEOUT_MS`
+- Added `SHUTDOWN_DELAY_MS` for graceful shutdown. On SIGTERM/SIGINT, `/healthcheck` returns `503` while the proxy keeps serving for the delay
+- Security updates (including distruting eMudhra certificates + Node October security release)
+
 **Version 1.4.0**
 
 - Updated the GrowthBook JS SDK to 1.7.0; remote evaluation now supports contextual bandits
@@ -176,12 +182,12 @@ The GrowthBook Proxy supports a number of configuration options available via en
 
 These settings apply to HTTP/1.1 connections between the load balancer and the proxy, including HTTP/1.1 connections accepted when `USE_HTTP2=true`. They do not configure negotiated HTTP/2 sessions.
 
-- `KEEP_ALIVE_TIMEOUT_MS` - How long the proxy holds an idle keep-alive connection open (default: Node's `5000` = 5 seconds)
+- `KEEP_ALIVE_TIMEOUT_MS` - How long the proxy holds an idle keep-alive connection open (default: `90000` = 90 seconds)
 - `HEADERS_TIMEOUT_MS` - How long the proxy waits for complete HTTP/1.1 request headers.
 
-If the load balancer connects to the proxy using HTTP/1.1, set `KEEP_ALIVE_TIMEOUT_MS` **higher than the load balancer's idle timeout**. Otherwise the proxy may close a pooled connection at the same moment the balancer dispatches a request onto it, and the balancer reports a 502 with no response from the target. Node's 5 second default is shorter than common balancer defaults — an AWS ALB idles at 60 seconds — so without this the proxy is always the side that closes first, producing a steady background rate of 502s that no amount of scaling removes.
+If the load balancer connects to the proxy using HTTP/1.1, set `KEEP_ALIVE_TIMEOUT_MS` **higher than the load balancer's idle timeout**. Otherwise the proxy may close a pooled connection at the same moment the balancer dispatches a request onto it, and the balancer reports a 502 with no response from the target. The 90 second default clears common balancer idle timeouts (an AWS ALB idles at 60 seconds, nginx at 75), so only raise it when your balancer idles longer.
 
-For a 60 second balancer idle timeout, `KEEP_ALIVE_TIMEOUT_MS=75000` leaves a comfortable margin. `HEADERS_TIMEOUT_MS` can remain at Node's default.
+For a 120 second balancer idle timeout, `KEEP_ALIVE_TIMEOUT_MS=125000` leaves a comfortable margin. `HEADERS_TIMEOUT_MS` can remain at Node's default.
 
 ### Caching
 
