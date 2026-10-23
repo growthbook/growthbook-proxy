@@ -34,6 +34,10 @@ RUN \
 # requires `docker login dhi.io` (free DHI Community tier); pulling needs no login.
 FROM dhi.io/node:22-debian12
 WORKDIR /app
+
+# TEMP for CVE-2026-111497. Remove once dhi.io/node:22-debian12 ships >= 22.23.4.
+COPY --from=node:22.23.4-bookworm-slim /usr/local/bin/node /usr/local/bin/node
+
 COPY --from=0 /app/pruned/node_modules ./node_modules
 COPY --from=0 /app/pruned/package.json ./package.json
 COPY --from=0 /usr/local/src/app/packages/apps/proxy/dist ./dist
