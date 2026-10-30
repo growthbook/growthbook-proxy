@@ -29,6 +29,12 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ### What's new
 
+**Version 1.6.0**
+
+- Added Remote Saved Groups: the Proxy loads large ID lists from GrowthBook into Redis and looks up each user's groups during remote evaluation. Turn it on with `ENABLE_REMOTE_SAVED_GROUPS` (see **Remote Saved Groups** below). Needs GrowthBook 5.2 or later
+- The loader can also run on its own, with `REMOTE_SAVED_GROUPS_LOADER_ONLY` or from the new `@growthbook/remote-saved-groups-redis-loader` package, to fill a Redis for backends and edge apps without a Proxy
+- Updated the GrowthBook JS SDK to 2.0.0. Remote evaluation now uses its stricter targeting: an attribute only matches a condition of the same type. See [Updating to 2.0.0](https://docs.growthbook.io/lib/js#updating-to-2-0-0)
+
 **Version 1.5.0**
 
 - HTTP/1.1 keep-alive timeout now defaults to 90 seconds instead of Node's 5, so the proxy no longer closes pooled load balancer connections first and causes 502s. Configure it with `KEEP_ALIVE_TIMEOUT_MS`, and the header timeout with `HEADERS_TIMEOUT_MS`

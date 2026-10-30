@@ -2,7 +2,6 @@
   "name": "@growthbook/remote-saved-groups-redis-loader",
   "description": "Loads GrowthBook remote saved groups into Redis",
   "version": "0.1.0",
-  "private": true,
   "packageManager": "pnpm@10.33.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -24,11 +23,8 @@
     "dev": "tsc --watch",
     "test": "jest"
   },
-  "//": [
-    "@growthbook/remote-saved-groups-csv-parser: unreleased, from a pinned main-repo commit. Switch to npm once published."
-  ],
   "dependencies": {
-    "@growthbook/remote-saved-groups-csv-parser": "github:growthbook/growthbook#8892b0306f836268fe4507da02cd13b576eaea8f&path:/packages/remote-saved-groups-csv-parser",
+    "@growthbook/remote-saved-groups-csv-parser": "^0.1.0",
     "ioredis": "^5.4.1"
   },
   "devDependencies": {

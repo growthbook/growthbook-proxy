@@ -67,8 +67,8 @@ importers:
   packages/apps/proxy:
     dependencies:
       '@growthbook/growthbook':
-        specifier: github:growthbook/growthbook#e39a543ad0d11a7864d25603b3b933b654a103c4&path:/packages/sdk-js
-        version: https://codeload.github.com/growthbook/growthbook/tar.gz/e39a543ad0d11a7864d25603b3b933b654a103c4#path:/packages/sdk-js
+        specifier: ^2.0.0
+        version: 2.0.0
       '@growthbook/proxy-eval':
         specifier: workspace:*
         version: link:../../lib/eval
@@ -322,8 +322,8 @@ importers:
   packages/lib/eval:
     dependencies:
       '@growthbook/growthbook':
-        specifier: github:growthbook/growthbook#e39a543ad0d11a7864d25603b3b933b654a103c4&path:/packages/sdk-js
-        version: https://codeload.github.com/growthbook/growthbook/tar.gz/e39a543ad0d11a7864d25603b3b933b654a103c4#path:/packages/sdk-js
+        specifier: ^2.0.0
+        version: 2.0.0
     devDependencies:
       '@types/jest':
         specifier: ^29.5.14
@@ -347,8 +347,8 @@ importers:
   packages/lib/remote-saved-groups-redis-loader:
     dependencies:
       '@growthbook/remote-saved-groups-csv-parser':
-        specifier: github:growthbook/growthbook#8892b0306f836268fe4507da02cd13b576eaea8f&path:/packages/remote-saved-groups-csv-parser
-        version: https://codeload.github.com/growthbook/growthbook/tar.gz/8892b0306f836268fe4507da02cd13b576eaea8f#path:/packages/remote-saved-groups-csv-parser
+        specifier: ^0.1.0
+        version: 0.1.0
       ioredis:
         specifier: ^5.4.1
         version: 5.10.0
@@ -799,14 +799,12 @@ packages:
     resolution: {integrity: sha512-Vmad3fWRh1XaFH4q+AS62ofX6Q3IxSTD7sBGuhEHCaad8VyZerxrVdojucjzlnJDUocfrnZFUSpEkR6R/wCV+A==}
     engines: {node: '>=10'}
 
-  '@growthbook/growthbook@https://codeload.github.com/growthbook/growthbook/tar.gz/e39a543ad0d11a7864d25603b3b933b654a103c4#path:/packages/sdk-js':
-    resolution: {path: /packages/sdk-js, tarball: https://codeload.github.com/growthbook/growthbook/tar.gz/e39a543ad0d11a7864d25603b3b933b654a103c4}
-    version: 1.8.1
+  '@growthbook/growthbook@2.0.0':
+    resolution: {integrity: sha512-NQgdtW9ezfNopNlc1ZzuA8lc7iKuNX6HT2o3NTHKgthdOlRFAubNSGf+F259sL1mbdsEO4e3j1aUQDF4CtUouA==}
     engines: {node: '>=10'}
 
-  '@growthbook/remote-saved-groups-csv-parser@https://codeload.github.com/growthbook/growthbook/tar.gz/8892b0306f836268fe4507da02cd13b576eaea8f#path:/packages/remote-saved-groups-csv-parser':
-    resolution: {path: /packages/remote-saved-groups-csv-parser, tarball: https://codeload.github.com/growthbook/growthbook/tar.gz/8892b0306f836268fe4507da02cd13b576eaea8f}
-    version: 0.1.0
+  '@growthbook/remote-saved-groups-csv-parser@0.1.0':
+    resolution: {integrity: sha512-xrvFTqT1AFmoop8wYhbeU0VG1SqUM6+Hm4C8ObrQLYE3pASOx+WL1YLXy4BTUeQuIHUtfZuED8r+1nnt63qVJw==}
     engines: {node: '>=18'}
 
   '@grpc/grpc-js@1.14.5':
@@ -5173,11 +5171,11 @@ snapshots:
     dependencies:
       dom-mutator: 0.6.0
 
-  '@growthbook/growthbook@https://codeload.github.com/growthbook/growthbook/tar.gz/e39a543ad0d11a7864d25603b3b933b654a103c4#path:/packages/sdk-js':
+  '@growthbook/growthbook@2.0.0':
     dependencies:
       dom-mutator: 0.6.0
 
-  '@growthbook/remote-saved-groups-csv-parser@https://codeload.github.com/growthbook/growthbook/tar.gz/8892b0306f836268fe4507da02cd13b576eaea8f#path:/packages/remote-saved-groups-csv-parser': {}
+  '@growthbook/remote-saved-groups-csv-parser@0.1.0': {}
 
   '@grpc/grpc-js@1.14.5':
     dependencies:
