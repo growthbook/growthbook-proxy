@@ -56,7 +56,3 @@ loader.start();
 await loader.stop();
 redis.disconnect();
 ```
-
-## License
-
-MIT
