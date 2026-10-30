@@ -73,8 +73,8 @@ importers:
         specifier: 1.3.0
         version: 1.3.0
       '@growthbook/remote-saved-groups-redis-loader':
-        specifier: workspace:*
-        version: link:../../lib/remote-saved-groups-redis-loader
+        specifier: 0.1.0
+        version: 0.1.0
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.0
@@ -809,6 +809,10 @@ packages:
   '@growthbook/remote-saved-groups-csv-parser@0.1.0':
     resolution: {integrity: sha512-xrvFTqT1AFmoop8wYhbeU0VG1SqUM6+Hm4C8ObrQLYE3pASOx+WL1YLXy4BTUeQuIHUtfZuED8r+1nnt63qVJw==}
     engines: {node: '>=18'}
+
+  '@growthbook/remote-saved-groups-redis-loader@0.1.0':
+    resolution: {integrity: sha512-snei0lEWItTcVWQQYslftCwEcKFPH4i0a2+Y/+nm/RgjBi0l1ElJpmoy1jThbq/FwLViYFVFOjXXtTC1DWVxPw==}
+    hasBin: true
 
   '@grpc/grpc-js@1.14.5':
     resolution: {integrity: sha512-7VZM+SVdEcUUqSQeNI3zM8Qs/BhQKZndPo2h5VkYkAM8Iz0wJIa8mKV5ekQGqG8UUsnkQ0NMxIxwkIHYvj0qOw==}
@@ -5183,6 +5187,13 @@ snapshots:
       '@growthbook/growthbook': 2.0.0
 
   '@growthbook/remote-saved-groups-csv-parser@0.1.0': {}
+
+  '@growthbook/remote-saved-groups-redis-loader@0.1.0':
+    dependencies:
+      '@growthbook/remote-saved-groups-csv-parser': 0.1.0
+      ioredis: 5.10.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@grpc/grpc-js@1.14.5':
     dependencies:
