@@ -18,6 +18,7 @@
     "build:clean": "rimraf -rf dist tsconfig.tsbuildinfo",
     "build:typescript": "tsc",
     "build": "pnpm build:clean && pnpm build:typescript",
+    "prepublishOnly": "node ../../../.github/scripts/check-publishable.mjs .",
     "type-check": "tsc --pretty --noEmit",
     "start": "node dist/index.js",
     "start:with-tracing": "node --require ./dist/tracing.js dist/index.js",

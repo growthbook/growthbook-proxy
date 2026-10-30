@@ -15,6 +15,7 @@
     "build:clean": "rimraf -rf dist",
     "build:typescript": "tsc",
     "build": "pnpm build:clean && pnpm build:typescript",
+    "prepublishOnly": "node ../../../.github/scripts/check-publishable.mjs .",
     "type-check": "tsc --pretty --noEmit",
     "dev": "tsc --watch",
     "test": "jest"
