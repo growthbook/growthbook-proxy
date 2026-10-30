@@ -16,7 +16,6 @@ COPY pnpm-lock.yaml ./pnpm-lock.yaml
 COPY pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY .npmrc ./.npmrc
 COPY packages/apps/proxy/package.json ./packages/apps/proxy/package.json
-COPY packages/lib/eval/package.json ./packages/lib/eval/package.json
 # Pnpm install with dev dependencies
 RUN pnpm install --frozen-lockfile --no-optional
 

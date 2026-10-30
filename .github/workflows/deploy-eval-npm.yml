@@ -24,11 +24,14 @@ jobs:
       - name: Enable corepack
         run: corepack enable
 
+      - name: Check dependencies install from npm
+        run: node .github/scripts/check-publishable.mjs packages/lib/eval
+
       - name: Build & Publish
         run: |
           if [ ! -v NPM_TOKEN ]; then echo "NPM_TOKEN not set"; exit 1; fi;
           npm set //registry.npmjs.org/:_authToken $NPM_TOKEN
           pnpm install
-          pnpm build:deps:proxy
+          pnpm --filter @growthbook/proxy-eval build
           cd packages/lib/eval
           npm publish
