@@ -1,7 +1,7 @@
 {
   "name": "@growthbook/edge-fastly",
   "description": "GrowthBook edge app for Fastly Compute",
-  "version": "0.2.9",
+  "version": "0.3.0",
   "packageManager": "pnpm@10.33.0",
   "main": "dist/index.js",
   "license": "MIT",
@@ -21,7 +21,7 @@
     "cookie": "^1.0.2"
   },
   "devDependencies": {
-    "@growthbook/growthbook": "^1.7.0",
+    "@growthbook/growthbook": "^2.0.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.7.2"
   }

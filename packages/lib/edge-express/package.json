@@ -5,7 +5,7 @@
   },
   "packageManager": "pnpm@10.33.0",
   "description": "GrowthBook edge app for Express",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "dist/index.js",
   "license": "MIT",
   "repository": {
@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@growthbook/edge-utils": "^0.2.9",
-    "@growthbook/growthbook": "^1.7.0",
+    "@growthbook/growthbook": "^2.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "express": "^5.2.1",

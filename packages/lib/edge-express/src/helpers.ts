@@ -44,6 +44,8 @@ export async function fetchFn(
   url: string,
   _req: Request,
 ) {
+  // TODO: `request` is undefined (the param is `_req`), so this throws. Fix:
+  // forward req's method and headers (minus Host), like the other edge apps
   // @ts-ignore
   return fetch(url, request) as Promise<Response>;
 }
