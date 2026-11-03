@@ -170,8 +170,8 @@ importers:
   packages/lib/edge-cloudflare:
     dependencies:
       '@growthbook/edge-utils':
-        specifier: ^0.2.9
-        version: 0.2.9
+        specifier: ^0.3.0
+        version: 0.3.0
       cookie:
         specifier: ^1.0.2
         version: 1.1.1
@@ -195,8 +195,8 @@ importers:
   packages/lib/edge-express:
     dependencies:
       '@growthbook/edge-utils':
-        specifier: ^0.2.9
-        version: 0.2.9
+        specifier: ^0.3.0
+        version: 0.3.0
       '@growthbook/growthbook':
         specifier: ^2.0.0
         version: 2.0.0
@@ -241,8 +241,8 @@ importers:
   packages/lib/edge-fastly:
     dependencies:
       '@growthbook/edge-utils':
-        specifier: ^0.2.9
-        version: 0.2.9
+        specifier: ^0.3.0
+        version: 0.3.0
       cookie:
         specifier: ^1.0.2
         version: 1.1.1
@@ -260,8 +260,8 @@ importers:
   packages/lib/edge-lambda:
     dependencies:
       '@growthbook/edge-utils':
-        specifier: ^0.2.9
-        version: 0.2.9
+        specifier: ^0.3.0
+        version: 0.3.0
       cookie:
         specifier: ^1.0.2
         version: 1.1.1
@@ -792,12 +792,8 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@growthbook/edge-utils@0.2.9':
-    resolution: {integrity: sha512-yhwgm3FBrCx521uixNsF24ey8ptjuMj5iQapKVo913B7TUw5vqkjx6kAnHUyvVL5NmLZ58yH35CofovM3Iegsg==}
-
-  '@growthbook/growthbook@1.7.0':
-    resolution: {integrity: sha512-Vmad3fWRh1XaFH4q+AS62ofX6Q3IxSTD7sBGuhEHCaad8VyZerxrVdojucjzlnJDUocfrnZFUSpEkR6R/wCV+A==}
-    engines: {node: '>=10'}
+  '@growthbook/edge-utils@0.3.0':
+    resolution: {integrity: sha512-C/NHg5DaHsaTeZ6ss3+3/a0XKoF0z5HSw7C7xjQ+Bj7RtT4H2ortyptMff0KRWLTsuKOX34sMddhqi/8Q2qc4A==}
 
   '@growthbook/growthbook@2.0.0':
     resolution: {integrity: sha512-NQgdtW9ezfNopNlc1ZzuA8lc7iKuNX6HT2o3NTHKgthdOlRFAubNSGf+F259sL1mbdsEO4e3j1aUQDF4CtUouA==}
@@ -5168,15 +5164,11 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@growthbook/edge-utils@0.2.9':
+  '@growthbook/edge-utils@0.3.0':
     dependencies:
-      '@growthbook/growthbook': 1.7.0
+      '@growthbook/growthbook': 2.0.0
       node-html-parser: 7.1.0
       pako: 2.1.0
-
-  '@growthbook/growthbook@1.7.0':
-    dependencies:
-      dom-mutator: 0.6.0
 
   '@growthbook/growthbook@2.0.0':
     dependencies:

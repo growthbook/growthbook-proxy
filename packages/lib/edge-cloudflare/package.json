@@ -19,7 +19,7 @@
     "dev": "wrangler dev"
   },
   "dependencies": {
-    "@growthbook/edge-utils": "^0.2.9",
+    "@growthbook/edge-utils": "^0.3.0",
     "cookie": "^1.0.2"
   },
   "devDependencies": {
