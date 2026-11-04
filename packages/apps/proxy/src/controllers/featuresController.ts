@@ -84,8 +84,8 @@ const getFeatures = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 const bodySchema = z.object({
-  attributes: z.record(z.any()).optional(),
-  forcedVariations: z.record(z.number()).optional(),
+  attributes: z.record(z.string(), z.any()).optional(),
+  forcedVariations: z.record(z.string(), z.number()).optional(),
   forcedFeatures: z.array(z.tuple([z.string(), z.any()])).optional(),
   url: z.string().optional(),
 });
