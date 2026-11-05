@@ -48,7 +48,8 @@ for (const intercept of [false, true]) {
           assert.equal(response.status, 200);
           assert.equal(response.headers.get("x-upstream"), "ok");
           assert.deepEqual(await response.json(), { url: "/features?key=test", method: "POST", body: "payload" });
-          const redirected = await fetch(base + "/redirect");
+          const redirected = await fetch(base + "/redirect", { redirect: "manual" });
+          assert.equal(redirected.status, 200);
           assert.deepEqual(await redirected.json(), { url: "/features", method: "GET", body: "" });
         } finally {
           proxy.closeAllConnections();
