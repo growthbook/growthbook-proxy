@@ -47,7 +47,6 @@ COPY --chmod=755 bin/start-shim /usr/local/bin/yarn
 COPY --chmod=755 bin/start-shim /usr/local/bin/pnpm
 
 EXPOSE 3300
-# Launch pm2-runtime via node directly: the .bin shim is a #!/bin/sh script, and
-# pm2's own entry relies on #!/usr/bin/env node — neither can exec here, but pm2
-# itself is plain Node.
-CMD ["node", "node_modules/pm2/bin/pm2-runtime", "start", "dist/index.js"]
+# Run Node directly: PM2's resource monitoring and shutdown need shell utilities
+# that are not available in this image. Let the container runtime manage restarts.
+CMD ["node", "dist/index.js"]

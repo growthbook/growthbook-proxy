@@ -3,7 +3,7 @@
   "name": "proxy-monorepo",
   "repository": "https://github.com/growthbook/growthbook-proxy",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.15.0"
   },
   "packageManager": "pnpm@10.33.0",
   "description": "GrowthBook proxy server for caching, realtime updates, telemetry, etc",
