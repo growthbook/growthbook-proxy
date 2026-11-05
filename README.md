@@ -139,11 +139,11 @@ The GrowthBook Proxy repository is a mono-repo containing the following packages
 
 ## Installation
 
-Install and run with Docker
+Install and run with Docker. When running the Proxy directly, Node.js 22.15.0 or later is required for its ESM proxy middleware.
 
 ```bash
 docker pull growthbook/proxy:latest
-docker run -d -p 3300:3300 \
+docker run -d --restart unless-stopped -p 3300:3300 \
   -e "GROWTHBOOK_API_HOST=https://growthbook-api.example.com" \
   -e "SECRET_API_KEY=key_abc123" \
   --name gbproxy growthbook/proxy
@@ -257,7 +257,7 @@ If the GrowthBook app your proxy is connecting to is using a self-signed certifi
 
 The GrowthBook Proxy is instrumented with OpenTelemetry to publish observability metrics, traces, and logs.
 
-To enable, you must change the Docker CMD from the default `pnpm start` to `pnpm start:with-tracing`.
+To enable tracing in Docker, override the command with `node --require ./dist/tracing.js dist/index.js`. The `pnpm start:with-tracing` and `yarn start:with-tracing` overrides are also supported.
 
 The standard [OTEL\_\* Environment Variables](https://opentelemetry.io/docs/concepts/sdk-configuration/) are supported, such as `OTEL_SERVICE_NAME` and `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
@@ -323,4 +323,4 @@ How changes reach users:
 
 - `SHUTDOWN_DELAY_MS` - On SIGTERM/SIGINT, keep serving for this long while `/healthcheck` returns `503` so load balancers and Kubernetes stop routing traffic to the instance before it closes (default: `0` = close immediately)
 
-When running the Docker image, also set `PM2_KILL_TIMEOUT` to a value above `SHUTDOWN_DELAY_MS`; pm2 otherwise force-kills the process after 1600ms. On Kubernetes, make sure `terminationGracePeriodSeconds` covers the delay too, and use a readiness probe against `/healthcheck` so the `503` takes the pod out of rotation.
+The Docker image runs Node directly and relies on the container runtime for restarts. Set the Docker stop timeout (for example, `docker stop --time 30`) or Kubernetes `terminationGracePeriodSeconds` long enough to cover `SHUTDOWN_DELAY_MS` plus in-flight requests and cleanup. On Kubernetes, use a readiness probe against `/healthcheck` so the `503` takes the pod out of rotation. For non-container deployments using PM2, also set `PM2_KILL_TIMEOUT` above the full shutdown duration; its default is 1600ms.

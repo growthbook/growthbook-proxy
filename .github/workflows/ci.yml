@@ -3,6 +3,11 @@ on:
   pull_request:
     paths:
       - "packages/**"
+      - "bin/**"
+      - "Dockerfile"
+      - "package.json"
+      - "pnpm-workspace.yaml"
+      - ".github/scripts/*.test.cjs"
       - "pnpm-lock.yaml"
       - ".eslint*"
       - ".github/workflows/ci.yml"
@@ -58,3 +63,6 @@ jobs:
         run: pnpm -r --if-present test
         env:
           CI: true
+
+      - name: Test container runtime
+        run: node --test .github/scripts/*.test.cjs

@@ -11,7 +11,7 @@ import { startDraining } from "./controllers/healthController";
   // creating and starting the proxy is a one-liner
   const proxy = await growthBookProxy(app, context);
 
-  // pm2 forwards `docker stop` as SIGINT by default, so both signals drain.
+  // Container runtimes send SIGTERM; PM2 sends SIGINT. Both signals drain.
   process.on("SIGTERM", () => {
     console.info("SIGTERM signal received: closing HTTP server");
     onClose(server, proxy, context.shutdownDelayMs);
