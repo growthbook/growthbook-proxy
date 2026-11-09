@@ -2,7 +2,19 @@ import { Request, Response } from "express";
 import logger, { truncatePayloadForLogging } from "../logger";
 import { Context } from "../../types";
 import { payloadChanged } from "../payloadChanged";
+import { featuresCache } from "../cache";
+import { registrar } from "../registrar";
 import { SSEChannel } from "./ssePubsub";
+
+function versionOf(payload: unknown): number | undefined {
+  const dateUpdated =
+    payload && typeof payload === "object"
+      ? (payload as Record<string, unknown>).dateUpdated
+      : undefined;
+  if (typeof dateUpdated !== "string") return undefined;
+  const epoch = Date.parse(dateUpdated);
+  return Number.isNaN(epoch) ? undefined : epoch;
+}
 
 interface ScopedChannel {
   apiKey: string;
@@ -18,9 +30,16 @@ export class SSEManager {
   private scopedChannels = new Map<string, ScopedChannel>();
 
   private appContext: Context;
+  private readonly contentVersions: boolean;
 
   constructor(appContext: Context) {
     this.appContext = appContext;
+    const settings = appContext.cacheSettings;
+    this.contentVersions =
+      !!appContext.enableCache &&
+      !!settings &&
+      settings.cacheEngine !== "memory" &&
+      settings.publishPayloadToChannel === true;
     setInterval(() => this.removeIdleChannels(), 60 * 1000).unref();
   }
 
@@ -36,7 +55,7 @@ export class SSEManager {
     });
   }
 
-  public subscribe(req: Request, res: Response) {
+  public async subscribe(req: Request, res: Response) {
     if (this.appContext?.verboseDebugging) {
       logger.info("EventStreamManager.subscribe");
     }
@@ -50,6 +69,7 @@ export class SSEManager {
       }
       if (scopedChannel) {
         try {
+          await this.seedFromCache(apiKey, scopedChannel);
           scopedChannel.channel.subscribe(req, res);
 
           if (this.appContext?.verboseDebugging) {
@@ -65,6 +85,25 @@ export class SSEManager {
         logger.error({ apiKey }, "Unable to get SSE channel");
       }
     }
+  }
+
+  private async seedFromCache(
+    apiKey: string,
+    scopedChannel: ScopedChannel,
+  ): Promise<void> {
+    if (!this.contentVersions) return;
+    if (scopedChannel.channel.hasContent()) return;
+    if (!featuresCache) return;
+    const entry = await featuresCache.get(apiKey);
+    if (!entry) return;
+    if (scopedChannel.channel.hasContent()) return;
+    const remoteEvalEnabled =
+      !!registrar.getConnection(apiKey)?.remoteEvalEnabled;
+    scopedChannel.channel.publish(
+      remoteEvalEnabled ? "" : entry.payload,
+      remoteEvalEnabled ? "features-updated" : "features",
+      versionOf(entry.payload),
+    );
   }
 
   public getSubscriberCount(apiKey: string): number | null {
@@ -134,11 +173,12 @@ export class SSEManager {
       return;
     }
 
+    const version = versionOf(payload);
     if (event === "features-updated") {
       // change payload to a "please refetch" beacon
       payload = "";
     }
-    scopedChannel.channel.publish(payload, event);
+    scopedChannel.channel.publish(payload, event, version);
   }
 
   /**
@@ -172,6 +212,7 @@ export class SSEManager {
             pingInterval: this.appContext.eventStreamPingIntervalMs,
             // a channel recreated after removal must not reuse a reconnecting client's Last-Event-ID
             startId: Date.now(),
+            contentVersions: this.contentVersions,
           },
           this.appContext,
         ),
