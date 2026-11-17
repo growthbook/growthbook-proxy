@@ -75,6 +75,7 @@ export default async ({ proxyTarget }: { proxyTarget: string }) => {
       target: proxyTarget,
       changeOrigin: true,
       selfHandleResponse: true,
+      headers: { "user-agent": "GrowthBook Proxy" },
       on: {
         proxyRes: interceptor(proxyTarget),
         error: (err, req, res) => {
