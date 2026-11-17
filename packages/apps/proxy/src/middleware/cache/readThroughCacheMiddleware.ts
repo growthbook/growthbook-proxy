@@ -76,6 +76,11 @@ export default async ({ proxyTarget }: { proxyTarget: string }) => {
       changeOrigin: true,
       selfHandleResponse: true,
       on: {
+        // A 304 can't fill the cache, so always ask upstream for the full payload
+        proxyReq: (proxyReq) => {
+          proxyReq.removeHeader("if-none-match");
+          proxyReq.removeHeader("if-modified-since");
+        },
         proxyRes: interceptor(proxyTarget),
         error: (err, req, res) => {
           logger.error({ err }, "proxy error");
