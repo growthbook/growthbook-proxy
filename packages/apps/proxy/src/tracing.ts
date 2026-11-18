@@ -52,9 +52,12 @@ try {
   );
 }
 
-process.on("SIGTERM", () => {
+const shutdownSdk = () => {
   sdk
     .shutdown()
     .then(() => diag.debug("OpenTelemetry SDK terminated"))
     .catch((error) => diag.error("Error terminating OpenTelemetry SDK", error));
-});
+};
+// pm2 stops the app with SIGINT, so flush on both.
+process.on("SIGTERM", shutdownSdk);
+process.on("SIGINT", shutdownSdk);
