@@ -77,6 +77,12 @@ export default async ({ proxyTarget }: { proxyTarget: string }) => {
       selfHandleResponse: true,
       headers: { "user-agent": "GrowthBook Proxy" },
       on: {
+        // A 304 can't fill the cache, so ask upstream for the full payload whenever we'll cache it
+        proxyReq: (proxyReq) => {
+          if (!featuresCache || !eventStreamManager) return;
+          proxyReq.removeHeader("if-none-match");
+          proxyReq.removeHeader("if-modified-since");
+        },
         proxyRes: interceptor(proxyTarget),
         error: (err, req, res) => {
           logger.error({ err }, "proxy error");
