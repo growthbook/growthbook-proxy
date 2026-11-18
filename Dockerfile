@@ -47,6 +47,8 @@ COPY --chmod=755 bin/start-shim /usr/local/bin/yarn
 COPY --chmod=755 bin/start-shim /usr/local/bin/pnpm
 
 EXPOSE 3300
+# pm2 SIGKILLs the app 1600ms after SIGINT by default, cutting off SHUTDOWN_DELAY_MS drains; raise to a typical 30s grace period.
+ENV PM2_KILL_TIMEOUT=30000
 # Launch pm2-runtime via node directly: the .bin shim is a #!/bin/sh script, and
 # pm2's own entry relies on #!/usr/bin/env node — neither can exec here, but pm2
 # itself is plain Node.

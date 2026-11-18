@@ -1,6 +1,6 @@
 #!/usr/local/bin/node
 // yarn/pnpm shim for the shell-less distroless image, which ships neither - keeps `start:with-tracing` CMD overrides working.
-const { spawnSync } = require("node:child_process");
+const path = require("node:path");
 
 const PM2_RUNTIME = "node_modules/pm2/bin/pm2-runtime";
 
@@ -21,5 +21,6 @@ if (!args) {
   process.exit(1);
 }
 
-const result = spawnSync(process.execPath, args, { stdio: "inherit" });
-process.exit(result.status ?? 1);
+// Run pm2-runtime in-process so it's PID 1 and receives container signals; a spawned child never did.
+process.argv = [process.execPath, ...args];
+require(path.resolve(PM2_RUNTIME));

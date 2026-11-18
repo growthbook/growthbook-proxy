@@ -323,4 +323,4 @@ How changes reach users:
 
 - `SHUTDOWN_DELAY_MS` - On SIGTERM/SIGINT, keep serving for this long while `/healthcheck` returns `503` so load balancers and Kubernetes stop routing traffic to the instance before it closes (default: `0` = close immediately)
 
-When running the Docker image, also set `PM2_KILL_TIMEOUT` to a value above `SHUTDOWN_DELAY_MS`; pm2 otherwise force-kills the process after 1600ms. On Kubernetes, make sure `terminationGracePeriodSeconds` covers the delay too, and use a readiness probe against `/healthcheck` so the `503` takes the pod out of rotation.
+The Docker image sets `PM2_KILL_TIMEOUT=30000`, so pm2 waits up to 30s for the drain before force-killing the process; raise it if `SHUTDOWN_DELAY_MS` plus connection close time can exceed that. On Kubernetes, make sure `terminationGracePeriodSeconds` covers the delay too, and use a readiness probe against `/healthcheck` so the `503` takes the pod out of rotation.
