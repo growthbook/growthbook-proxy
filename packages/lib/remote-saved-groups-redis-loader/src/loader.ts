@@ -4,7 +4,9 @@ import { ApiError, GrowthBookApi, LoadStatus, RemoteGroup } from "./api";
 import {
   GROUP_ATTRIBUTES_KEY,
   GROUPS_KEY,
+  PENDING_GROUPS_KEY,
   UPDATED_AT_FIELD,
+  applyingKey,
   groupKey,
   LoaderRedis,
   lockKey,
@@ -43,6 +45,9 @@ type LoadedGroup = { version: number; attributeKey: string };
 /** A load that started changing member sets but didn't finish. */
 type PendingLoad = LoadedGroup & { numeric: boolean };
 
+/** A version that failed because Redis was out of memory. */
+type MemoryFailure = { version: number; failures: number; retryAt: number };
+
 /** A set of IDs and the attribute its member sets use. */
 type IdSet = { key: string; attributeKey: string };
 
@@ -56,6 +61,8 @@ const STAGING_TTL_SECONDS = 24 * 60 * 60;
 // How long a stopped load can still be undone. The record is a few bytes.
 const PENDING_TTL_SECONDS = 7 * 24 * 60 * 60;
 const BATCH_SIZE = 1000;
+// The longest wait before retrying a version Redis had no memory for.
+const MAX_RETRY_DELAY_MS = 60 * 60 * 1000;
 // The version recorded for a group with no upload: loaded, with no IDs. It
 // tells lookups the group was checked, unlike a group that isn't loaded yet.
 const EMPTY_VERSION = 0;
@@ -87,6 +94,9 @@ export class RemoteGroupsLoader {
   private readonly storeId: string;
   // Versions this loader found invalid, so they're not downloaded again
   private readonly invalidVersions = new Map<string, number>();
+  // Versions that failed because Redis was out of memory. Each retry fills
+  // Redis again and blocks other writes, so retries wait longer each time.
+  private readonly memoryFailures = new Map<string, MemoryFailure>();
   private warnedReportAccess = false;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private running: Promise<void> | null = null;
@@ -132,6 +142,7 @@ export class RemoteGroupsLoader {
     const storeId = this.storeId;
     const groups = await this.api.listRemoteGroups();
     const loaded = await this.getLoadedGroups();
+    const pending = await this.getPendingGroupIds();
     const listed = new Set(groups.map((g) => g.id));
 
     for (const group of groups) {
@@ -141,8 +152,9 @@ export class RemoteGroupsLoader {
       );
     }
 
-    // Groups deleted in GrowthBook, or no longer remote
-    for (const id of loaded.keys()) {
+    // Groups deleted in GrowthBook, or no longer remote, including ones
+    // whose loads all stopped before finishing
+    for (const id of new Set([...loaded.keys(), ...pending])) {
       if (this.stopping) return;
       if (listed.has(id)) continue;
       await this.withLock(id, async (assertActive) => {
@@ -172,7 +184,7 @@ export class RemoteGroupsLoader {
     loaded: LoadedGroup | undefined,
     storeId: string,
   ) {
-    if (!needsWork(group, loaded, this.invalidVersions)) return;
+    if (!needsWork(group, loaded, this.isSkipped)) return;
 
     await this.withLock(group.id, async (assertActive) => {
       // The list may be minutes old, and another loader may have loaded a
@@ -186,7 +198,7 @@ export class RemoteGroupsLoader {
         await this.clearGroup(group.id, assertActive);
         return;
       }
-      if (!needsWork(latest, current, this.invalidVersions)) return;
+      if (!needsWork(latest, current, this.isSkipped)) return;
       if (!latest.currentUpload) {
         await this.clearGroup(group.id, assertActive, latest.attributeKey);
         return;
@@ -214,6 +226,21 @@ export class RemoteGroupsLoader {
     await this.report(id, version, storeId, { type: "loading" });
 
     const staging = stagingKey(id, version);
+    const applying = applyingKey(id, version);
+    const previous = current && {
+      key: groupKey(id, current.version),
+      attributeKey: current.attributeKey,
+    };
+    const load: PendingLoad = {
+      version,
+      numeric: !!upload.numeric,
+      attributeKey: group.attributeKey,
+    };
+    // Set while only the staging set exists, then while this load adds
+    // members. A failure in either step can be undone at once; later, the
+    // previous version's members are being removed, so the next poll
+    // finishes the load instead.
+    let undoable: "staging" | "adding" | undefined = "staging";
     try {
       // Reporting can take a while, so check the lock before writing.
       assertActive();
@@ -249,33 +276,30 @@ export class RemoteGroupsLoader {
 
       // Record this load before changing member sets, so a later load can
       // undo its changes if it stops partway. Earlier stopped loads stay
-      // recorded until this one finishes.
+      // recorded until this one finishes. The complete set moves out of
+      // staging, where a retry could overwrite it, and lasts as long as
+      // the record.
       assertActive();
-      await this.redis.sadd(
-        pendingKey(id),
-        `${version}:${upload.numeric ? 1 : 0}:${group.attributeKey}`,
-      );
+      await this.redis.sadd(pendingKey(id), pendingValue(load));
       await this.redis.expire(pendingKey(id), PENDING_TTL_SECONDS);
-      const next = { key: staging, attributeKey: group.attributeKey };
-      await this.updateMembers(
-        id,
-        current && {
-          key: groupKey(id, current.version),
-          attributeKey: current.attributeKey,
-        },
-        next,
-        assertActive,
-      );
+      await this.redis.sadd(PENDING_GROUPS_KEY, id);
+      await this.redis.rename(staging, applying);
+      await this.redis.expire(applying, PENDING_TTL_SECONDS);
+      undoable = "adding";
+      const next = { key: applying, attributeKey: group.attributeKey };
+      await this.addMembers(id, previous, next, assertActive);
+      undoable = undefined;
+      await this.removeMembers(id, previous, next, assertActive);
       for (const p of abandoned) {
         await this.undoLoad(id, p, next, assertActive);
       }
-      const rowCount = await this.redis.scard(staging);
+      const rowCount = await this.redis.scard(applying);
 
       // Put the set in place and make it permanent before recording the
       // version, so a recorded version always has its set. Replaces the old
       // set when only the attribute changed (same version, same IDs).
       assertActive();
-      await this.redis.rename(staging, groupKey(id, version));
+      await this.redis.rename(applying, groupKey(id, version));
       await this.redis.persist(groupKey(id, version));
       // The attribute and change time go first, in one command: if this
       // stops before the version is recorded, the next poll loads it again
@@ -283,6 +307,7 @@ export class RemoteGroupsLoader {
       await this.recordAttribute(id, group.attributeKey);
       await this.redis.hset(GROUPS_KEY, id, String(version));
       await this.redis.unlink(pendingKey(id));
+      await this.redis.srem(PENDING_GROUPS_KEY, id);
       for (const p of pending) {
         if (p.version === version) continue;
         for (const key of pendingKeys(id, p)) await this.redis.unlink(key);
@@ -291,6 +316,7 @@ export class RemoteGroupsLoader {
         await this.redis.unlink(groupKey(id, current.version));
       }
       this.invalidVersions.delete(id);
+      this.memoryFailures.delete(id);
       this.logger.info(
         { savedGroupId: id, version, rowCount },
         "Loaded remote group",
@@ -298,12 +324,53 @@ export class RemoteGroupsLoader {
       await this.report(id, version, storeId, { type: "loaded", rowCount });
     } catch (e) {
       if (!(e instanceof LoadAbortedError)) {
+        if (undoable) {
+          await this.undoFailedLoad(id, load, undoable, previous, assertActive);
+        }
+        if (isOutOfMemory(e)) this.delayRetry(id, version);
         await this.report(id, version, storeId, {
           type: "failed",
           error: e instanceof Error ? e.message : String(e),
         });
       }
       throw e;
+    }
+  }
+
+  /**
+   * Removes what a failed load wrote, so the memory is free again and the
+   * previous version's members stay as they were. Redis allows removals
+   * when it's out of memory. If this fails too, the load stays recorded and
+   * a later load or clear undoes it.
+   */
+  private async undoFailedLoad(
+    id: string,
+    load: PendingLoad,
+    step: "staging" | "adding",
+    previous: IdSet | undefined,
+    assertActive: () => void,
+  ) {
+    try {
+      assertActive();
+      if (step === "staging") {
+        await this.redis.unlink(stagingKey(id, load.version));
+        return;
+      }
+      await this.undoLoad(id, load, previous, assertActive);
+      await this.redis.unlink(applyingKey(id, load.version));
+      await this.redis.srem(pendingKey(id), pendingValue(load));
+      if (!(await this.redis.scard(pendingKey(id)))) {
+        await this.redis.srem(PENDING_GROUPS_KEY, id);
+      }
+      this.logger.info(
+        { savedGroupId: id, version: load.version },
+        "Undid a failed remote group load",
+      );
+    } catch (e) {
+      this.logger.warn(
+        { err: e, savedGroupId: id, version: load.version },
+        "Could not undo a failed remote group load; the next load or clear undoes it",
+      );
     }
   }
 
@@ -365,9 +432,10 @@ export class RemoteGroupsLoader {
   }
 
   /**
-   * Removes members a stopped load added: re-reads its upload and removes
-   * the group from IDs that aren't in `next` (every ID without `next`). If
-   * the upload was deleted, its members can't be found, so they stay.
+   * Removes members a stopped load added: reads its IDs and removes the
+   * group from IDs that aren't in `next` (every ID without `next`). The IDs
+   * come from the version's set when it's still in Redis, else from its
+   * upload. If both are gone, its members can't be found, so they stay.
    */
   private async undoLoad(
     id: string,
@@ -377,20 +445,24 @@ export class RemoteGroupsLoader {
   ) {
     const keep =
       next && next.attributeKey === stopped.attributeKey ? next : undefined;
-    try {
-      await this.readIds(
-        id,
-        stopped,
-        async (ids) => {
-          const removed = keep ? await this.notIn(keep.key, ids) : ids;
-          await Promise.all(
-            removed.map((m) =>
-              this.redis.srem(memberKey(stopped.attributeKey, m), id),
-            ),
-          );
-        },
-        assertActive,
+    const removeIds = async (ids: string[]) => {
+      const removed = keep ? await this.notIn(keep.key, ids) : ids;
+      await Promise.all(
+        removed.map((m) =>
+          this.redis.srem(memberKey(stopped.attributeKey, m), id),
+        ),
       );
+    };
+    const stored = await this.findStoredIds(id, stopped.version);
+    if (stored) {
+      await this.scan(stored, async (ids) => {
+        assertActive();
+        await removeIds(ids);
+      });
+      return;
+    }
+    try {
+      await this.readIds(id, stopped, removeIds, assertActive);
     } catch (e) {
       if (!(e instanceof ApiError && e.status === 404)) throw e;
       this.logger.error(
@@ -401,21 +473,16 @@ export class RemoteGroupsLoader {
   }
 
   /**
-   * Adds the group to the member sets of IDs in `next` but not `previous`,
-   * and removes it from those in `previous` but not `next`. Every ID moves
-   * when the attribute changed.
+   * Adds the group to the member sets of IDs in `next` but not `previous`.
+   * Every ID is added when the attribute changed.
    */
-  private async updateMembers(
+  private async addMembers(
     id: string,
     previous: IdSet | undefined,
     next: IdSet,
     assertActive: () => void,
   ) {
-    const unchanged =
-      previous && previous.attributeKey === next.attributeKey
-        ? previous
-        : undefined;
-
+    const unchanged = sameAttribute(previous, next);
     await this.scan(next.key, async (ids) => {
       assertActive();
       const added = unchanged ? await this.notIn(unchanged.key, ids) : ids;
@@ -423,8 +490,20 @@ export class RemoteGroupsLoader {
         added.map((m) => this.redis.sadd(memberKey(next.attributeKey, m), id)),
       );
     });
+  }
 
+  /**
+   * Removes the group from the member sets of IDs in `previous` but not
+   * `next`. Every ID is removed when the attribute changed.
+   */
+  private async removeMembers(
+    id: string,
+    previous: IdSet | undefined,
+    next: IdSet,
+    assertActive: () => void,
+  ) {
     if (!previous) return;
+    const unchanged = sameAttribute(previous, next);
     await this.scan(previous.key, async (ids) => {
       assertActive();
       const removed = unchanged ? await this.notIn(next.key, ids) : ids;
@@ -468,6 +547,7 @@ export class RemoteGroupsLoader {
     // Sets go first, so a clear that stops partway leaves no large keys,
     // and the next poll finishes it from the recorded version.
     for (const key of keys) await this.redis.unlink(key);
+    await this.redis.srem(PENDING_GROUPS_KEY, id);
     if (emptyAttributeKey) {
       await this.recordAttribute(id, emptyAttributeKey);
       await this.redis.hset(GROUPS_KEY, id, String(EMPTY_VERSION));
@@ -483,9 +563,42 @@ export class RemoteGroupsLoader {
       await this.redis.hdel(GROUPS_KEY, id);
     }
     this.invalidVersions.delete(id);
+    this.memoryFailures.delete(id);
     if (loaded || pending.length || !emptyAttributeKey) {
       this.logger.info({ savedGroupId: id }, "Cleared remote group");
     }
+  }
+
+  private readonly isSkipped = (id: string, version: number) => {
+    if (this.invalidVersions.get(id) === version) return true;
+    const failure = this.memoryFailures.get(id);
+    return failure?.version === version && Date.now() < failure.retryAt;
+  };
+
+  private delayRetry(id: string, version: number) {
+    const previous = this.memoryFailures.get(id);
+    const failures = previous?.version === version ? previous.failures + 1 : 1;
+    const delayMs = Math.min(
+      this.pollIntervalMs * 2 ** failures,
+      MAX_RETRY_DELAY_MS,
+    );
+    this.memoryFailures.set(id, {
+      version,
+      failures,
+      retryAt: Date.now() + delayMs,
+    });
+    this.logger.warn(
+      { savedGroupId: id, version, retryInMs: delayMs },
+      "Redis is out of memory; retrying this remote group version later",
+    );
+  }
+
+  private async getPendingGroupIds(): Promise<string[]> {
+    const ids: string[] = [];
+    await this.scan(PENDING_GROUPS_KEY, async (page) => {
+      ids.push(...page);
+    });
+    return ids;
   }
 
   private async getPendingLoads(id: string): Promise<PendingLoad[]> {
@@ -502,6 +615,18 @@ export class RemoteGroupsLoader {
       }
     });
     return pending;
+  }
+
+  /**
+   * A set that holds all of a version's IDs, if one is still in Redis. A
+   * staging set doesn't count: a load that stops while reading leaves it
+   * with only some IDs.
+   */
+  private async findStoredIds(id: string, version: number) {
+    for (const key of [applyingKey(id, version), groupKey(id, version)]) {
+      if (await this.redis.scard(key)) return key;
+    }
+    return undefined;
   }
 
   private async notIn(key: string, ids: string[]) {
@@ -635,22 +760,43 @@ export class RemoteGroupsLoader {
 }
 
 /**
- * Keys a stopped load may have left: its staging set, or its final set if
- * it stopped after the rename but before recording the version.
+ * Keys a stopped load may have left: its staging or applying set, or its
+ * final set if it stopped after the rename but before recording the version.
  */
 function pendingKeys(id: string, { version }: LoadedGroup): string[] {
-  return [stagingKey(id, version), groupKey(id, version)];
+  return [
+    stagingKey(id, version),
+    applyingKey(id, version),
+    groupKey(id, version),
+  ];
+}
+
+/** A pending load as stored: `<version>:<1 if numeric else 0>:<attribute>`. */
+function pendingValue({ version, numeric, attributeKey }: PendingLoad) {
+  return `${version}:${numeric ? 1 : 0}:${attributeKey}`;
+}
+
+/** `previous` when its member sets use the same attribute as `next`. */
+function sameAttribute(previous: IdSet | undefined, next: IdSet) {
+  return previous && previous.attributeKey === next.attributeKey
+    ? previous
+    : undefined;
 }
 
 /** Whether the group needs loading or clearing in this store. */
 function needsWork(
   group: RemoteGroup,
   loaded: LoadedGroup | undefined,
-  invalidVersions: Map<string, number>,
+  isSkipped: (id: string, version: number) => boolean,
 ) {
   if (isLoaded(group, loaded)) return false;
   const upload = group.currentUpload;
-  return !upload || invalidVersions.get(group.id) !== upload.version;
+  return !upload || !isSkipped(group.id, upload.version);
+}
+
+/** Whether Redis refused a write because it reached `maxmemory`. */
+function isOutOfMemory(e: unknown) {
+  return e instanceof Error && e.message.startsWith("OOM ");
 }
 
 /** Whether the store has the group's current version, or it as empty. */

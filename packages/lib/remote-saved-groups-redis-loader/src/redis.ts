@@ -54,13 +54,26 @@ export const groupKey = (id: string, version: number) =>
   `gb:group:{${id}}:${version}`;
 export const stagingKey = (id: string, version: number) =>
   `${groupKey(id, version)}:loading`;
+/**
+ * All of a version's IDs while its load changes member sets. Unlike the
+ * staging set, it's never partly written, so a stopped load can be undone
+ * from it.
+ */
+export const applyingKey = (id: string, version: number) =>
+  `${groupKey(id, version)}:applying`;
 export const lockKey = (id: string) => `gb:lock:{${id}}`;
 /**
  * Loads of the group that started changing member sets but didn't finish,
  * as `<version>:<1 if numeric else 0>:<attribute>`. A later load or clear
- * of the group re-reads each one's upload to undo its changes. Expires, so
- * nothing is left behind if no load ever comes.
+ * of the group reads each one's IDs (from its applying or final set, else
+ * from its upload) to undo its changes. Expires, so nothing is left behind
+ * if no load ever comes.
  */
 export const pendingKey = (id: string) => `gb:group-pending:{${id}}`;
+/**
+ * IDs of groups with a `pendingKey`, so a poll finds stopped loads of
+ * groups that were never loaded, and undoes them once the group is gone.
+ */
+export const PENDING_GROUPS_KEY = "gb:groups-pending";
 export const memberKey = (attributeKey: string, id: string) =>
   `gb:member:${attributeKey}:${id}`;

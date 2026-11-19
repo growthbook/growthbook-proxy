@@ -288,6 +288,7 @@ Redis requirements:
 
 - Redis 6.2 or later.
 - `maxmemory-policy noeviction`. An evicted key silently removes users from a group, and "not in group" rules then match them. The Proxy logs a warning at startup if it can read a different policy.
+- Enough memory for the largest group. Each ID needs a member set and an entry in its group's set: about 400 bytes for a 64-character ID. While a new version loads, the old and new group sets are both in Redis. If Redis runs out of memory, the loader removes what the failed load wrote, and retries that version later, with a longer wait after each failure.
 - Its own Redis, separate from the feature cache and sticky buckets. Caches usually evict keys, the groups can use a lot of memory, and large loads can slow other reads.
 
 Settings:
