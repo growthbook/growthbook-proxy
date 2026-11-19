@@ -75,5 +75,11 @@ export const pendingKey = (id: string) => `gb:group-pending:{${id}}`;
  * groups that were never loaded, and undoes them once the group is gone.
  */
 export const PENDING_GROUPS_KEY = "gb:groups-pending";
+/**
+ * Each group whose current version failed because Redis was out of memory,
+ * as `<version>:<failures>:<retry time in ms>`. Loaders sharing the Redis
+ * wait until the retry time before they load that version again.
+ */
+export const RETRIES_KEY = "gb:group-retries";
 export const memberKey = (attributeKey: string, id: string) =>
   `gb:member:${attributeKey}:${id}`;

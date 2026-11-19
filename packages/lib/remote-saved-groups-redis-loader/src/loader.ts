@@ -5,6 +5,7 @@ import {
   GROUP_ATTRIBUTES_KEY,
   GROUPS_KEY,
   PENDING_GROUPS_KEY,
+  RETRIES_KEY,
   UPDATED_AT_FIELD,
   applyingKey,
   groupKey,
@@ -46,7 +47,7 @@ type LoadedGroup = { version: number; attributeKey: string };
 type PendingLoad = LoadedGroup & { numeric: boolean };
 
 /** A version that failed because Redis was out of memory. */
-type MemoryFailure = { version: number; failures: number; retryAt: number };
+type Retry = { version: number; failures: number; retryAt: number };
 
 /** A set of IDs and the attribute its member sets use. */
 type IdSet = { key: string; attributeKey: string };
@@ -94,9 +95,6 @@ export class RemoteGroupsLoader {
   private readonly storeId: string;
   // Versions this loader found invalid, so they're not downloaded again
   private readonly invalidVersions = new Map<string, number>();
-  // Versions that failed because Redis was out of memory. Each retry fills
-  // Redis again and blocks other writes, so retries wait longer each time.
-  private readonly memoryFailures = new Map<string, MemoryFailure>();
   private warnedReportAccess = false;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private running: Promise<void> | null = null;
@@ -143,13 +141,17 @@ export class RemoteGroupsLoader {
     const groups = await this.api.listRemoteGroups();
     const loaded = await this.getLoadedGroups();
     const pending = await this.getPendingGroupIds();
+    const retries = await this.getRetries();
     const listed = new Set(groups.map((g) => g.id));
 
     for (const group of groups) {
       if (this.stopping) return;
-      await this.syncGroup(group, loaded.get(group.id), storeId).catch((e) =>
-        this.logError(e, group.id),
-      );
+      await this.syncGroup(
+        group,
+        loaded.get(group.id),
+        retries.get(group.id),
+        storeId,
+      ).catch((e) => this.logError(e, group.id));
     }
 
     // Groups deleted in GrowthBook, or no longer remote, including ones
@@ -182,9 +184,10 @@ export class RemoteGroupsLoader {
   private async syncGroup(
     group: RemoteGroup,
     loaded: LoadedGroup | undefined,
+    retry: Retry | undefined,
     storeId: string,
   ) {
-    if (!needsWork(group, loaded, this.isSkipped)) return;
+    if (!needsWork(group, loaded, this.skips(retry))) return;
 
     await this.withLock(group.id, async (assertActive) => {
       // The list may be minutes old, and another loader may have loaded a
@@ -198,7 +201,8 @@ export class RemoteGroupsLoader {
         await this.clearGroup(group.id, assertActive);
         return;
       }
-      if (!needsWork(latest, current, this.isSkipped)) return;
+      const latestRetry = (await this.getRetries()).get(group.id);
+      if (!needsWork(latest, current, this.skips(latestRetry))) return;
       if (!latest.currentUpload) {
         await this.clearGroup(group.id, assertActive, latest.attributeKey);
         return;
@@ -207,6 +211,7 @@ export class RemoteGroupsLoader {
         latest,
         latest.currentUpload,
         current,
+        latestRetry,
         storeId,
         assertActive,
       );
@@ -217,6 +222,7 @@ export class RemoteGroupsLoader {
     group: RemoteGroup,
     upload: NonNullable<RemoteGroup["currentUpload"]>,
     current: LoadedGroup | undefined,
+    retry: Retry | undefined,
     storeId: string,
     assertActive: () => void,
   ) {
@@ -236,10 +242,10 @@ export class RemoteGroupsLoader {
       numeric: !!upload.numeric,
       attributeKey: group.attributeKey,
     };
-    // Set while only the staging set exists, then while this load adds
-    // members. A failure in either step can be undone at once; later, the
-    // previous version's members are being removed, so the next poll
-    // finishes the load instead.
+    // Set while only the staging set exists, then from when this load is
+    // recorded until it has added its members. A failure in either step can
+    // be undone at once; later, the previous version's members are being
+    // removed, so the next poll finishes the load instead.
     let undoable: "staging" | "adding" | undefined = "staging";
     try {
       // Reporting can take a while, so check the lock before writing.
@@ -278,14 +284,16 @@ export class RemoteGroupsLoader {
       // undo its changes if it stops partway. Earlier stopped loads stay
       // recorded until this one finishes. The complete set moves out of
       // staging, where a retry could overwrite it, and lasts as long as
-      // the record.
+      // the record. The index entry goes first: one without a record only
+      // costs a clear, but a record without one isn't found once the group
+      // is deleted.
       assertActive();
-      await this.redis.sadd(pendingKey(id), pendingValue(load));
-      await this.redis.expire(pendingKey(id), PENDING_TTL_SECONDS);
       await this.redis.sadd(PENDING_GROUPS_KEY, id);
+      await this.redis.sadd(pendingKey(id), pendingValue(load));
+      undoable = "adding";
+      await this.redis.expire(pendingKey(id), PENDING_TTL_SECONDS);
       await this.redis.rename(staging, applying);
       await this.redis.expire(applying, PENDING_TTL_SECONDS);
-      undoable = "adding";
       const next = { key: applying, attributeKey: group.attributeKey };
       await this.addMembers(id, previous, next, assertActive);
       undoable = undefined;
@@ -316,7 +324,7 @@ export class RemoteGroupsLoader {
         await this.redis.unlink(groupKey(id, current.version));
       }
       this.invalidVersions.delete(id);
-      this.memoryFailures.delete(id);
+      if (retry) await this.redis.hdel(RETRIES_KEY, id);
       this.logger.info(
         { savedGroupId: id, version, rowCount },
         "Loaded remote group",
@@ -324,14 +332,16 @@ export class RemoteGroupsLoader {
       await this.report(id, version, storeId, { type: "loaded", rowCount });
     } catch (e) {
       if (!(e instanceof LoadAbortedError)) {
-        if (undoable) {
-          await this.undoFailedLoad(id, load, undoable, previous, assertActive);
-        }
-        if (isOutOfMemory(e)) this.delayRetry(id, version);
+        // Undoing a large load takes about as long as the load, so report
+        // the failure first.
         await this.report(id, version, storeId, {
           type: "failed",
           error: e instanceof Error ? e.message : String(e),
         });
+        if (undoable) {
+          await this.undoFailedLoad(id, load, undoable, previous, assertActive);
+        }
+        if (isOutOfMemory(e)) await this.delayRetry(id, version, retry);
       }
       throw e;
     }
@@ -352,20 +362,21 @@ export class RemoteGroupsLoader {
   ) {
     try {
       assertActive();
-      if (step === "staging") {
-        await this.redis.unlink(stagingKey(id, load.version));
-        return;
+      if (step === "adding") {
+        await this.undoLoad(id, load, previous, assertActive);
+        await this.redis.unlink(applyingKey(id, load.version));
+        await this.redis.srem(pendingKey(id), pendingValue(load));
       }
-      await this.undoLoad(id, load, previous, assertActive);
-      await this.redis.unlink(applyingKey(id, load.version));
-      await this.redis.srem(pendingKey(id), pendingValue(load));
+      await this.redis.unlink(stagingKey(id, load.version));
       if (!(await this.redis.scard(pendingKey(id)))) {
         await this.redis.srem(PENDING_GROUPS_KEY, id);
       }
-      this.logger.info(
-        { savedGroupId: id, version: load.version },
-        "Undid a failed remote group load",
-      );
+      if (step === "adding") {
+        this.logger.info(
+          { savedGroupId: id, version: load.version },
+          "Undid a failed remote group load",
+        );
+      }
     } catch (e) {
       this.logger.warn(
         { err: e, savedGroupId: id, version: load.version },
@@ -551,7 +562,7 @@ export class RemoteGroupsLoader {
     if (emptyAttributeKey) {
       await this.recordAttribute(id, emptyAttributeKey);
       await this.redis.hset(GROUPS_KEY, id, String(EMPTY_VERSION));
-    } else {
+    } else if (loaded || (await this.hasAttribute(id))) {
       await this.redis.eval(
         REMOVE_ATTRIBUTE_SCRIPT,
         1,
@@ -563,34 +574,56 @@ export class RemoteGroupsLoader {
       await this.redis.hdel(GROUPS_KEY, id);
     }
     this.invalidVersions.delete(id);
-    this.memoryFailures.delete(id);
+    await this.redis.hdel(RETRIES_KEY, id);
     if (loaded || pending.length || !emptyAttributeKey) {
       this.logger.info({ savedGroupId: id }, "Cleared remote group");
     }
   }
 
-  private readonly isSkipped = (id: string, version: number) => {
-    if (this.invalidVersions.get(id) === version) return true;
-    const failure = this.memoryFailures.get(id);
-    return failure?.version === version && Date.now() < failure.retryAt;
-  };
+  private skips(retry: Retry | undefined) {
+    return (id: string, version: number) =>
+      this.invalidVersions.get(id) === version ||
+      (retry?.version === version && Date.now() < retry.retryAt);
+  }
 
-  private delayRetry(id: string, version: number) {
-    const previous = this.memoryFailures.get(id);
+  // Each retry fills Redis again and blocks other writes, so retries wait
+  // longer each time. The wait is in Redis, so every loader sharing it
+  // waits.
+  private async delayRetry(
+    id: string,
+    version: number,
+    previous: Retry | undefined,
+  ) {
     const failures = previous?.version === version ? previous.failures + 1 : 1;
     const delayMs = Math.min(
       this.pollIntervalMs * 2 ** failures,
       MAX_RETRY_DELAY_MS,
     );
-    this.memoryFailures.set(id, {
-      version,
-      failures,
-      retryAt: Date.now() + delayMs,
-    });
+    await this.redis.hset(
+      RETRIES_KEY,
+      id,
+      `${version}:${failures}:${Date.now() + delayMs}`,
+    );
     this.logger.warn(
       { savedGroupId: id, version, retryInMs: delayMs },
       "Redis is out of memory; retrying this remote group version later",
     );
+  }
+
+  private async getRetries(): Promise<Map<string, Retry>> {
+    const retries = new Map<string, Retry>();
+    for (const [id, value] of Object.entries(
+      await this.redis.hgetall(RETRIES_KEY),
+    )) {
+      const [version, failures, retryAt] = value.split(":").map(Number);
+      retries.set(id, { version, failures, retryAt });
+    }
+    return retries;
+  }
+
+  private async hasAttribute(id: string) {
+    const attributes = await this.redis.hgetall(GROUP_ATTRIBUTES_KEY);
+    return Object.prototype.hasOwnProperty.call(attributes, id);
   }
 
   private async getPendingGroupIds(): Promise<string[]> {
