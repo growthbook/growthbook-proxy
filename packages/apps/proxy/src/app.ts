@@ -4,6 +4,7 @@ import packageJson from "../package.json";
 import { adminRouter } from "./controllers/adminController";
 import { eventStreamRouter } from "./controllers/eventStreamController";
 import { featuresRouter } from "./controllers/featuresController";
+import { payloadTooLargeMiddleware } from "./middleware/payloadTooLargeMiddleware";
 import proxyMiddleware from "./middleware/proxyMiddleware";
 import {
   featuresCache,
@@ -106,6 +107,8 @@ export const growthBookProxy = async (
   app.use("/", featuresRouter(ctx));
 
   if (ctx.proxyAllRequests) app.all("/*", proxyMiddleware);
+
+  app.use(payloadTooLargeMiddleware);
 
   return {
     app,

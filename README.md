@@ -314,7 +314,7 @@ How changes reach users:
 
 **Misc**
 
-- `MAX_PAYLOAD_SIZE` - The maximum size of a request body (default: `"2mb"`)
+- `MAX_PAYLOAD_SIZE` - The maximum size of a request body (default: `"16mb"`). Applies to SDK payloads pushed from GrowthBook and to remote evaluation requests.
 - `VERBOSE_DEBUGGING` - "true" or "1" to enable verbose debugging (default: `false`)
 - `CONNECTION_POLLING_FREQUENCY` - How frequently to refresh SDK connections (default: `60000` = 1 minute)
 - `MULTI_ORG` - "true" or "1" to enable multi-organization support (requires a compatible access token) (default: `false`)

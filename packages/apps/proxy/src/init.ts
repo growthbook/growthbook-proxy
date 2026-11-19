@@ -9,7 +9,11 @@ import {
 } from "./types";
 dotenv.config({ path: "./.env.local" });
 
-export const MAX_PAYLOAD_SIZE = "2mb";
+/**
+ * Largest request body the proxy accepts. Matches GrowthBook's 16 MB SDK
+ * payload limit, so a payload GrowthBook can build is never rejected here.
+ */
+export const MAX_PAYLOAD_SIZE = "16mb";
 
 // "true"/"1" (case-insensitive) = true; unset/empty = defaultVal; anything else = false
 const envBool = (val: string | undefined, defaultVal = false): boolean =>
