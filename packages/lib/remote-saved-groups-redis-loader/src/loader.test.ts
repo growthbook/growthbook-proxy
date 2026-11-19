@@ -961,6 +961,65 @@ describe("RemoteGroupsLoader", () => {
     expect(redis.sets.size).toBe(0);
   });
 
+  it("keeps a version's stored IDs while another load of it still needs them", async () => {
+    const groups: Group[] = [
+      { id: "grp_1", attributeKey: "id", currentUpload: { version: 1 } },
+    ];
+    const files: Record<string, string> = { "grp_1/1": "a\nb\nc\n" };
+    await mockApi(groups, files);
+    const { redis, loader } = setup();
+    // The first load stops after it adds a and b.
+    const start = Date.now();
+    const sadd = redis.sadd.bind(redis);
+    jest.spyOn(redis, "sadd").mockImplementation(async (key, ...members) => {
+      if (key === "gb:member:id:a") {
+        jest.spyOn(Date, "now").mockReturnValue(start + 55 * 1000);
+      }
+      return sadd(key, ...members);
+    });
+    await loader.poll();
+    expect(redis.members("gb:member:id:b")).toEqual(["grp_1"]);
+    jest.restoreAllMocks();
+
+    // The same version loads for a new attribute, and Redis is full.
+    groups[0].attributeKey = "account";
+    redis.failMessage =
+      "OOM command not allowed when used memory > 'maxmemory'.";
+    redis.failOn = (call) => call === "sadd gb:member:account:b grp_1";
+    await loader.poll();
+    expect(redis.members("gb:member:account:a")).toEqual([]);
+
+    redis.failOn = undefined;
+    groups.pop();
+    delete files["grp_1/1"];
+    await loader.poll();
+
+    expect(redis.members("gb:member:id:a")).toEqual([]);
+    expect(redis.members("gb:member:id:b")).toEqual([]);
+    expect(redis.sets.size).toBe(0);
+  });
+
+  it("removes the retry wait of a deleted group that never loaded", async () => {
+    const groups: Group[] = [
+      { id: "grp_1", attributeKey: "id", currentUpload: { version: 1 } },
+    ];
+    await mockApi(groups, { "grp_1/1": "a\nb\n" });
+    const { redis, loader } = setup();
+    redis.failMessage =
+      "OOM command not allowed when used memory > 'maxmemory'.";
+    redis.failOn = (call) => call === "sadd gb:member:id:b grp_1";
+    await loader.poll();
+    expect(Object.keys(await redis.hgetall("gb:group-retries"))).toEqual([
+      "grp_1",
+    ]);
+
+    redis.failOn = undefined;
+    groups.pop();
+    await loader.poll();
+
+    expect(await redis.hgetall("gb:group-retries")).toEqual({});
+  });
+
   it("records when members last changed, together with the attribute", async () => {
     const groups: Group[] = [
       { id: "grp_1", attributeKey: "id", currentUpload: { version: 1 } },

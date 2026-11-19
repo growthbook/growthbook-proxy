@@ -155,8 +155,12 @@ export class RemoteGroupsLoader {
     }
 
     // Groups deleted in GrowthBook, or no longer remote, including ones
-    // whose loads all stopped before finishing
-    for (const id of new Set([...loaded.keys(), ...pending])) {
+    // whose loads all stopped or failed before finishing
+    for (const id of new Set([
+      ...loaded.keys(),
+      ...pending,
+      ...retries.keys(),
+    ])) {
       if (this.stopping) return;
       if (listed.has(id)) continue;
       await this.withLock(id, async (assertActive) => {
@@ -364,8 +368,13 @@ export class RemoteGroupsLoader {
       assertActive();
       if (step === "adding") {
         await this.undoLoad(id, load, previous, assertActive);
-        await this.redis.unlink(applyingKey(id, load.version));
         await this.redis.srem(pendingKey(id), pendingValue(load));
+        // A stopped load of the same version for another attribute shares
+        // the set, and needs it for its own undo.
+        const pending = await this.getPendingLoads(id);
+        if (!pending.some((p) => p.version === load.version)) {
+          await this.redis.unlink(applyingKey(id, load.version));
+        }
       }
       await this.redis.unlink(stagingKey(id, load.version));
       if (!(await this.redis.scard(pendingKey(id)))) {
