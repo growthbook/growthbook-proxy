@@ -12,7 +12,7 @@ npm install @growthbook/remote-saved-groups-redis-loader
 
 - Redis 6.2 or later, single node or Cluster
 - `maxmemory-policy noeviction`. If Redis evicts a key, users silently drop out of groups. The command logs a warning when it can see another policy; in your own service, call `warnIfRedisCanEvict`
-- Enough memory for the largest group. Each ID needs a member set and an entry in its group's set: about 400 bytes for a 64-character ID. While a new version loads, the old and new group sets are both in Redis. If Redis runs out of memory, the loader removes what the failed load wrote, and retries that version later, with a longer wait after each failure
+- Enough memory for the largest group. Each ID needs a member set and an entry in its group's set. While a new version loads, the old and new group sets are both in Redis. If Redis runs out of memory, the loader removes what the failed load wrote, and retries that version later, with a longer wait after each failure
 - A GrowthBook secret API key with publish access, to report loads
 
 ## Running it
