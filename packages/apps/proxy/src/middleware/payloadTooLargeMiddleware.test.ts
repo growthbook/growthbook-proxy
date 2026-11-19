@@ -2,7 +2,8 @@ import http from "http";
 import { AddressInfo } from "net";
 import express from "express";
 import logger from "../services/logger";
-import { MAX_PAYLOAD_SIZE } from "../init";
+import { featuresRouter } from "../controllers/featuresController";
+import { Context } from "../types";
 import { payloadTooLargeMiddleware } from "./payloadTooLargeMiddleware";
 
 const serve = (limit: string) => {
@@ -57,6 +58,58 @@ test("doesn't log a body under the limit", async () => {
   }
 });
 
-test("accepts a 16 MB payload by default", () => {
-  expect(MAX_PAYLOAD_SIZE).toBe("16mb");
+describe("default limit on pushes from GrowthBook", () => {
+  const MB = 1024 * 1024;
+  const ctx: Context = {
+    growthbookApiHost: "",
+    secretApiKey: "",
+    createConnectionsFromEnv: false,
+    pollForConnections: false,
+    connectionPollingFrequency: 60000,
+    enableCache: false,
+    enableHealthCheck: false,
+    enableCors: false,
+    enableAdmin: false,
+    enableEventStream: false,
+    enableEventStreamHeaders: false,
+    enableRemoteEval: false,
+    enableStickyBucketing: false,
+    enableRemoteSavedGroups: false,
+    proxyAllRequests: false,
+  };
+  let server: http.Server;
+  beforeAll(() => {
+    delete process.env.MAX_PAYLOAD_SIZE;
+    const app = express();
+    app.use("/", featuresRouter(ctx));
+    app.use(payloadTooLargeMiddleware);
+    server = http.createServer(app).listen(0);
+  });
+  afterAll(() => server.close());
+
+  const pushPayload = (bytes: number) =>
+    fetch(
+      `http://127.0.0.1:${(server.address() as AddressInfo).port}/proxy/features`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-GrowthBook-Api-Key": "sdk-abc",
+        },
+        body: JSON.stringify({ features: { a: "x".repeat(bytes) } }),
+      },
+    );
+
+  test("accepts a payload between 2 MB and 16 MB", async () => {
+    const res = await pushPayload(3 * MB);
+
+    // Past the size check: rejected later only for the missing signing key
+    expect(res.status).not.toBe(413);
+  });
+
+  test("rejects a payload over 16 MB", async () => {
+    const res = await pushPayload(17 * MB);
+
+    expect(res.status).toBe(413);
+  });
 });
