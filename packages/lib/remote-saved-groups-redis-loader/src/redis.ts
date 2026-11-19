@@ -61,6 +61,13 @@ export const stagingKey = (id: string, version: number) =>
  */
 export const applyingKey = (id: string, version: number) =>
   `${groupKey(id, version)}:applying`;
+/**
+ * The attribute whose load built the applying set, as a one-member set. A
+ * file's first line is a header only for the attribute it names, so a
+ * retry reuses the applying set only when its own attribute built it.
+ */
+export const applyingAttributeKey = (id: string, version: number) =>
+  `${applyingKey(id, version)}:attribute`;
 export const lockKey = (id: string) => `gb:lock:{${id}}`;
 /**
  * Loads of the group that started changing member sets but didn't finish,
@@ -70,6 +77,13 @@ export const lockKey = (id: string) => `gb:lock:{${id}}`;
  * if no load ever comes.
  */
 export const pendingKey = (id: string) => `gb:group-pending:{${id}}`;
+/**
+ * Set while the recorded version's set may list members that are gone: from
+ * before an update removes members, or after a stopped load is undone, until
+ * a load records its version. Loads add every ID instead of skipping ones
+ * the recorded version has while it's set.
+ */
+export const repairKey = (id: string) => `gb:group-repair:{${id}}`;
 /**
  * IDs of groups with a `pendingKey`, so a poll finds stopped loads of
  * groups that were never loaded, and undoes them once the group is gone.

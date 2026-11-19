@@ -52,8 +52,9 @@ function onClose(server: any, proxy: GrowthBookProxy, delayMs = 0) {
     proxy.services.remoteGroupUpdateWatcher?.stop();
     proxy.services.eventStreamManager?.closeAll();
     proxy.services.cacheRefreshScheduler?.stop();
-    // The loader stops at its next batch and releases its locks; wait for
-    // that, up to a limit, so a replacement doesn't find groups locked.
+    // The loader stops at its next batch, except that it finishes undoing a
+    // failed load, and releases its locks; wait for that, up to a limit, so
+    // a replacement doesn't find groups locked.
     const loaderStopped = Promise.race([
       proxy.services.remoteGroupsLoader?.stop(),
       new Promise((resolve) => setTimeout(resolve, LOADER_STOP_TIMEOUT_MS)),
