@@ -54,13 +54,46 @@ export const groupKey = (id: string, version: number) =>
   `gb:group:{${id}}:${version}`;
 export const stagingKey = (id: string, version: number) =>
   `${groupKey(id, version)}:loading`;
+/**
+ * All of a version's IDs while its load changes member sets. Unlike the
+ * staging set, it's never partly written, so a stopped load can be undone
+ * from it.
+ */
+export const applyingKey = (id: string, version: number) =>
+  `${groupKey(id, version)}:applying`;
+/**
+ * The attribute whose load built the applying set, as a one-member set. A
+ * file's first line is a header only for the attribute it names, so a
+ * retry reuses the applying set only when its own attribute built it.
+ */
+export const applyingAttributeKey = (id: string, version: number) =>
+  `${applyingKey(id, version)}:attribute`;
 export const lockKey = (id: string) => `gb:lock:{${id}}`;
 /**
  * Loads of the group that started changing member sets but didn't finish,
  * as `<version>:<1 if numeric else 0>:<attribute>`. A later load or clear
- * of the group re-reads each one's upload to undo its changes. Expires, so
- * nothing is left behind if no load ever comes.
+ * of the group reads each one's IDs (from its applying or final set, else
+ * from its upload) to undo its changes. Expires, so nothing is left behind
+ * if no load ever comes.
  */
 export const pendingKey = (id: string) => `gb:group-pending:{${id}}`;
+/**
+ * Set while the recorded version's set may list members that are gone: from
+ * before an update removes members, or after a stopped load is undone, until
+ * a load records its version. Loads add every ID instead of skipping ones
+ * the recorded version has while it's set.
+ */
+export const repairKey = (id: string) => `gb:group-repair:{${id}}`;
+/**
+ * IDs of groups with a `pendingKey`, so a poll finds stopped loads of
+ * groups that were never loaded, and undoes them once the group is gone.
+ */
+export const PENDING_GROUPS_KEY = "gb:groups-pending";
+/**
+ * Each group whose current version failed because Redis was out of memory,
+ * as `<version>:<failures>:<retry time in ms>`. Loaders sharing the Redis
+ * wait until the retry time before they load that version again.
+ */
+export const RETRIES_KEY = "gb:group-retries";
 export const memberKey = (attributeKey: string, id: string) =>
   `gb:member:${attributeKey}:${id}`;
