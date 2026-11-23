@@ -10,6 +10,16 @@ import {
 dotenv.config({ path: "./.env.local" });
 
 export const MAX_PAYLOAD_SIZE = "2mb";
+// Matches GrowthBook's 16 MB SDK payload limit. Only for pushes from
+// GrowthBook, which are signed; other routes keep the smaller limit.
+export const MAX_FEATURES_PAYLOAD_SIZE = "16mb";
+
+// MAX_PAYLOAD_SIZE used to cover pushes too, so it still applies to them when
+// MAX_FEATURES_PAYLOAD_SIZE isn't set
+export const getMaxFeaturesPayloadSize = () =>
+  process.env.MAX_FEATURES_PAYLOAD_SIZE ??
+  process.env.MAX_PAYLOAD_SIZE ??
+  MAX_FEATURES_PAYLOAD_SIZE;
 
 // "true"/"1" (case-insensitive) = true; unset/empty = defaultVal; anything else = false
 const envBool = (val: string | undefined, defaultVal = false): boolean =>
