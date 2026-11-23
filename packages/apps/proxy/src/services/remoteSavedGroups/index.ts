@@ -39,7 +39,14 @@ export let savedGroupResolver: SavedGroupResolver | null = null;
 export let remoteGroupsLoader: RemoteGroupsLoader | null = null;
 /** Tells streaming remote-eval clients when remote group members change. */
 export let remoteGroupUpdateWatcher: RemoteGroupUpdateWatcher | null = null;
-let lookupClient: Redis | Cluster | null = null;
+/**
+ * The Redis clients, for apps embedding the Proxy that need them, e.g. to
+ * update credentials after a rotation.
+ */
+export const remoteSavedGroupsClients: {
+  lookups: Redis | Cluster | null;
+  loader: Redis | Cluster | null;
+} = { lookups: null, loader: null };
 let lookupTimeoutMs = 1000;
 
 export const initializeRemoteSavedGroups = (context: Context) => {
@@ -51,6 +58,7 @@ export const initializeRemoteSavedGroups = (context: Context) => {
     connectionUrl: settings.connectionUrl,
     useCluster: settings.useCluster,
     clusterRootNodes: settings.clusterRootNodesJSON,
+    clusterOptions: settings.clusterOptionsJSON,
   };
   const connect = (purpose: string) => {
     const client = createRedisClient(redisSettings);
@@ -62,7 +70,7 @@ export const initializeRemoteSavedGroups = (context: Context) => {
 
   if (!settings.loaderOnly) {
     const redis = connect("lookups");
-    lookupClient = redis;
+    remoteSavedGroupsClients.lookups = redis;
     const resolve = redisResolver({ sMembers: (key) => redis.smembers(key) });
     lookupTimeoutMs = settings.timeoutMs ?? 1000;
     savedGroupResolver = (args) => withTimeout(resolve(args), lookupTimeoutMs);
@@ -87,6 +95,7 @@ export const initializeRemoteSavedGroups = (context: Context) => {
   if (runsLoader(settings)) {
     // Its own connection, so its bulk writes don't queue ahead of lookups.
     const redis = connect("loader");
+    remoteSavedGroupsClients.loader = redis;
     remoteGroupsLoader = createLoader({
       apiHost: context.growthbookApiHost,
       apiKey: context.secretApiKey,
@@ -117,7 +126,7 @@ let groupState: {
 } | null = null;
 
 function getGroupState(): Promise<GroupState> {
-  const redis = lookupClient;
+  const redis = remoteSavedGroupsClients.lookups;
   if (!redis) return Promise.resolve({ attributes: {}, updatedAt: null });
   if (!groupState || groupState.expires < Date.now()) {
     // One read, so the attributes and change time always match.

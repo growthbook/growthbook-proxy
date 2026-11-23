@@ -1,4 +1,4 @@
-import { ClusterNode } from "ioredis";
+import { ClusterNode, ClusterOptions } from "ioredis";
 import {
   getRedisSettingsProblem,
   getStoreIdProblem,
@@ -8,6 +8,7 @@ export interface RemoteSavedGroupsSettings {
   connectionUrl?: string;
   useCluster?: boolean;
   clusterRootNodesJSON?: ClusterNode[];
+  clusterOptionsJSON?: ClusterOptions;
   /** How long a lookup may take before the user is evaluated as in no remote groups. */
   timeoutMs?: number;
   /** Whether this instance runs the loader. */
