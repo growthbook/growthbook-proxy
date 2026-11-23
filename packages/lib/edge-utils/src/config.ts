@@ -20,7 +20,7 @@ export const defaultContext: Context<Req, Res> = {
     autoInflate: false,
     nocacheOrigin: false,
     environment: "production",
-    maxPayloadSize: "16mb",
+    maxPayloadSize: "2mb",
     runVisualEditorExperiments: "everywhere",
     disableJsInjection: false,
     alwaysParseDOM: false,

@@ -2,8 +2,8 @@ import { ErrorRequestHandler } from "express";
 import logger from "../services/logger";
 
 /**
- * Logs request bodies larger than MAX_PAYLOAD_SIZE, then passes the error on
- * so Express still responds with 413.
+ * Logs request bodies over the size limit, then passes the error on so
+ * Express still responds with 413.
  *
  * The limit is enforced inside `express.json()`, which hands the error to
  * Express before any route handler runs. An error handler is the one place
@@ -16,6 +16,10 @@ export const payloadTooLargeMiddleware: ErrorRequestHandler = (
   next,
 ) => {
   if (isPayloadTooLarge(err)) {
+    const setting =
+      req.path === "/proxy/features"
+        ? "MAX_FEATURES_PAYLOAD_SIZE"
+        : "MAX_PAYLOAD_SIZE";
     logger.warn(
       {
         method: req.method,
@@ -23,7 +27,7 @@ export const payloadTooLargeMiddleware: ErrorRequestHandler = (
         bytes: err.length,
         limit: err.limit,
       },
-      "Request body is larger than MAX_PAYLOAD_SIZE. Increase MAX_PAYLOAD_SIZE to accept it.",
+      `Request body is larger than ${setting}. Increase ${setting} to accept it.`,
     );
   }
   next(err);

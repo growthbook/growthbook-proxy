@@ -39,7 +39,7 @@ test("logs and rejects a body over the limit", async () => {
     expect(res.status).toBe(413);
     expect(warn).toHaveBeenCalledWith(
       expect.objectContaining({ path: "/proxy/features", limit: 10 }),
-      expect.stringContaining("Increase MAX_PAYLOAD_SIZE"),
+      expect.stringContaining("Increase MAX_FEATURES_PAYLOAD_SIZE"),
     );
   } finally {
     server.close();
@@ -58,7 +58,7 @@ test("doesn't log a body under the limit", async () => {
   }
 });
 
-describe("default limit on pushes from GrowthBook", () => {
+describe("limits on the proxy's routes", () => {
   const MB = 1024 * 1024;
   const ctx: Context = {
     growthbookApiHost: "",
@@ -72,44 +72,75 @@ describe("default limit on pushes from GrowthBook", () => {
     enableAdmin: false,
     enableEventStream: false,
     enableEventStreamHeaders: false,
-    enableRemoteEval: false,
+    enableRemoteEval: true,
     enableStickyBucketing: false,
     enableRemoteSavedGroups: false,
     proxyAllRequests: false,
   };
-  let server: http.Server;
-  beforeAll(() => {
+  const servers: http.Server[] = [];
+  const env = { ...process.env };
+  beforeEach(() => {
     delete process.env.MAX_PAYLOAD_SIZE;
+    delete process.env.MAX_FEATURES_PAYLOAD_SIZE;
+  });
+  afterEach(() => {
+    process.env = { ...env };
+    servers.splice(0).forEach((server) => server.close());
+  });
+
+  // Built per test, since the routes read the limits when they're created
+  const send = (path: string, bytes: number) => {
     const app = express();
     app.use("/", featuresRouter(ctx));
     app.use(payloadTooLargeMiddleware);
-    server = http.createServer(app).listen(0);
-  });
-  afterAll(() => server.close());
-
-  const pushPayload = (bytes: number) =>
-    fetch(
-      `http://127.0.0.1:${(server.address() as AddressInfo).port}/proxy/features`,
+    const server = http.createServer(app).listen(0);
+    servers.push(server);
+    return fetch(
+      `http://127.0.0.1:${(server.address() as AddressInfo).port}${path}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-GrowthBook-Api-Key": "sdk-abc",
         },
-        body: JSON.stringify({ features: { a: "x".repeat(bytes) } }),
+        body: JSON.stringify({ attributes: { a: "x".repeat(bytes) } }),
       },
     );
+  };
+  const push = (bytes: number) => send("/proxy/features", bytes);
+  const evaluate = (bytes: number) => send("/api/eval/sdk-abc", bytes);
 
-  test("accepts a payload between 2 MB and 16 MB", async () => {
-    const res = await pushPayload(3 * MB);
-
+  test("accepts a pushed payload between 2 MB and 16 MB", async () => {
     // Past the size check: rejected later only for the missing signing key
-    expect(res.status).not.toBe(413);
+    expect((await push(3 * MB)).status).not.toBe(413);
   });
 
-  test("rejects a payload over 16 MB", async () => {
-    const res = await pushPayload(17 * MB);
+  test("rejects a pushed payload over 16 MB, naming the setting to change", async () => {
+    expect((await push(17 * MB)).status).toBe(413);
+    expect(warn).toHaveBeenCalledWith(
+      expect.objectContaining({ path: "/proxy/features" }),
+      expect.stringContaining("Increase MAX_FEATURES_PAYLOAD_SIZE"),
+    );
+  });
 
-    expect(res.status).toBe(413);
+  test("keeps remote evaluation requests at 2 MB", async () => {
+    expect((await evaluate(3 * MB)).status).toBe(413);
+    expect(warn).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.stringContaining("Increase MAX_PAYLOAD_SIZE"),
+    );
+  });
+
+  test("applies MAX_PAYLOAD_SIZE to pushes when MAX_FEATURES_PAYLOAD_SIZE isn't set", async () => {
+    process.env.MAX_PAYLOAD_SIZE = "1mb";
+
+    expect((await push(2 * MB)).status).toBe(413);
+  });
+
+  test("prefers MAX_FEATURES_PAYLOAD_SIZE for pushes", async () => {
+    process.env.MAX_PAYLOAD_SIZE = "1mb";
+    process.env.MAX_FEATURES_PAYLOAD_SIZE = "4mb";
+
+    expect((await push(2 * MB)).status).not.toBe(413);
   });
 });
