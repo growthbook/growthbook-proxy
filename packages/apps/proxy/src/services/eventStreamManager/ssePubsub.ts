@@ -99,8 +99,7 @@ export class SSEChannel {
       }
       output = "data: \n\n";
     } else {
-      id =
-        this.options.contentVersions && version ? version : this.nextID++;
+      id = this.options.contentVersions && version ? version : this.nextID++;
       if (typeof data === "object") {
         data = JSON.stringify(data);
       }
