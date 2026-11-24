@@ -161,7 +161,7 @@ export class SSEChannel {
       const latest = this.messages[this.messages.length - 1];
       if (
         latest &&
-        lastID !== latest.id &&
+        (Number.isNaN(lastID) || lastID < latest.id) &&
         this.hasEventMatch(c.events, latest.eventName)
       ) {
         body += latest.output;

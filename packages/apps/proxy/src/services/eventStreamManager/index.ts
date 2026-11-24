@@ -68,8 +68,16 @@ export class SSEManager {
         logger.error({ err: e }, "Unable to get SSE channel");
       }
       if (scopedChannel) {
+        // Await only when a seed is needed, so a warm channel subscribes synchronously
+        if (this.needsSeed(scopedChannel)) {
+          try {
+            await this.seedFromCache(apiKey, scopedChannel);
+          } catch (e) {
+            // Open the stream without the seed; the next publish still reaches this client
+            logger.error({ err: e, apiKey }, "Unable to seed SSE channel");
+          }
+        }
         try {
-          await this.seedFromCache(apiKey, scopedChannel);
           scopedChannel.channel.subscribe(req, res);
 
           if (this.appContext?.verboseDebugging) {
@@ -87,12 +95,18 @@ export class SSEManager {
     }
   }
 
+  private needsSeed(scopedChannel: ScopedChannel): boolean {
+    return (
+      this.contentVersions &&
+      !!featuresCache &&
+      !scopedChannel.channel.hasContent()
+    );
+  }
+
   private async seedFromCache(
     apiKey: string,
     scopedChannel: ScopedChannel,
   ): Promise<void> {
-    if (!this.contentVersions) return;
-    if (scopedChannel.channel.hasContent()) return;
     if (!featuresCache) return;
     const entry = await featuresCache.get(apiKey);
     if (!entry) return;
