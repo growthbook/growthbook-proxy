@@ -44,6 +44,28 @@ describe("SSEManager.removeIdleChannels", () => {
     expect(manager.getSubscriberCounts()).toEqual({ key: 1 });
   });
 
+  it("replays updates to clients reconnecting after their channel was removed", () => {
+    const now = jest.spyOn(Date, "now").mockReturnValue(1000);
+    const manager = newManager();
+    const first = fakeConnection("key");
+    manager.subscribe(first.req, first.res);
+    manager.publish({ apiKey: "key", event: "features", payload: { v: 1 } });
+    const lastId = (first.res.write as jest.Mock).mock.calls
+      .map(([out]) => /^id: (\d+)/.exec(out)?.[1])
+      .find(Boolean);
+    first.res.emit("close");
+
+    now.mockReturnValue(1000 + IDLE_CHANNEL_TTL_MS);
+    manager.removeIdleChannels();
+    manager.publish({ apiKey: "key", event: "features", payload: { v: 2 } });
+
+    const second = fakeConnection("key");
+    second.req.headers["last-event-id"] = lastId;
+    manager.subscribe(second.req, second.res);
+    expect((second.res.write as jest.Mock).mock.calls[0][0]).toContain('"v":2');
+    now.mockRestore();
+  });
+
   it("removes channels that were published to but never subscribed", () => {
     const manager = newManager();
     manager.publish({ apiKey: "key", event: "features", payload: { a: 1 } });

@@ -169,6 +169,8 @@ export class SSEManager {
           {
             maxStreamDuration: this.appContext.eventStreamMaxDurationMs,
             pingInterval: this.appContext.eventStreamPingIntervalMs,
+            // a channel recreated after removal must not reuse a reconnecting client's Last-Event-ID
+            startId: Date.now(),
           },
           this.appContext,
         ),
