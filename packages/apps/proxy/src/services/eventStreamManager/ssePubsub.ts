@@ -34,6 +34,8 @@ export class SSEChannel {
   private clients: Set<Connection> = new Set();
   private messages: Message[] = [];
   private active = true;
+  // ms timestamp the channel last had no subscribers; null while it has some
+  public emptySince: number | null = Date.now();
 
   private pingTimer: NodeJS.Timeout | null = null;
 
@@ -166,6 +168,7 @@ export class SSEChannel {
 
     c.res.write(body);
     this.clients.add(c);
+    this.emptySince = null;
 
     if (this.options.maxStreamDuration) {
       setTimeout(() => {
@@ -204,6 +207,9 @@ export class SSEChannel {
     if (this.appContext?.verboseDebugging) logger.info("ssePubsub.unsubscribe");
     c.res.end();
     this.clients.delete(c);
+    if (!this.clients.size && this.emptySince === null) {
+      this.emptySince = Date.now();
+    }
   }
 
   public close() {

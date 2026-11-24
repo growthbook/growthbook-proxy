@@ -11,6 +11,9 @@ interface ScopedChannel {
 
 export type EventType = "features" | "features-updated";
 
+// Long enough for a dropped client to reconnect and replay what it missed
+export const IDLE_CHANNEL_TTL_MS = 5 * 60 * 1000;
+
 export class SSEManager {
   private scopedChannels = new Map<string, ScopedChannel>();
 
@@ -18,6 +21,19 @@ export class SSEManager {
 
   constructor(appContext: Context) {
     this.appContext = appContext;
+    setInterval(() => this.removeIdleChannels(), 60 * 1000).unref();
+  }
+
+  public removeIdleChannels(now = Date.now()) {
+    this.scopedChannels.forEach(({ channel }, apiKey) => {
+      if (
+        channel.emptySince !== null &&
+        now - channel.emptySince >= IDLE_CHANNEL_TTL_MS
+      ) {
+        channel.close();
+        this.scopedChannels.delete(apiKey);
+      }
+    });
   }
 
   public subscribe(req: Request, res: Response) {
@@ -154,6 +170,8 @@ export class SSEManager {
           {
             maxStreamDuration: this.appContext.eventStreamMaxDurationMs,
             pingInterval: this.appContext.eventStreamPingIntervalMs,
+            // a channel recreated after removal must not reuse a reconnecting client's Last-Event-ID
+            startId: Date.now(),
           },
           this.appContext,
         ),

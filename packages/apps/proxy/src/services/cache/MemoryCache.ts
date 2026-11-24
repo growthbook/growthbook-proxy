@@ -19,6 +19,18 @@ export class MemoryCache {
     this.expiresTTL = expiresTTL === "never" ? "never" : expiresTTL * 1000;
     this.allowStale = allowStale;
     this.cacheRefreshStrategy = cacheRefreshStrategy!;
+    // "none" serves expired entries, so only other strategies can drop them
+    if (this.expiresTTL !== "never" && this.cacheRefreshStrategy !== "none") {
+      setInterval(() => this.removeExpired(), 60 * 1000).unref();
+    }
+  }
+
+  public removeExpired(now = new Date()) {
+    this.store.forEach((entry, key) => {
+      if (entry.expiresOn && new Date(entry.expiresOn) < now) {
+        this.store.delete(key);
+      }
+    });
   }
 
   public async get(key: string): Promise<CacheEntry | undefined> {
