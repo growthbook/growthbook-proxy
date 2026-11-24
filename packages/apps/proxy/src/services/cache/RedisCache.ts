@@ -11,6 +11,7 @@ import { eventStreamManager } from "../eventStreamManager";
 import { Context } from "../../types";
 import { registrar } from "../registrar";
 import { CacheRefreshStrategy } from "../../types";
+import { payloadChanged } from "../payloadChanged";
 import { MemoryCache } from "./MemoryCache";
 import { CacheEntry, CacheSettings } from "./index";
 
@@ -172,7 +173,10 @@ export class RedisCache {
       throw new Error("No redis client");
     }
 
-    const oldEntry = await this.get(key);
+    // the old payload only feeds the pub/sub change check
+    const oldEntry = this.publishPayloadToChannel
+      ? await this.get(key)
+      : undefined;
 
     const entry: CacheEntry = {
       payload,
@@ -203,8 +207,7 @@ export class RedisCache {
     // 2. update their MemoryCache
     if (this.publishPayloadToChannel) {
       // publish to Redis subscribers if new payload !== old payload
-      const hasChanges =
-        JSON.stringify(oldEntry?.payload) !== JSON.stringify(payload);
+      const hasChanges = payloadChanged(oldEntry?.payload, payload);
       if (hasChanges) {
         if (this.appContext?.verboseDebugging) {
           logger.info(

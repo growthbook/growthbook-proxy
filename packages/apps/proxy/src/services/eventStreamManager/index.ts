@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import logger, { truncatePayloadForLogging } from "../logger";
 import { Context } from "../../types";
+import { payloadChanged } from "../payloadChanged";
 import { SSEChannel } from "./ssePubsub";
 
 interface ScopedChannel {
@@ -106,7 +107,7 @@ export class SSEManager {
       return;
     }
 
-    const hasChanges = JSON.stringify(payload) !== JSON.stringify(oldPayload);
+    const hasChanges = payloadChanged(payload, oldPayload);
     if (!hasChanges) {
       if (this.appContext?.verboseDebugging) {
         logger.info(
