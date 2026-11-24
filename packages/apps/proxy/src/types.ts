@@ -1,5 +1,6 @@
 import { Express } from "express";
 import { HttpLogger } from "pino-http";
+import type { Cluster, Redis } from "ioredis";
 import type { RemoteGroupsLoader } from "@growthbook/remote-saved-groups-redis-loader";
 import { Connection, Registrar } from "./services/registrar";
 import { EventStreamManager } from "./services/eventStreamManager";
@@ -20,6 +21,10 @@ export interface GrowthBookProxy {
     logger: HttpLogger["logger"];
     remoteGroupsLoader?: RemoteGroupsLoader | null;
     remoteGroupUpdateWatcher?: RemoteGroupUpdateWatcher | null;
+    remoteSavedGroupsClients?: {
+      lookups: Redis | Cluster | null;
+      loader: Redis | Cluster | null;
+    };
   };
   version: string;
 }

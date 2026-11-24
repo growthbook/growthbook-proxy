@@ -24,6 +24,7 @@ import {
   initializeRemoteSavedGroups,
   remoteGroupsLoader,
   remoteGroupUpdateWatcher,
+  remoteSavedGroupsClients,
 } from "./services/remoteSavedGroups";
 
 export { Context, GrowthBookProxy, CacheEngine } from "./types";
@@ -83,6 +84,7 @@ export const growthBookProxy = async (
         eventStreamManager,
         logger,
         remoteGroupsLoader,
+        remoteSavedGroupsClients,
       },
       version,
     };
@@ -121,6 +123,7 @@ export const growthBookProxy = async (
       logger,
       remoteGroupsLoader,
       remoteGroupUpdateWatcher,
+      remoteSavedGroupsClients,
     },
     version,
   };

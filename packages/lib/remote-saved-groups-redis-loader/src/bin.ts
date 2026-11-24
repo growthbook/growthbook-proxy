@@ -26,6 +26,9 @@ const redisSettings = {
   clusterRootNodes: env.REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON
     ? JSON.parse(env.REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON)
     : undefined,
+  clusterOptions: env.REMOTE_SAVED_GROUPS_CLUSTER_OPTIONS_JSON
+    ? JSON.parse(env.REMOTE_SAVED_GROUPS_CLUSTER_OPTIONS_JSON)
+    : undefined,
 };
 const redisProblem = getRedisSettingsProblem(redisSettings);
 if (redisProblem) {

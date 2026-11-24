@@ -127,6 +127,9 @@ export default async () => {
         .REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON
         ? JSON.parse(process.env.REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON)
         : undefined,
+      clusterOptionsJSON: process.env.REMOTE_SAVED_GROUPS_CLUSTER_OPTIONS_JSON
+        ? JSON.parse(process.env.REMOTE_SAVED_GROUPS_CLUSTER_OPTIONS_JSON)
+        : undefined,
       timeoutMs: parseInt(process.env.REMOTE_SAVED_GROUPS_TIMEOUT_MS ?? "1000"),
       runLoader: envBool(process.env.REMOTE_SAVED_GROUPS_LOADER, true),
       pollIntervalMs: parseInt(

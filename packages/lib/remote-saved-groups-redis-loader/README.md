@@ -31,6 +31,7 @@ npx remote-saved-groups-redis-loader
 - `REMOTE_SAVED_GROUPS_STORE_ID` (required): identifies this Redis in GrowthBook's load reports, such as `redis-us-east`. Loaders sharing a Redis (or a Redis Cluster) use the same ID, and each Redis gets a different one
 - `REMOTE_SAVED_GROUPS_CONNECTION_URL`: the Redis URL. Required unless using Redis Cluster
 - `REMOTE_SAVED_GROUPS_USE_CLUSTER` and `REMOTE_SAVED_GROUPS_CLUSTER_ROOT_NODES_JSON`: for Redis Cluster
+- `REMOTE_SAVED_GROUPS_CLUSTER_OPTIONS_JSON`: ioredis ClusterOptions for Redis Cluster, such as `redisOptions` with TLS settings and credentials
 - `REMOTE_SAVED_GROUPS_POLL_INTERVAL_MS`: how often to check for new files (default: 5 minutes)
 
 Several loaders can share a Redis. They take turns loading each group.
