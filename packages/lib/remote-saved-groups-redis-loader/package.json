@@ -1,7 +1,7 @@
 {
   "name": "@growthbook/remote-saved-groups-redis-loader",
   "description": "Loads GrowthBook remote saved groups into Redis",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "packageManager": "pnpm@10.33.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
