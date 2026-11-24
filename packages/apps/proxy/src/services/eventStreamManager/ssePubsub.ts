@@ -99,7 +99,7 @@ export class SSEChannel {
       }
       output = "data: \n\n";
     } else {
-      id = this.options.contentVersions && version ? version : this.nextID++;
+      id = this.nextEventId(version);
       if (typeof data === "object") {
         data = JSON.stringify(data);
       }
@@ -251,6 +251,15 @@ export class SSEChannel {
 
   public getSubscriberCount() {
     return this.clients.size;
+  }
+
+  private nextEventId(version?: number): number {
+    if (!this.options.contentVersions) return this.nextID++;
+    if (version) return version;
+    // An event with no version (a beacon) must be newer than the payload it follows,
+    // so a client that has that payload but missed the beacon still receives it.
+    const latest = this.messages[this.messages.length - 1];
+    return latest ? latest.id + 1 : this.nextID++;
   }
 
   public hasContent(): boolean {

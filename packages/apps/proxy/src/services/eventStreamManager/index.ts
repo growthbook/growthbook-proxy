@@ -70,12 +70,18 @@ export class SSEManager {
       if (scopedChannel) {
         // Await only when a seed is needed, so a warm channel subscribes synchronously
         if (this.needsSeed(scopedChannel)) {
+          // The client can disconnect during the cache read, before the channel listens for close
+          let closed = false;
+          res.once("close", () => {
+            closed = true;
+          });
           try {
             await this.seedFromCache(apiKey, scopedChannel);
           } catch (e) {
             // Open the stream without the seed; the next publish still reaches this client
             logger.error({ err: e, apiKey }, "Unable to seed SSE channel");
           }
+          if (closed) return;
         }
         try {
           scopedChannel.channel.subscribe(req, res);

@@ -69,6 +69,19 @@ describe("SSEChannel with content versions", () => {
     channel().subscribe(req, res);
     expect(written(res)).not.toContain("data:");
   });
+
+  it("sends a beacon to a client that has the payload before it but missed the beacon", () => {
+    const c = channel();
+    c.publish("", "features-updated");
+    const missed = fakeConnection("key", V2);
+    c.subscribe(missed.req, missed.res);
+    expect(written(missed.res)).toContain(`id: ${V2 + 1}`);
+    expect(written(missed.res)).toContain("event: features-updated");
+
+    const current = fakeConnection("key", V2 + 1);
+    c.subscribe(current.req, current.res);
+    expect(written(current.res)).not.toContain("event:");
+  });
 });
 
 describe("SSEManager seeding from the shared cache", () => {
@@ -99,6 +112,23 @@ describe("SSEManager seeding from the shared cache", () => {
     expect(res.writeHead).toHaveBeenCalledWith(200, expect.anything());
     expect(written(res)).toContain("retry:");
     expect(written(res)).not.toContain("data:");
+  });
+
+  it("does not subscribe a client that disconnects during the cache read", async () => {
+    let finishRead: (entry: unknown) => void = () => undefined;
+    cacheGet.mockReturnValue(
+      new Promise((resolve) => {
+        finishRead = resolve;
+      }),
+    );
+    const manager = newManager();
+    const { req, res } = fakeConnection("key");
+    const subscribing = manager.subscribe(req, res);
+    res.emit("close");
+    finishRead({ payload: payload("2026-11-24T12:05:00.000Z", "v2") });
+    await subscribing;
+    expect(res.writeHead).not.toHaveBeenCalled();
+    expect(manager.getSubscriberCount("key")).toBe(0);
   });
 
   it("does not read the cache for a warm channel", async () => {
