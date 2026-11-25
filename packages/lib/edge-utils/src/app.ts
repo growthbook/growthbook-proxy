@@ -273,9 +273,18 @@ export async function edgeApp<Req, Res>(
     );
   }
   const originHeaders = headersToObject(originResponse.headers);
-  // Errors and redirects we didn't follow go back to the browser as-is
-  if (originStatus >= 400 || (originStatus >= 300 && originHeaders.location)) {
+  if (originStatus >= 400) {
     return originResponse;
+  }
+  // Redirects we didn't follow go back to the browser
+  if (originStatus >= 300 && originHeaders.location) {
+    return passThroughRedirect(
+      context,
+      originResponse as unknown as Response,
+      originUrl,
+      new URL(getOriginUrl(context, requestUrl)).host,
+      respCookies,
+    );
   }
 
   // Got a valid response, begin processing
@@ -444,4 +453,34 @@ function headersToObject(headers: any) {
     return Object.fromEntries(headers.entries());
   }
   return headers || {};
+}
+
+// Copies the origin's redirect (keeping all its headers) and adds our cookies. A relative
+// Location is resolved against the URL we fetched, since the browser's URL may differ.
+function passThroughRedirect<Req, Res>(
+  context: Context<Req, Res>,
+  response: Response,
+  originUrl: string,
+  proxiedHost: string,
+  cookies: Record<string, string>,
+): Res {
+  const redirect = new Response(response.body, response);
+  const location = redirect.headers.get("location") || "";
+  if (!/^([a-z][a-z\d+.-]*:|\/\/)/i.test(location)) {
+    try {
+      const target = new URL(location, response.url || originUrl);
+      redirect.headers.set(
+        "location",
+        target.host === proxiedHost
+          ? target.pathname + target.search + target.hash
+          : target.href,
+      );
+    } catch {
+      // leave an unparseable Location as-is
+    }
+  }
+  for (const key in cookies) {
+    context.helpers.setCookie?.(redirect as unknown as Res, key, cookies[key]);
+  }
+  return redirect as unknown as Res;
 }

@@ -60,7 +60,9 @@ export async function proxyRequest(
     proxyFn = createProxyMiddleware({
       target: ctx.config.proxyTarget,
       changeOrigin: true,
-      followRedirects: ctx.config.followRedirects,
+      // http-proxy-middleware follows any host, so only when cross-origin is allowed
+      followRedirects:
+        ctx.config.followRedirects && !!ctx.config.followCrossOriginRedirects,
     });
   }
   return proxyFn(req, res, next);

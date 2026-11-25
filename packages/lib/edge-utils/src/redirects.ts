@@ -6,6 +6,7 @@ const CREDENTIAL_HEADERS = ["cookie", "authorization", "proxy-authorization"];
 type FetchResponse = {
   status: number;
   headers: { get: (name: string) => string | null };
+  body?: { cancel: () => Promise<void> } | null;
 };
 
 // Follows GET/HEAD redirects that stay on the same host (any host if followCrossOriginRedirects).
@@ -33,12 +34,19 @@ export async function fetchFollowingRedirects<R extends FetchResponse>(
     } catch {
       break;
     }
-    if (next.host !== new URL(url).host) {
+    if (next.protocol !== "http:" && next.protocol !== "https:") break;
+    const prev = new URL(url);
+    // Another host, or an https -> http downgrade, counts as cross-origin
+    if (
+      next.host !== prev.host ||
+      (prev.protocol === "https:" && next.protocol === "http:")
+    ) {
       if (!config.followCrossOriginRedirects) break;
-      // Like fetch, don't send the visitor's credentials to another host
+      // Like fetch, don't send the visitor's credentials cross-origin
       headers = new Headers(headers);
       CREDENTIAL_HEADERS.forEach((h) => headers.delete(h));
     }
+    response.body?.cancel().catch(() => {});
     url = next.href;
     response = await doFetch(url, headers);
   }

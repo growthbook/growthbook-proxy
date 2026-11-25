@@ -62,7 +62,7 @@ The GrowthBook Edge App supports a number of configuration options available via
 
 - `PROXY_TARGET` - Origin (non-edge) base URL to your website
 - `FORWARD_PROXY_HEADERS` - "true" or "1" to preserve response headers from your server (default `true`)
-- `FOLLOW_REDIRECTS` - "true" or "1" to follow redirects from your origin that stay on the same host, for GET and HEAD requests. Other redirects are returned to the browser (default `true`)
+- `FOLLOW_REDIRECTS` - "true" or "1" to follow redirects from your origin that stay on the same host (an https to http downgrade doesn't count), for GET and HEAD requests. Other redirects are returned to the browser (default `true`)
 - `FOLLOW_CROSS_ORIGIN_REDIRECTS` - "true" or "1" to also follow redirects to other hosts. The followed page is served under your site's URL, so only enable this if every host your origin can redirect to is trusted; an open redirect on your origin would let anyone serve their page from your domain. Cookies and `Authorization` aren't forwarded to other hosts (default `false`)
 - `USE_DEFAULT_CONTENT_TYPE` - "true" or "1" to assume a content-type of "text-html" if no "Content-Type" header was set (default `false`).
 - `PROCESS_TEXT_HTML_ONLY` - "true" or "1" to only process server responses with the `Content-Type: text/html` header set – others will be proxied through (default `true`).

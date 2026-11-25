@@ -10,6 +10,7 @@ function follow(
   method = "GET",
 ) {
   const calls: [string, string | null][] = [];
+  let cancelled = 0;
   const result = fetchFollowingRedirects(
     config,
     url,
@@ -23,6 +24,7 @@ function follow(
         headers: {
           get: (n: string) => (n === "location" ? (location ?? null) : null),
         },
+        body: { cancel: async () => void cancelled++ },
       };
     },
   );
@@ -30,6 +32,7 @@ function follow(
     status: res.status,
     urls: calls.map(([u]) => u),
     cookies: calls.map(([, c]) => c),
+    cancelled,
   }));
 }
 
@@ -50,14 +53,29 @@ describe("fetchFollowingRedirects", () => {
       "https://o.test/b",
     ]);
     expect(res.cookies.every((c) => c === "session=secret")).toBe(true);
+    expect(res.cancelled).toBe(3);
   });
 
-  it("returns redirects to another host", async () => {
+  it.each([
+    ["another host", "https://evil.test/"],
+    ["an https -> http downgrade", "http://o.test/plain"],
+    ["a non-http URL", "ftp://o.test/x"],
+  ])("returns redirects to %s", async (_, location) => {
     const res = await follow(sameHost, "https://o.test/logout", {
-      "https://o.test/logout": [302, "https://evil.test/"],
+      "https://o.test/logout": [302, location],
     });
     expect(res.status).toBe(302);
     expect(res.urls).toEqual(["https://o.test/logout"]);
+  });
+
+  it("follows a downgrade with followCrossOriginRedirects, without credentials", async () => {
+    const res = await follow(
+      { followRedirects: true, followCrossOriginRedirects: true },
+      "https://o.test/x",
+      { "https://o.test/x": [302, "http://o.test/plain"] },
+    );
+    expect(res.urls).toEqual(["https://o.test/x", "http://o.test/plain"]);
+    expect(res.cookies).toEqual(["session=secret", null]);
   });
 
   it("follows other hosts with followCrossOriginRedirects, without credentials", async () => {
