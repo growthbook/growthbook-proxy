@@ -272,12 +272,13 @@ export async function edgeApp<Req, Res>(
       500,
     );
   }
-  if (originStatus >= 400) {
+  const originHeaders = headersToObject(originResponse.headers);
+  // Errors and redirects we didn't follow go back to the browser as-is
+  if (originStatus >= 400 || (originStatus >= 300 && originHeaders.location)) {
     return originResponse;
   }
 
   // Got a valid response, begin processing
-  const originHeaders = headersToObject(originResponse.headers);
   if (context.config.forwardProxyHeaders) {
     resHeaders = { ...originHeaders, ...resHeaders };
   }

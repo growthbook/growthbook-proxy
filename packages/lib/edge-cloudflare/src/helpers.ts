@@ -1,4 +1,9 @@
-import { Context, FetchOptions, getOriginUrl } from "@growthbook/edge-utils";
+import {
+  Context,
+  FetchOptions,
+  fetchFollowingRedirects,
+  getOriginUrl,
+} from "@growthbook/edge-utils";
 import { parse } from "cookie";
 
 export function getRequestURL(req: Request) {
@@ -51,13 +56,21 @@ export function fetchFn(
     });
   }
 
-  const newRequest = new Request(url, {
-    method: req.method,
-    headers: newHeaders,
-    body: req.body,
-    redirect: ctx.config.followRedirects ? "follow" : "manual",
-  });
-  return fetch(newRequest);
+  return fetchFollowingRedirects(
+    ctx.config,
+    url,
+    req.method,
+    newHeaders,
+    (u, headers) =>
+      fetch(
+        new Request(u, {
+          method: req.method,
+          headers,
+          body: req.body,
+          redirect: "manual",
+        }),
+      ),
+  );
 }
 
 export function proxyRequest(ctx: Context<Request, Response>, req: Request) {

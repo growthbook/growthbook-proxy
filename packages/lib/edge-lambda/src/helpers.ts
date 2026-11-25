@@ -1,4 +1,9 @@
-import { Context, FetchOptions, getOriginUrl } from "@growthbook/edge-utils";
+import {
+  Context,
+  FetchOptions,
+  fetchFollowingRedirects,
+  getOriginUrl,
+} from "@growthbook/edge-utils";
 import type { CloudFrontRequest, CloudFrontResultResponse } from "aws-lambda";
 import cookie from "cookie";
 import { Env } from "./init";
@@ -81,7 +86,6 @@ export async function fetchFn(
   req: CloudFrontRequest,
   options?: FetchOptions,
 ): Promise<Response> {
-  const maxRedirects = 5;
   const headerRecord = cloudFrontHeadersToRecord(req.headers);
   const newHeaders = new Headers(headerRecord);
   if (ctx.config.nocacheOrigin) {
@@ -97,34 +101,14 @@ export async function fetchFn(
   }
 
   const body = req.body?.data ?? undefined;
-  let response = await fetch(url, {
-    method: req.method,
-    headers: newHeaders,
-    body,
-  });
-  if (!ctx.config.followRedirects) {
-    return response;
-  }
-
-  let location = response.headers.get("location");
-  let redirectCount = 0;
-
-  while (
-    response.status >= 300 &&
-    response.status < 400 &&
-    location &&
-    redirectCount < maxRedirects
-  ) {
-    response = await fetch(location, {
-      method: req.method,
-      headers: newHeaders,
-      body,
-    });
-    location = response.headers.get("location");
-    redirectCount++;
-  }
-
-  return response;
+  return fetchFollowingRedirects(
+    ctx.config,
+    url,
+    req.method,
+    newHeaders,
+    (u, headers) =>
+      fetch(u, { method: req.method, headers, body, redirect: "manual" }),
+  );
 }
 
 export async function proxyRequest(

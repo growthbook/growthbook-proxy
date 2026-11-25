@@ -21,3 +21,4 @@ export { edgeApp, getOriginUrl } from "./app";
 
 export { getUserAttributes, getUUID, getAutoAttributes } from "./attributes";
 export { applyDomMutations } from "./domMutations";
+export { fetchFollowingRedirects } from "./redirects";

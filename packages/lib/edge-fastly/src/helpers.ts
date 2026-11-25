@@ -1,4 +1,9 @@
-import { Context, FetchOptions, getOriginUrl } from "@growthbook/edge-utils";
+import {
+  Context,
+  FetchOptions,
+  fetchFollowingRedirects,
+  getOriginUrl,
+} from "@growthbook/edge-utils";
 import { parse } from "cookie";
 import { FastlyConfig } from "./init";
 
@@ -38,8 +43,6 @@ export async function fetchFn(
   req: Request,
   options?: FetchOptions,
 ) {
-  const maxRedirects = 5;
-
   const newHeaders = new Headers(req.headers);
   if (ctx.config.nocacheOrigin) {
     // try to prevent 304s:
@@ -54,40 +57,20 @@ export async function fetchFn(
     });
   }
 
-  const backend = getBackend(ctx, url);
-  let response = await fetch(url, {
-    method: req.method,
-    headers: newHeaders,
-    body: req.body,
-    // @ts-ignore
-    backend: backend,
-  });
-  if (!ctx.config.followRedirects) {
-    return response;
-  }
-
-  let location = response.headers.get("location");
-  let redirectCount = 0;
-
-  while (
-    response.status >= 300 &&
-    response.status < 400 &&
-    location &&
-    redirectCount < maxRedirects
-  ) {
-    const backend = getBackend(ctx, location);
-    response = await fetch(location, {
-      method: req.method,
-      headers: newHeaders,
-      body: req.body,
-      // @ts-ignore
-      backend: backend,
-    });
-    location = response.headers.get("location");
-    redirectCount++;
-  }
-
-  return response;
+  return fetchFollowingRedirects(
+    ctx.config,
+    url,
+    req.method,
+    newHeaders,
+    (u, headers) =>
+      fetch(u, {
+        method: req.method,
+        headers,
+        body: req.body,
+        // @ts-ignore
+        backend: getBackend(ctx, u),
+      }),
+  );
 }
 
 export function proxyRequest(ctx: Context<Request, Response>, req: Request) {
