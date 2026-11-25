@@ -103,13 +103,13 @@ export function injectScript<Req, Res>({
     context.config.noAutoCookies ? `\n  data-no-auto-cookies="true"` : ""
   }
 >
-  window.growthbook_config = ${JSON.stringify(gbContext)};
+  window.growthbook_config = ${escapedJson(gbContext)};
 ${
   deferredTrackingCalls?.length
     ? `
   window.growthbook_queue = [
     (gb) => {
-      gb.setDeferredTrackingCalls(${JSON.stringify(
+      gb.setDeferredTrackingCalls(${escapedJson(
         scrubInvalidTrackingCalls(deferredTrackingCalls, preRedirectChangeIds),
       )});
       gb.fireDeferredTrackingCalls();
@@ -121,9 +121,7 @@ ${
   ${sdkWrapper}
   ${
     url !== oldUrl && injectRedirectUrlScript
-      ? `window.history.replaceState(undefined, undefined, ${JSON.stringify(
-          url,
-        )})`
+      ? `window.history.replaceState(undefined, undefined, ${escapedJson(url)})`
       : ""
   }
 </script>
@@ -142,6 +140,16 @@ ${
 
   setBody(body);
   return;
+}
+
+/**
+ * Serializes a value as JSON, escaping `<`, U+2028 and U+2029.
+ */
+export function escapedJson(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, "\\u003c")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
 }
 
 export function getCspInfo<Req, Res>(
