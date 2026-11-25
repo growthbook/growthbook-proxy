@@ -61,6 +61,7 @@ export function injectScript<Req, Res>({
     persistUuidOnLoad?: boolean;
     useStickyBucketService?: "cookie" | "localStorage";
     stickyBucketPrefix?: string;
+    trackingCallback?: string; // replaced by macro
     payload?: FeatureApiResponse;
     noStreaming?: boolean;
   } = {
@@ -87,8 +88,11 @@ export function injectScript<Req, Res>({
     stickyBucketPrefix: context.config.stickyBucketPrefix,
     stickyBucketAssignmentDocs: stickyAssignments,
   };
+  if (trackingCallback) {
+    gbContext.trackingCallback = "__TRACKING_CALLBACK__";
+  }
 
-  const scriptTag = `
+  let scriptTag = `
 <script
   data-api-host="${context.config.apiHost}"
   data-client-key="${context.config.clientKey}"${
@@ -99,11 +103,7 @@ export function injectScript<Req, Res>({
     context.config.noAutoCookies ? `\n  data-no-auto-cookies="true"` : ""
   }
 >
-  window.growthbook_config = ${escapedJson(gbContext)};${
-    trackingCallback
-      ? `\n  window.growthbook_config.trackingCallback = ${trackingCallback};`
-      : ""
-  }
+  window.growthbook_config = ${escapedJson(gbContext)};
 ${
   deferredTrackingCalls?.length
     ? `
@@ -126,6 +126,10 @@ ${
   }
 </script>
 `;
+  scriptTag = scriptTag.replace(
+    `"__TRACKING_CALLBACK__"`,
+    trackingCallback || "undefined",
+  );
 
   const index = body.indexOf(context.config.scriptInjectionPattern);
   if (index >= 0) {
@@ -138,7 +142,9 @@ ${
   return;
 }
 
-// Serializes a value as JSON, escaping `<`, U+2028 and U+2029.
+/**
+ * Serializes a value as JSON, escaping `<`, U+2028 and U+2029.
+ */
 export function escapedJson(value: unknown): string {
   return JSON.stringify(value)
     .replace(/</g, "\\u003c")
