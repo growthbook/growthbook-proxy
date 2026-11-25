@@ -5,7 +5,7 @@ import { validateEventStreamChannelMiddleware } from "../middleware/eventStream/
 
 const getSubscribeToEventStream = async (req: Request, res: Response) => {
   if (eventStreamManager) {
-    eventStreamManager.subscribe(req, res);
+    await eventStreamManager.subscribe(req, res);
   }
 };
 
