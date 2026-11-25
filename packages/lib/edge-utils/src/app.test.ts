@@ -70,9 +70,15 @@ describe("edgeApp", () => {
 
   it("resolves a relative Location against the URL it fetched", async () => {
     const sameHost = await run(redirect("6", "https://origin.test/steps/5"));
-    expect(sameHost.headers.get("location")).toBe("/steps/6");
+    expect(sameHost.headers.get("location")).toBe("https://site.test/steps/6");
 
     const otherHost = await run(redirect("6", "https://other.test/x/5"));
     expect(otherHost.headers.get("location")).toBe("https://other.test/x/6");
+  });
+
+  it("keeps the public host when a relative Location's path starts with //", async () => {
+    const res = await run(redirect(".//elsewhere.test/"));
+    const location = res.headers.get("location") ?? "";
+    expect(new URL(location, "https://site.test/start").host).toBe("site.test");
   });
 });

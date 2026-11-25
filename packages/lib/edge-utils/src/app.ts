@@ -282,7 +282,7 @@ export async function edgeApp<Req, Res>(
       context,
       originResponse as unknown as Response,
       originUrl,
-      new URL(getOriginUrl(context, requestUrl)).host,
+      requestUrl,
       respCookies,
     );
   }
@@ -461,7 +461,7 @@ function passThroughRedirect<Req, Res>(
   context: Context<Req, Res>,
   response: Response,
   originUrl: string,
-  proxiedHost: string,
+  requestUrl: string,
   cookies: Record<string, string>,
 ): Res {
   const redirect = new Response(response.body, response);
@@ -469,12 +469,16 @@ function passThroughRedirect<Req, Res>(
   if (!/^([a-z][a-z\d+.-]*:|\/\/)/i.test(location)) {
     try {
       const target = new URL(location, response.url || originUrl);
-      redirect.headers.set(
-        "location",
-        target.host === proxiedHost
-          ? target.pathname + target.search + target.hash
-          : target.href,
-      );
+      // Same path on the public host; set via URL so a `//` path can't become a host
+      if (target.host === new URL(getOriginUrl(context, requestUrl)).host) {
+        const publicUrl = new URL(requestUrl);
+        publicUrl.pathname = target.pathname;
+        publicUrl.search = target.search;
+        publicUrl.hash = target.hash;
+        redirect.headers.set("location", publicUrl.href);
+      } else {
+        redirect.headers.set("location", target.href);
+      }
     } catch {
       // leave an unparseable Location as-is
     }
