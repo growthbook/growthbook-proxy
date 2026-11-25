@@ -107,9 +107,11 @@ export async function applyDomMutations({
     if (!root) return;
     const els = root.querySelectorAll(selector);
     els.map((el) => {
-      const classList = new Set(el.classNames);
+      const classList = new Set(
+        (el.getAttribute("class") ?? "").split(/\s+/).filter(Boolean),
+      );
       cb(classList);
-      el.setAttribute("class", Array.from(classList).join(" "));
+      setAttr(el, "class", Array.from(classList).join(" "));
     });
   }
 
@@ -136,12 +138,7 @@ export async function applyDomMutations({
     }
     const els = root.querySelectorAll(selector);
     els.map((el) => {
-      const val = cb(el.getAttribute(attr) || "");
-      if (val === null) {
-        el.removeAttribute(attr);
-      } else {
-        el.setAttribute(attr, val);
-      }
+      setAttr(el, attr, cb(el.getAttribute(attr) || ""));
     });
   }
 
@@ -166,4 +163,17 @@ export async function applyDomMutations({
       }
     });
   }
+}
+
+// node-html-parser decodes on read but doesn't encode `&` on write, and its own
+// quoting strips backslashes, so escape the value and rebuild the attribute string.
+function setAttr(el: HTMLElement, name: string, value: string | null) {
+  if (value === null) {
+    el.removeAttribute(name);
+  } else {
+    el.setAttribute(name, value.replace(/&/g, "&amp;").replace(/"/g, "&quot;"));
+  }
+  el.rawAttrs = Object.entries(el.rawAttributes)
+    .map(([k, v]) => (v == null ? k : `${k}="${v.replace(/"/g, "&quot;")}"`))
+    .join(" ");
 }
