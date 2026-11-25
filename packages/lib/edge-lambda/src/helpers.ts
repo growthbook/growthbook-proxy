@@ -1,6 +1,6 @@
 import { Context, FetchOptions, getOriginUrl } from "@growthbook/edge-utils";
 import type { CloudFrontRequest, CloudFrontResultResponse } from "aws-lambda";
-import cookie from "cookie";
+import { parse, serialize } from "cookie";
 import { Env } from "./init";
 
 function cloudFrontHeadersToRecord(
@@ -148,41 +148,45 @@ export async function responseToCloudFrontFormat(
   if (response.headers) {
     const headersObj: CloudFrontResultResponse["headers"] = {};
     response.headers.forEach((value, key) => {
-      headersObj[key] = [{ key, value }];
+      if (key !== "set-cookie") headersObj[key] = [{ key, value }];
     });
+    // forEach joins multiple Set-Cookie headers into one, so add them separately
+    const setCookies = response.headers.getSetCookie();
+    if (setCookies.length) {
+      headersObj["set-cookie"] = setCookies.map((value) => ({
+        key: "Set-Cookie",
+        value,
+      }));
+    }
     res.headers = headersObj;
   }
   return res;
 }
 
 export function getCookie(req: CloudFrontRequest, key: string): string {
-  const parsedCookie: Record<string, string> = {};
-  const cookieHeader = req?.headers?.cookie;
-  if (cookieHeader) {
-    for (const entry of cookieHeader) {
-      const raw = entry?.value;
-      if (!raw) continue;
-      raw.split(";").forEach((part: string) => {
-        const [c0, c1] = part.split("=");
-        if (c0) {
-          parsedCookie[c0.trim()] = c1 ? decodeURIComponent(c1.trim()) : "";
-        }
-      });
-    }
-  }
-  return parsedCookie[key] ?? "";
+  const header = (req?.headers?.cookie ?? [])
+    .map((entry) => entry?.value)
+    .filter(Boolean)
+    .join("; ");
+  return parse(header)[key] ?? "";
 }
 
+// Takes a CloudFront response, or a fetch Response that index.ts converts later.
 export function setCookie(
-  res: CloudFrontResultResponse,
+  res: CloudFrontResultResponse | Response,
   key: string,
   value: string,
 ): void {
   const COOKIE_DAYS = 400; // max cookie duration (days) for Chrome
-  const serialized = cookie.serialize(key, value, {
-    maxAge: 24 * 60 * 60 * 1000 * COOKIE_DAYS,
+  const serialized = serialize(key, value, {
+    maxAge: 24 * 60 * 60 * COOKIE_DAYS,
+    path: "/",
   });
+  if (res instanceof Response) {
+    res.headers.append("Set-Cookie", serialized);
+    return;
+  }
   if (!res.headers) res.headers = {};
-  if (!res.headers["cookie"]) res.headers["cookie"] = [];
-  res.headers["cookie"].push({ key, value: serialized });
+  if (!res.headers["set-cookie"]) res.headers["set-cookie"] = [];
+  res.headers["set-cookie"].push({ key: "Set-Cookie", value: serialized });
 }
