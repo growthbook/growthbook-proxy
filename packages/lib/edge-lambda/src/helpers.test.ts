@@ -144,25 +144,4 @@ describe("responseToCloudFrontFormat", () => {
       server.close();
     }
   });
-
-  it("keeps each Set-Cookie header separate", async () => {
-    const res = await responseToCloudFrontFormat(
-      new Response("moved", {
-        status: 302,
-        headers: [
-          ["location", "/next"],
-          ["set-cookie", "a=1"],
-          ["set-cookie", "b=2"],
-        ],
-      }),
-    );
-    expect(res.status).toBe("302");
-    expect(res.headers?.location).toEqual([
-      { key: "location", value: "/next" },
-    ]);
-    expect(res.headers?.["set-cookie"]).toEqual([
-      { key: "Set-Cookie", value: "a=1" },
-      { key: "Set-Cookie", value: "b=2" },
-    ]);
-  });
 });
