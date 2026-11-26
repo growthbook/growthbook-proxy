@@ -1,3 +1,5 @@
+import http from "node:http";
+import type { AddressInfo } from "node:net";
 import type { CloudFrontRequest, CloudFrontResultResponse } from "aws-lambda";
 import {
   getCookie,
@@ -34,6 +36,31 @@ describe("setCookie", () => {
     expect(res.headers.getSetCookie()).toEqual([
       `gbuuid=abc; Max-Age=${MAX_AGE}; Path=/`,
     ]);
+  });
+
+  it("appends to a fetched Response, whose headers are read-only", async () => {
+    const server = http.createServer((_, res) => {
+      res.writeHead(302, { location: "/next", "set-cookie": "origin=1" });
+      res.end("moved");
+    });
+    await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+    try {
+      const { port } = server.address() as AddressInfo;
+      const res = await fetch(`http://127.0.0.1:${port}/`, {
+        redirect: "manual",
+      });
+      setCookie(res, "gbuuid", "abc");
+
+      const cf = await responseToCloudFrontFormat(res);
+      expect(cf.status).toBe("302");
+      expect(cf.body).toBe("moved");
+      expect(cf.headers?.["set-cookie"]).toEqual([
+        { key: "Set-Cookie", value: "origin=1" },
+        { key: "Set-Cookie", value: `gbuuid=abc; Max-Age=${MAX_AGE}; Path=/` },
+      ]);
+    } finally {
+      server.close();
+    }
   });
 });
 
