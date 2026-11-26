@@ -61,6 +61,7 @@ export function fetchFn(
     url,
     req.method,
     newHeaders,
+    ctx.helpers.getRequestURL(req),
     (u, headers) =>
       fetch(
         new Request(u, {

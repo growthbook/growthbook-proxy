@@ -5,6 +5,7 @@ import { defaultContext } from "./config";
 async function run(
   originResponse: Response,
   config: Partial<typeof defaultContext.config> = {},
+  method = "GET",
 ) {
   const sendResponse = jest.fn();
   const context = {
@@ -17,12 +18,13 @@ async function run(
     helpers: {
       ...defaultContext.helpers,
       getRequestURL: () => "https://site.test/start",
-      getRequestMethod: () => "GET",
+      getRequestMethod: () => method,
       getRequestHeader: () => undefined,
       getCookie: () => "",
       setCookie: (res: Response, key: string, value: string) =>
         res.headers.append("set-cookie", `${key}=${value}`),
       fetch: async () => originResponse,
+      proxyRequest: async () => originResponse,
       sendResponse,
     },
     hooks: {},
@@ -80,5 +82,23 @@ describe("edgeApp", () => {
     const res = await run(redirect(".//elsewhere.test/"));
     const location = res.headers.get("location") ?? "";
     expect(new URL(location, "https://site.test/start").host).toBe("site.test");
+  });
+
+  it("moves an absolute Location on the origin's host to the public host", async () => {
+    const res = await run(redirect("http://origin.test/dashboard?x=1"));
+    expect(res.headers.get("location")).toBe("https://site.test/dashboard?x=1");
+  });
+
+  it("does the same for proxied requests, like a form POST", async () => {
+    const res = await run(
+      redirect("https://origin.test/dashboard", undefined, [
+        ["set-cookie", "session=1"],
+      ]),
+      {},
+      "POST",
+    );
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBe("https://site.test/dashboard");
+    expect(res.headers.getSetCookie()).toEqual(["session=1"]);
   });
 });

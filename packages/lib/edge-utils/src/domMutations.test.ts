@@ -61,4 +61,34 @@ describe("applyDomMutations", () => {
     expect(el.hasAttribute("title")).toBe(false);
     expect(el.getAttribute("data-x")).toBe("1");
   });
+
+  it("leaves attributes node-html-parser can't parse untouched", async () => {
+    let html = `<div class="q" _ngcontent-ng-c1="" *ngIf="show" data-ñ='1' Title=x>t</div>`;
+    await applyDomMutations({
+      body: html,
+      setBody: (s) => (html = s),
+      domChanges: [
+        {
+          domMutations: [
+            {
+              selector: ".q",
+              action: "append",
+              attribute: "class",
+              value: "a",
+            },
+            { selector: ".q", action: "set", attribute: "title", value: "y" },
+            {
+              selector: ".q",
+              action: "set",
+              attribute: "data-new",
+              value: "&",
+            },
+          ],
+        },
+      ],
+    });
+    expect(html).toBe(
+      `<div class="q a" _ngcontent-ng-c1="" *ngIf="show" data-ñ='1' Title="y" data-new="&amp;">t</div>`,
+    );
+  });
 });

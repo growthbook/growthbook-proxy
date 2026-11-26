@@ -97,7 +97,7 @@ export async function edgeApp<Req, Res>(
    */
   // Non GET requests are proxied
   if (context.helpers.getRequestMethod(req) !== "GET") {
-    return context.helpers.proxyRequest(context, req, res, next);
+    return proxy(context, req, res, next, requestUrl);
   }
   // Check the url for routing rules (default behavior is intercept)
   const route = getRoute(context, requestUrl);
@@ -112,7 +112,7 @@ export async function edgeApp<Req, Res>(
     );
   }
   if (route.behavior === "proxy") {
-    return context.helpers.proxyRequest(context, req, res, next);
+    return proxy(context, req, res, next, requestUrl);
   }
   // Custom route behavior via hook:
   const onRouteParams: OnRouteParams<Req, Res> = { ...onRequestParams, route };
@@ -301,7 +301,7 @@ export async function edgeApp<Req, Res>(
     context.config.processTextHtmlOnly &&
     !(resHeaders["content-type"] ?? "").includes("text/html")
   ) {
-    return context.helpers.proxyRequest(context, req, res, next);
+    return proxy(context, req, res, next, requestUrl);
   }
 
   const { csp, nonce } = getCspInfo(context);
@@ -455,8 +455,8 @@ function headersToObject(headers: any) {
   return headers || {};
 }
 
-// Copies the origin's redirect (keeping all its headers) and adds our cookies. A relative
-// Location is resolved against the URL we fetched, since the browser's URL may differ.
+// Copies the origin's redirect (keeping all its headers) and adds our cookies. Its Location
+// is resolved against the URL we fetched and, if it's on the origin's host, moved to the public host.
 function passThroughRedirect<Req, Res>(
   context: Context<Req, Res>,
   response: Response,
@@ -465,8 +465,8 @@ function passThroughRedirect<Req, Res>(
   cookies: Record<string, string>,
 ): Res {
   const redirect = new Response(response.body, response);
-  const location = redirect.headers.get("location") || "";
-  if (!/^([a-z][a-z\d+.-]*:|\/\/)/i.test(location)) {
+  const location = redirect.headers.get("location");
+  if (location) {
     try {
       const target = new URL(location, response.url || originUrl);
       // Same path on the public host; set via URL so a `//` path can't become a host
@@ -487,4 +487,31 @@ function passThroughRedirect<Req, Res>(
     context.helpers.setCookie?.(redirect as unknown as Res, key, cookies[key]);
   }
   return redirect as unknown as Res;
+}
+
+// Proxies the request, giving a redirect the same Location handling as passThroughRedirect
+async function proxy<Req, Res>(
+  context: Context<Req, Res>,
+  req: Req,
+  res: Res | undefined,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  next: any,
+  requestUrl: string,
+): Promise<unknown> {
+  const response = await context.helpers.proxyRequest(context, req, res, next);
+  if (
+    response instanceof Response &&
+    response.status >= 300 &&
+    response.status < 400 &&
+    response.headers.get("location")
+  ) {
+    return passThroughRedirect(
+      context,
+      response,
+      getOriginUrl(context, requestUrl),
+      requestUrl,
+      {},
+    );
+  }
+  return response;
 }

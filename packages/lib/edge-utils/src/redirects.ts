@@ -1,7 +1,13 @@
 import { Config } from "./types";
 
 const MAX_REDIRECTS = 5;
-const CREDENTIAL_HEADERS = ["cookie", "authorization", "proxy-authorization"];
+// The visitor's credentials and ID, which other hosts shouldn't get
+const PRIVATE_HEADERS = [
+  "cookie",
+  "authorization",
+  "proxy-authorization",
+  "x-gbuuid",
+];
 
 type FetchResponse = {
   status: number;
@@ -9,15 +15,17 @@ type FetchResponse = {
   body?: { cancel: () => Promise<void> } | null;
 };
 
-// Follows GET/HEAD redirects that stay on the same host (any host if followCrossOriginRedirects).
-// Any other 3xx is returned as-is so the browser can follow it.
+// Follows GET/HEAD redirects that stay on the same host or go to the site's own (public) host;
+// any host with followCrossOriginRedirects. Any other 3xx is returned so the browser can follow it.
 export async function fetchFollowingRedirects<R extends FetchResponse>(
   config: Pick<Config, "followRedirects" | "followCrossOriginRedirects">,
   url: string,
   method: string,
   headers: Headers,
+  publicUrl: string,
   doFetch: (url: string, headers: Headers) => Promise<R>,
 ): Promise<R> {
+  const publicHost = new URL(publicUrl).host;
   let response = await doFetch(url, headers);
   if (
     !config.followRedirects ||
@@ -36,15 +44,14 @@ export async function fetchFollowingRedirects<R extends FetchResponse>(
     }
     if (next.protocol !== "http:" && next.protocol !== "https:") break;
     const prev = new URL(url);
-    // Another host, or an https -> http downgrade, counts as cross-origin
+    // Another host (other than the site's own), or an https -> http downgrade, is cross-origin
     if (
-      next.host !== prev.host ||
+      (next.host !== prev.host && next.host !== publicHost) ||
       (prev.protocol === "https:" && next.protocol === "http:")
     ) {
       if (!config.followCrossOriginRedirects) break;
-      // Like fetch, don't send the visitor's credentials cross-origin
       headers = new Headers(headers);
-      CREDENTIAL_HEADERS.forEach((h) => headers.delete(h));
+      PRIVATE_HEADERS.forEach((h) => headers.delete(h));
     }
     response.body?.cancel().catch(() => {});
     url = next.href;

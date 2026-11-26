@@ -165,15 +165,26 @@ export async function applyDomMutations({
   }
 }
 
-// node-html-parser decodes on read but doesn't encode `&` on write, and its own
-// quoting strips backslashes, so escape the value and rebuild the attribute string.
+// node-html-parser decodes on read but doesn't encode `&` on write, and rebuilding the
+// tag strips backslashes and mangles names like `_ngcontent-x`, so only the changed
+// attribute is rewritten in the raw tag; the rest stay as the origin wrote them.
 function setAttr(el: HTMLElement, name: string, value: string | null) {
-  if (value === null) {
+  const attrs: { name: string; text: string }[] = [];
+  const re = /([^\s"'>/=]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s>]+))?/g;
+  for (let m = re.exec(el.rawAttrs); m; m = re.exec(el.rawAttrs)) {
+    attrs.push({ name: m[1], text: m[0] });
+  }
+  const escaped = value?.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  const i = attrs.findIndex((a) => a.name.toLowerCase() === name.toLowerCase());
+  if (escaped === undefined) {
+    if (i >= 0) attrs.splice(i, 1);
     el.removeAttribute(name);
   } else {
-    el.setAttribute(name, value.replace(/&/g, "&amp;").replace(/"/g, "&quot;"));
+    const text = `${i >= 0 ? attrs[i].name : name}="${escaped}"`;
+    if (i >= 0) attrs[i].text = text;
+    else attrs.push({ name, text });
+    el.setAttribute(name, escaped);
   }
-  el.rawAttrs = Object.entries(el.rawAttributes)
-    .map(([k, v]) => (v == null ? k : `${k}="${v.replace(/"/g, "&quot;")}"`))
-    .join(" ");
+  // set last: the calls above keep node-html-parser's lookups current but rewrite rawAttrs
+  el.rawAttrs = attrs.map((a) => a.text).join(" ");
 }

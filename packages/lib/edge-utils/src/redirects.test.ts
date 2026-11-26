@@ -2,7 +2,8 @@ import { fetchFollowingRedirects } from "./redirects";
 
 type FollowConfig = Parameters<typeof fetchFollowingRedirects>[0];
 
-// Fake origin (url -> [status, location]); records each URL and the cookie it received.
+// Fake origin (url -> [status, location]) behind https://site.test; records each URL
+// and the cookie it received.
 function follow(
   config: FollowConfig,
   url: string,
@@ -15,9 +16,10 @@ function follow(
     config,
     url,
     method,
-    new Headers({ cookie: "session=secret", "x-other": "1" }),
+    new Headers({ cookie: "session=secret", "x-gbuuid": "u1" }),
+    "https://site.test/start",
     async (u, headers) => {
-      calls.push([u, headers.get("cookie")]);
+      calls.push([u, headers.get("cookie") ?? headers.get("x-gbuuid")]);
       const [status, location] = routes[u] ?? [200];
       return {
         status,
@@ -54,6 +56,18 @@ describe("fetchFollowingRedirects", () => {
     ]);
     expect(res.cookies.every((c) => c === "session=secret")).toBe(true);
     expect(res.cancelled).toBe(3);
+  });
+
+  it("follows redirects to the site's own host, with credentials", async () => {
+    const res = await follow(sameHost, "https://o.test/canon", {
+      "https://o.test/canon": [301, "https://site.test/canon"],
+    });
+    expect(res.status).toBe(200);
+    expect(res.urls).toEqual([
+      "https://o.test/canon",
+      "https://site.test/canon",
+    ]);
+    expect(res.cookies).toEqual(["session=secret", "session=secret"]);
   });
 
   it.each([
