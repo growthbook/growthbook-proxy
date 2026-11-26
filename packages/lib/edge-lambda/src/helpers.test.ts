@@ -1,5 +1,6 @@
 import http from "node:http";
 import type { AddressInfo } from "node:net";
+import { gzipSync } from "node:zlib";
 import type { CloudFrontRequest, CloudFrontResultResponse } from "aws-lambda";
 import {
   getCookie,
@@ -95,9 +96,55 @@ describe("sendResponse", () => {
       { key: "Set-Cookie", value: `gbuuid=abc; Max-Age=${MAX_AGE}; Path=/` },
     ]);
   });
+
+  it("drops headers CloudFront rejects", () => {
+    const ctx = { helpers: { setCookie } } as unknown as Parameters<
+      typeof sendResponse
+    >[0];
+    const res = sendResponse(
+      ctx,
+      undefined,
+      {
+        connection: "keep-alive",
+        "keep-alive": "timeout=5",
+        "content-length": "34",
+        "x-amz-cf-id": "abc",
+        "content-type": "text/html",
+      },
+      "<p>",
+    );
+    expect(Object.keys(res.headers ?? {})).toEqual(["content-type"]);
+  });
 });
 
 describe("responseToCloudFrontFormat", () => {
+  it("drops headers CloudFront rejects from a fetched response", async () => {
+    const server = http.createServer((_, res) => {
+      res.writeHead(200, {
+        "content-type": "text/plain",
+        "content-encoding": "gzip",
+        "x-cache": "HIT",
+        "x-custom": "1",
+      });
+      res.end(gzipSync("hello"));
+    });
+    await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+    try {
+      const { port } = server.address() as AddressInfo;
+      const cf = await responseToCloudFrontFormat(
+        await fetch(`http://127.0.0.1:${port}/`),
+      );
+      expect(cf.body).toBe("hello");
+      expect(Object.keys(cf.headers ?? {}).sort()).toEqual([
+        "content-type",
+        "date",
+        "x-custom",
+      ]);
+    } finally {
+      server.close();
+    }
+  });
+
   it("keeps each Set-Cookie header separate", async () => {
     const res = await responseToCloudFrontFormat(
       new Response("moved", {

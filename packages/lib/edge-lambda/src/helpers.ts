@@ -3,6 +3,11 @@ import type { CloudFrontRequest, CloudFrontResultResponse } from "aws-lambda";
 import { parse, serialize } from "cookie";
 import { Env } from "./init";
 
+// CloudFront rejects these in a generated response. The body is already decoded (and may
+// be rewritten), so the origin's content-length and content-encoding don't apply either.
+const DROPPED_HEADERS =
+  /^(connection|keep-alive|proxy-connection|transfer-encoding|upgrade|trailer|expect|proxy-authenticate|proxy-authorization|via|x-cache|x-real-ip|x-forwarded-proto|content-length|content-encoding|x-amz-cf-.*|x-edge-.*|x-accel-.*)$/i;
+
 function cloudFrontHeadersToRecord(
   headers: CloudFrontRequest["headers"],
 ): Record<string, string> {
@@ -63,7 +68,9 @@ export function sendResponse(
     const headersObj: CloudFrontResultResponse["headers"] = {};
     for (const key in headers) {
       const v = headers[key];
-      if (v != null) headersObj[key] = [{ key, value: v }];
+      if (v != null && !DROPPED_HEADERS.test(key)) {
+        headersObj[key] = [{ key, value: v }];
+      }
     }
     res.headers = headersObj;
   }
@@ -148,9 +155,11 @@ export async function responseToCloudFrontFormat(
   if (response.headers) {
     const headersObj: CloudFrontResultResponse["headers"] = {};
     response.headers.forEach((value, key) => {
-      if (key !== "set-cookie") headersObj[key] = [{ key, value }];
+      if (key !== "set-cookie" && !DROPPED_HEADERS.test(key)) {
+        headersObj[key] = [{ key, value }];
+      }
     });
-    // forEach joins multiple Set-Cookie headers into one, so add them separately
+    // headersObj[key] keeps one value per name, so give each Set-Cookie its own entry
     const setCookies = response.headers.getSetCookie();
     if (setCookies.length) {
       headersObj["set-cookie"] = setCookies.map((value) => ({
