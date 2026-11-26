@@ -55,7 +55,7 @@ export function getRequestHeader(
 export function sendResponse(
   ctx: Context<CloudFrontRequest, CloudFrontResultResponse>,
   _res?: CloudFrontResultResponse,
-  headers?: Record<string, string | undefined>,
+  headers?: Record<string, string | string[] | undefined>,
   body?: string,
   cookies?: Record<string, string>,
   status?: number,
@@ -69,7 +69,11 @@ export function sendResponse(
     for (const key in headers) {
       const v = headers[key];
       if (v != null && !DROPPED_HEADERS.test(key)) {
-        headersObj[key] = [{ key, value: v }];
+        // a list (like several Set-Cookies) gets one entry per value
+        headersObj[key] = (Array.isArray(v) ? v : [v]).map((value) => ({
+          key,
+          value,
+        }));
       }
     }
     res.headers = headersObj;

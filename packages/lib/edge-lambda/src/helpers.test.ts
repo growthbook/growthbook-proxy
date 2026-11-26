@@ -87,12 +87,22 @@ describe("getCookie", () => {
 });
 
 describe("sendResponse", () => {
-  it("sets queued cookies", () => {
+  it("sends each origin Set-Cookie and the queued cookies", () => {
     const ctx = { helpers: { setCookie } } as unknown as Parameters<
       typeof sendResponse
     >[0];
-    const res = sendResponse(ctx, undefined, {}, "", { gbuuid: "abc" });
+    const res = sendResponse(
+      ctx,
+      undefined,
+      { "set-cookie": ["a=1", "b=2"] },
+      "",
+      {
+        gbuuid: "abc",
+      },
+    );
     expect(res.headers?.["set-cookie"]).toEqual([
+      { key: "set-cookie", value: "a=1" },
+      { key: "set-cookie", value: "b=2" },
       { key: "Set-Cookie", value: `gbuuid=abc; Max-Age=${MAX_AGE}; Path=/` },
     ]);
   });
