@@ -17,7 +17,7 @@ export {
 } from "./types";
 export { ConfigEnv, defaultContext, getConfig } from "./config";
 
-export { edgeApp, getOriginUrl } from "./app";
+export { edgeApp, getOriginUrl, objectToHeaders } from "./app";
 
 export { getUserAttributes, getUUID, getAutoAttributes } from "./attributes";
 export { applyDomMutations } from "./domMutations";

@@ -3,6 +3,7 @@ import {
   FetchOptions,
   fetchFollowingRedirects,
   getOriginUrl,
+  objectToHeaders,
 } from "@growthbook/edge-utils";
 import { parse } from "cookie";
 import { FastlyConfig } from "./init";
@@ -28,7 +29,10 @@ export function sendResponse(
   cookies?: Record<string, string>,
   status?: number,
 ) {
-  const resp = new Response(body, { headers, status });
+  const resp = new Response(body, {
+    headers: objectToHeaders(headers),
+    status,
+  });
   if (cookies) {
     for (const key in cookies) {
       ctx.helpers.setCookie?.(resp, key, cookies[key]);

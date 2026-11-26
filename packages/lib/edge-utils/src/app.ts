@@ -48,7 +48,7 @@ export async function edgeApp<Req, Res>(
   let originUrl = getOriginUrl(context, requestUrl);
   // Response vars:
   let originResponse: (OriginResponse & Res) | undefined = undefined;
-  let resHeaders: Record<string, string | undefined> = {};
+  let resHeaders: Record<string, string | string[] | undefined> = {};
   const respCookies: Record<string, string> = {};
   const setRespCookie = (key: string, value: string) => {
     respCookies[key] = value;
@@ -450,9 +450,26 @@ export function getOriginUrl<Req, Res>(
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function headersToObject(headers: any) {
   if (headers && typeof headers.entries === "function") {
-    return Object.fromEntries(headers.entries());
+    const obj = Object.fromEntries(headers.entries());
+    // fromEntries keeps only the last Set-Cookie, so list them all when there are several
+    const setCookies: string[] = headers.getSetCookie?.() ?? [];
+    if (setCookies.length > 1) obj["set-cookie"] = setCookies;
+    return obj;
   }
   return headers || {};
+}
+
+// Builds Headers from a header record, adding each value of a list (like several Set-Cookies)
+export function objectToHeaders(
+  record: Record<string, string | string[] | undefined> = {},
+): Headers {
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(record)) {
+    for (const v of Array.isArray(value) ? value : [value]) {
+      if (v != null) headers.append(key, v);
+    }
+  }
+  return headers;
 }
 
 // Copies the origin's redirect (keeping all its headers) and adds our cookies. Its Location

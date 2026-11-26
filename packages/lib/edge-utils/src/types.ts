@@ -159,7 +159,7 @@ export type OnOriginFetchParams<Req, Res> = OnBeforeOriginFetchParams<
 };
 export type OnBodyReadyParams<Req, Res> = OnOriginFetchParams<Req, Res> & {
   originHeaders: Record<string, string | undefined>;
-  resHeaders: Record<string, string | undefined>;
+  resHeaders: Record<string, string | string[] | undefined>;
   body: string;
   setBody: (s: string) => void;
   root?: HTMLElement;

@@ -1,13 +1,18 @@
-import { edgeApp } from "./app";
+import { edgeApp, objectToHeaders } from "./app";
 import { defaultContext } from "./config";
 
 // Runs edgeApp for https://site.test/start against an origin that returns `originResponse`.
+// A page edgeApp processes comes back as the headers it was sent with.
 async function run(
   originResponse: Response,
   config: Partial<typeof defaultContext.config> = {},
   method = "GET",
 ) {
-  const sendResponse = jest.fn();
+  const sendResponse = (
+    _ctx: unknown,
+    _res: unknown,
+    headers: Record<string, string | string[]>,
+  ) => ({ headers });
   const context = {
     config: {
       ...defaultContext.config,
@@ -30,9 +35,7 @@ async function run(
     hooks: {},
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = (await edgeApp(context as any, {})) as Response;
-  expect(sendResponse).not.toHaveBeenCalled();
-  return res;
+  return (await edgeApp(context as any, {})) as Response;
 }
 
 function redirect(
@@ -100,5 +103,22 @@ describe("edgeApp", () => {
     expect(res.status).toBe(302);
     expect(res.headers.get("location")).toBe("https://site.test/dashboard");
     expect(res.headers.getSetCookie()).toEqual(["session=1"]);
+  });
+
+  it("forwards every Set-Cookie on a page it processes", async () => {
+    const sent = (await run(
+      new Response("<html><head></head><body>hi</body></html>", {
+        headers: [
+          ["content-type", "text/html"],
+          ["set-cookie", "s1=1"],
+          ["set-cookie", "s2=2; HttpOnly"],
+        ],
+      }),
+    )) as unknown as { headers: Record<string, string | string[]> };
+    expect(sent.headers["set-cookie"]).toEqual(["s1=1", "s2=2; HttpOnly"]);
+    expect(objectToHeaders(sent.headers).getSetCookie()).toEqual([
+      "s1=1",
+      "s2=2; HttpOnly",
+    ]);
   });
 });
