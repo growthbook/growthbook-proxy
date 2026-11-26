@@ -18,7 +18,7 @@ export interface Context<Req, Res> {
 
 export interface Config {
   proxyTarget: string;
-  followRedirects: boolean; // same-host redirects only
+  followRedirects: boolean;
   followCrossOriginRedirects?: boolean;
   forwardProxyHeaders: boolean;
   useDefaultContentType: boolean;

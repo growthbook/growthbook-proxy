@@ -33,18 +33,6 @@ describe("applyDomMutations", () => {
     expect(el.childNodes).toHaveLength(0);
   });
 
-  it("keeps the element's other attributes intact", async () => {
-    const el = await mutate(
-      `<button id="el" class="q" onclick="go(&quot;a\\&quot;);x()//&quot;)" pattern="\\d+" title='say "hi"' disabled>x</button>`,
-      [{ selector: "#el", action: "append", attribute: "class", value: "exp" }],
-    );
-    expect(el.getAttribute("onclick")).toBe(`go("a\\");x()//")`);
-    expect(el.getAttribute("pattern")).toBe("\\d+");
-    expect(el.getAttribute("title")).toBe(`say "hi"`);
-    expect(el.hasAttribute("disabled")).toBe(true);
-    expect(el.getAttribute("class")).toBe("q exp");
-  });
-
   it("edits multi-letter class names", async () => {
     const el = await mutate(`<div id="el" class="hero big"></div>`, [
       { selector: "#el", action: "append", attribute: "class", value: "a" },
@@ -62,8 +50,11 @@ describe("applyDomMutations", () => {
     expect(el.getAttribute("data-x")).toBe("1");
   });
 
-  it("leaves attributes node-html-parser can't parse untouched", async () => {
-    let html = `<div class="q" _ngcontent-ng-c1="" *ngIf="show" data-ñ='1' Title=x>t</div>`;
+  it("rewrites only the changed attributes, leaving the rest as written", async () => {
+    // includes values node-html-parser would drop backslashes from, and names it can't parse
+    let html = `<button class="q" onclick="go(&quot;a\\&quot;);x()//&quot;)" pattern="\\d+" title='say "hi"' disabled _ngcontent-ng-c1="" *ngIf="show" data-ñ='1' Data-X=x>t</button>`;
+    const set = (attribute: string, value: string) =>
+      ({ selector: ".q", action: "set", attribute, value }) as DOMMutation;
     await applyDomMutations({
       body: html,
       setBody: (s) => (html = s),
@@ -76,19 +67,14 @@ describe("applyDomMutations", () => {
               attribute: "class",
               value: "a",
             },
-            { selector: ".q", action: "set", attribute: "title", value: "y" },
-            {
-              selector: ".q",
-              action: "set",
-              attribute: "data-new",
-              value: "&",
-            },
+            set("data-x", "y"),
+            set("data-new", "&"),
           ],
         },
       ],
     });
     expect(html).toBe(
-      `<div class="q a" _ngcontent-ng-c1="" *ngIf="show" data-ñ='1' Title="y" data-new="&amp;">t</div>`,
+      `<button class="q a" onclick="go(&quot;a\\&quot;);x()//&quot;)" pattern="\\d+" title='say "hi"' disabled _ngcontent-ng-c1="" *ngIf="show" data-ñ='1' Data-X="y" data-new="&amp;">t</button>`,
     );
   });
 });

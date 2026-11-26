@@ -165,9 +165,8 @@ export async function applyDomMutations({
   }
 }
 
-// node-html-parser decodes on read but doesn't encode `&` on write, and rebuilding the
-// tag strips backslashes and mangles names like `_ngcontent-x`, so only the changed
-// attribute is rewritten in the raw tag; the rest stay as the origin wrote them.
+// node-html-parser decodes on read without encoding on write, and its rebuilt tags drop backslashes
+// and mangle names like `_ngcontent-x`, so only the changed attribute is rewritten in the raw tag.
 function setAttr(el: HTMLElement, name: string, value: string | null) {
   const attrs: { name: string; text: string }[] = [];
   const re = /([^\s"'>/=]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s>]+))?/g;

@@ -82,32 +82,25 @@ describe("fetchFollowingRedirects", () => {
     expect(res.urls).toEqual(["https://o.test/logout"]);
   });
 
-  it("follows a downgrade with followCrossOriginRedirects, without credentials", async () => {
-    const res = await follow(
-      { followRedirects: true, followCrossOriginRedirects: true },
-      "https://o.test/x",
-      { "https://o.test/x": [302, "http://o.test/plain"] },
-    );
-    expect(res.urls).toEqual(["https://o.test/x", "http://o.test/plain"]);
-    expect(res.cookies).toEqual(["session=secret", null]);
-  });
-
-  it("follows other hosts with followCrossOriginRedirects, without credentials", async () => {
+  it("follows cross-origin redirects with followCrossOriginRedirects, without credentials", async () => {
     const res = await follow(
       { followRedirects: true, followCrossOriginRedirects: true },
       "https://o.test/x",
       {
-        "https://o.test/x": [302, "https://other.test/y"],
+        "https://o.test/x": [302, "http://o.test/plain"],
+        "http://o.test/plain": [302, "https://other.test/y"],
         "https://other.test/y": [302, "https://o.test/z"],
       },
     );
     expect(res.status).toBe(200);
     expect(res.urls).toEqual([
       "https://o.test/x",
+      "http://o.test/plain",
       "https://other.test/y",
       "https://o.test/z",
     ]);
-    expect(res.cookies).toEqual(["session=secret", null, null]);
+    // dropped at the downgrade, and not restored back on o.test
+    expect(res.cookies).toEqual(["session=secret", null, null, null]);
   });
 
   it.each([
