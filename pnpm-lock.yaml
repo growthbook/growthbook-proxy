@@ -171,8 +171,8 @@ importers:
   packages/lib/edge-cloudflare:
     dependencies:
       '@growthbook/edge-utils':
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.4.0
+        version: 0.4.0
       cookie:
         specifier: ^1.0.2
         version: 1.1.1
@@ -196,8 +196,8 @@ importers:
   packages/lib/edge-express:
     dependencies:
       '@growthbook/edge-utils':
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.4.0
+        version: 0.4.0
       '@growthbook/growthbook':
         specifier: ^2.0.0
         version: 2.0.0
@@ -242,8 +242,8 @@ importers:
   packages/lib/edge-fastly:
     dependencies:
       '@growthbook/edge-utils':
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.4.0
+        version: 0.4.0
       cookie:
         specifier: ^1.0.2
         version: 1.1.1
@@ -261,8 +261,8 @@ importers:
   packages/lib/edge-lambda:
     dependencies:
       '@growthbook/edge-utils':
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.4.0
+        version: 0.4.0
       cookie:
         specifier: ^1.0.2
         version: 1.1.1
@@ -802,8 +802,8 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@growthbook/edge-utils@0.3.0':
-    resolution: {integrity: sha512-C/NHg5DaHsaTeZ6ss3+3/a0XKoF0z5HSw7C7xjQ+Bj7RtT4H2ortyptMff0KRWLTsuKOX34sMddhqi/8Q2qc4A==}
+  '@growthbook/edge-utils@0.4.0':
+    resolution: {integrity: sha512-N1SufxmSYY4CNME2LBRxLxEfEYoqzVQ2slaCMjAQl21yToeEBLg5djBU7VZeXBB+z2KhiHA3FhOubHn0QBR75A==}
 
   '@growthbook/growthbook@2.0.0':
     resolution: {integrity: sha512-NQgdtW9ezfNopNlc1ZzuA8lc7iKuNX6HT2o3NTHKgthdOlRFAubNSGf+F259sL1mbdsEO4e3j1aUQDF4CtUouA==}
@@ -5153,7 +5153,7 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@growthbook/edge-utils@0.3.0':
+  '@growthbook/edge-utils@0.4.0':
     dependencies:
       '@growthbook/growthbook': 2.0.0
       node-html-parser: 7.1.0

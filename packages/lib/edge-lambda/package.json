@@ -1,7 +1,7 @@
 {
   "name": "@growthbook/edge-lambda",
   "description": "GrowthBook edge app for Lambda@Edge",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "packageManager": "pnpm@10.33.0",
   "main": "dist/index.js",
   "license": "MIT",
@@ -18,7 +18,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@growthbook/edge-utils": "^0.3.0",
+    "@growthbook/edge-utils": "^0.4.0",
     "cookie": "^1.0.2"
   },
   "devDependencies": {
