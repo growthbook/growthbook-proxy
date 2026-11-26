@@ -19,6 +19,7 @@ export interface Context<Req, Res> {
 export interface Config {
   proxyTarget: string;
   followRedirects: boolean;
+  followCrossOriginRedirects?: boolean;
   forwardProxyHeaders: boolean;
   useDefaultContentType: boolean;
   processTextHtmlOnly: boolean;
@@ -157,8 +158,8 @@ export type OnOriginFetchParams<Req, Res> = OnBeforeOriginFetchParams<
   originStatus: number;
 };
 export type OnBodyReadyParams<Req, Res> = OnOriginFetchParams<Req, Res> & {
-  originHeaders: Record<string, string | undefined>;
-  resHeaders: Record<string, string | undefined>;
+  originHeaders: Record<string, string | string[] | undefined>;
+  resHeaders: Record<string, string | string[] | undefined>;
   body: string;
   setBody: (s: string) => void;
   root?: HTMLElement;

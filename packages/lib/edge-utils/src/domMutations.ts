@@ -107,9 +107,11 @@ export async function applyDomMutations({
     if (!root) return;
     const els = root.querySelectorAll(selector);
     els.map((el) => {
-      const classList = new Set(el.classNames);
+      const classList = new Set(
+        (el.getAttribute("class") ?? "").split(/\s+/).filter(Boolean),
+      );
       cb(classList);
-      el.setAttribute("class", Array.from(classList).join(" "));
+      setAttr(el, "class", Array.from(classList).join(" "));
     });
   }
 
@@ -136,12 +138,7 @@ export async function applyDomMutations({
     }
     const els = root.querySelectorAll(selector);
     els.map((el) => {
-      const val = cb(el.getAttribute(attr) || "");
-      if (val === null) {
-        el.removeAttribute(attr);
-      } else {
-        el.setAttribute(attr, val);
-      }
+      setAttr(el, attr, cb(el.getAttribute(attr) || ""));
     });
   }
 
@@ -166,4 +163,27 @@ export async function applyDomMutations({
       }
     });
   }
+}
+
+// node-html-parser decodes on read without encoding on write, and its rebuilt tags drop backslashes
+// and mangle names like `_ngcontent-x`, so only the changed attribute is rewritten in the raw tag.
+function setAttr(el: HTMLElement, name: string, value: string | null) {
+  const attrs: { name: string; text: string }[] = [];
+  const re = /([^\s"'>/=]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s>]+))?/g;
+  for (let m = re.exec(el.rawAttrs); m; m = re.exec(el.rawAttrs)) {
+    attrs.push({ name: m[1], text: m[0] });
+  }
+  const escaped = value?.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  const i = attrs.findIndex((a) => a.name.toLowerCase() === name.toLowerCase());
+  if (escaped === undefined) {
+    if (i >= 0) attrs.splice(i, 1);
+    el.removeAttribute(name);
+  } else {
+    const text = `${i >= 0 ? attrs[i].name : name}="${escaped}"`;
+    if (i >= 0) attrs[i].text = text;
+    else attrs.push({ name, text });
+    el.setAttribute(name, escaped);
+  }
+  // set last: the calls above keep node-html-parser's lookups current but rewrite rawAttrs
+  el.rawAttrs = attrs.map((a) => a.text).join(" ");
 }

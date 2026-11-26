@@ -1,0 +1,124 @@
+import { edgeApp, objectToHeaders } from "./app";
+import { defaultContext } from "./config";
+
+// Runs edgeApp for https://site.test/start against an origin that returns `originResponse`.
+// A page edgeApp processes comes back as the headers it was sent with.
+async function run(
+  originResponse: Response,
+  config: Partial<typeof defaultContext.config> = {},
+  method = "GET",
+) {
+  const sendResponse = (
+    _ctx: unknown,
+    _res: unknown,
+    headers: Record<string, string | string[]>,
+  ) => ({ headers });
+  const context = {
+    config: {
+      ...defaultContext.config,
+      proxyTarget: "https://origin.test",
+      payload: { features: {} },
+      ...config,
+    },
+    helpers: {
+      ...defaultContext.helpers,
+      getRequestURL: () => "https://site.test/start",
+      getRequestMethod: () => method,
+      getRequestHeader: () => undefined,
+      getCookie: () => "",
+      setCookie: (res: Response, key: string, value: string) =>
+        res.headers.append("set-cookie", `${key}=${value}`),
+      fetch: async () => originResponse,
+      proxyRequest: async () => originResponse,
+      sendResponse,
+    },
+    hooks: {},
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (await edgeApp(context as any, {})) as Response;
+}
+
+function redirect(
+  location: string,
+  fetchedUrl?: string,
+  headers: [string, string][] = [],
+) {
+  const res = new Response(null, {
+    status: 302,
+    headers: [["location", location], ...headers],
+  });
+  if (fetchedUrl) Object.defineProperty(res, "url", { value: fetchedUrl });
+  return res;
+}
+
+describe("edgeApp", () => {
+  it("passes redirects it didn't follow back to the browser", async () => {
+    const res = await run(
+      redirect("https://elsewhere.test/", undefined, [
+        ["set-cookie", "a=1"],
+        ["set-cookie", "b=2"],
+      ]),
+    );
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBe("https://elsewhere.test/");
+    expect(res.headers.getSetCookie()).toEqual(["a=1", "b=2"]);
+  });
+
+  it("adds its own cookies to passed-through redirects", async () => {
+    const res = await run(redirect("https://elsewhere.test/"), {
+      persistUuid: true,
+    });
+    expect(res.headers.getSetCookie()).toEqual([
+      expect.stringMatching(/^gbuuid=.+/),
+    ]);
+  });
+
+  it("resolves a relative Location against the URL it fetched", async () => {
+    const sameHost = await run(redirect("6", "https://origin.test/steps/5"));
+    expect(sameHost.headers.get("location")).toBe("https://site.test/steps/6");
+
+    const otherHost = await run(redirect("6", "https://other.test/x/5"));
+    expect(otherHost.headers.get("location")).toBe("https://other.test/x/6");
+  });
+
+  it("keeps the public host when a relative Location's path starts with //", async () => {
+    const res = await run(redirect(".//elsewhere.test/"));
+    const location = res.headers.get("location") ?? "";
+    expect(new URL(location, "https://site.test/start").host).toBe("site.test");
+  });
+
+  it("moves an absolute Location on the origin's host to the public host", async () => {
+    const res = await run(redirect("http://origin.test/dashboard?x=1"));
+    expect(res.headers.get("location")).toBe("https://site.test/dashboard?x=1");
+  });
+
+  it("does the same for proxied requests, like a form POST", async () => {
+    const res = await run(
+      redirect("https://origin.test/dashboard", undefined, [
+        ["set-cookie", "session=1"],
+      ]),
+      {},
+      "POST",
+    );
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBe("https://site.test/dashboard");
+    expect(res.headers.getSetCookie()).toEqual(["session=1"]);
+  });
+
+  it("forwards every Set-Cookie on a page it processes", async () => {
+    const sent = (await run(
+      new Response("<html><head></head><body>hi</body></html>", {
+        headers: [
+          ["content-type", "text/html"],
+          ["set-cookie", "s1=1"],
+          ["set-cookie", "s2=2; HttpOnly"],
+        ],
+      }),
+    )) as unknown as { headers: Record<string, string | string[]> };
+    expect(sent.headers["set-cookie"]).toEqual(["s1=1", "s2=2; HttpOnly"]);
+    expect(objectToHeaders(sent.headers).getSetCookie()).toEqual([
+      "s1=1",
+      "s2=2; HttpOnly",
+    ]);
+  });
+});

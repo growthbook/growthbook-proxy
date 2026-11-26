@@ -119,6 +119,7 @@ export function getConfigEnvFromStore(store: any): ConfigEnv {
     "PROXY_TARGET",
     "FORWARD_PROXY_HEADERS",
     "FOLLOW_REDIRECTS",
+    "FOLLOW_CROSS_ORIGIN_REDIRECTS",
     "USE_DEFAULT_CONTENT_TYPE",
     "PROCESS_TEXT_HTML_ONLY",
     "NODE_ENV",
