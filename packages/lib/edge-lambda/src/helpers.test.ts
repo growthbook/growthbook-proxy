@@ -33,8 +33,10 @@ describe("setCookie", () => {
   it("appends to a fetch Response", () => {
     const res = new Response(null, { status: 302 });
     setCookie(res, "gbuuid", "abc");
+    setCookie(res, "other", "1");
     expect(res.headers.getSetCookie()).toEqual([
       `gbuuid=abc; Max-Age=${MAX_AGE}; Path=/`,
+      `other=1; Max-Age=${MAX_AGE}; Path=/`,
     ]);
   });
 
@@ -50,6 +52,7 @@ describe("setCookie", () => {
         redirect: "manual",
       });
       setCookie(res, "gbuuid", "abc");
+      setCookie(res, "other", "1");
 
       const cf = await responseToCloudFrontFormat(res);
       expect(cf.status).toBe("302");
@@ -57,6 +60,7 @@ describe("setCookie", () => {
       expect(cf.headers?.["set-cookie"]).toEqual([
         { key: "Set-Cookie", value: "origin=1" },
         { key: "Set-Cookie", value: `gbuuid=abc; Max-Age=${MAX_AGE}; Path=/` },
+        { key: "Set-Cookie", value: `other=1; Max-Age=${MAX_AGE}; Path=/` },
       ]);
     } finally {
       server.close();

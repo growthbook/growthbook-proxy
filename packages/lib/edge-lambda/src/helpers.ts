@@ -183,10 +183,14 @@ export function setCookie(
     path: "/",
   });
   if (res instanceof Response) {
-    // A fetched Response has read-only headers, so swap in a writable copy
-    const headers = new Headers(res.headers);
-    headers.append("Set-Cookie", serialized);
-    Object.defineProperty(res, "headers", { value: headers });
+    try {
+      res.headers.append("Set-Cookie", serialized);
+    } catch {
+      // A fetched Response has read-only headers, so swap in a writable copy
+      const headers = new Headers(res.headers);
+      headers.append("Set-Cookie", serialized);
+      Object.defineProperty(res, "headers", { value: headers });
+    }
     return;
   }
   if (!res.headers) res.headers = {};
