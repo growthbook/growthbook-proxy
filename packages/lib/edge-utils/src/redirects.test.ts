@@ -58,20 +58,21 @@ describe("fetchFollowingRedirects", () => {
     expect(res.cancelled).toBe(3);
   });
 
-  it("follows redirects to the site's own host, with credentials", async () => {
-    const res = await follow(sameHost, "https://o.test/canon", {
-      "https://o.test/canon": [301, "https://site.test/canon"],
+  it("follows a redirect back to the URL the visitor requested, with credentials", async () => {
+    const res = await follow(sameHost, "https://o.test/start", {
+      "https://o.test/start": [301, "https://site.test/start"],
     });
     expect(res.status).toBe(200);
     expect(res.urls).toEqual([
-      "https://o.test/canon",
-      "https://site.test/canon",
+      "https://o.test/start",
+      "https://site.test/start",
     ]);
     expect(res.cookies).toEqual(["session=secret", "session=secret"]);
   });
 
   it.each([
     ["another host", "https://evil.test/"],
+    ["another page on the site's own host", "https://site.test/other"],
     ["an https -> http downgrade", "http://o.test/plain"],
     ["a non-http URL", "ftp://o.test/x"],
   ])("returns redirects to %s", async (_, location) => {

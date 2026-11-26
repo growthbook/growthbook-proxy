@@ -15,8 +15,8 @@ type FetchResponse = {
   body?: { cancel: () => Promise<void> } | null;
 };
 
-// Follows GET/HEAD redirects that stay on the same host or go to the site's own (public) host;
-// any host with followCrossOriginRedirects. Any other 3xx is returned so the browser can follow it.
+// Follows GET/HEAD redirects that stay on the same host (any host if followCrossOriginRedirects).
+// Any other 3xx is returned so the browser can follow it.
 export async function fetchFollowingRedirects<R extends FetchResponse>(
   config: Pick<Config, "followRedirects" | "followCrossOriginRedirects">,
   url: string,
@@ -25,7 +25,7 @@ export async function fetchFollowingRedirects<R extends FetchResponse>(
   publicUrl: string,
   doFetch: (url: string, headers: Headers) => Promise<R>,
 ): Promise<R> {
-  const publicHost = new URL(publicUrl).host;
+  const requested = new URL(publicUrl).href;
   let response = await doFetch(url, headers);
   if (
     !config.followRedirects ||
@@ -44,9 +44,10 @@ export async function fetchFollowingRedirects<R extends FetchResponse>(
     }
     if (next.protocol !== "http:" && next.protocol !== "https:") break;
     const prev = new URL(url);
-    // Another host (other than the site's own), or an https -> http downgrade, is cross-origin
+    // Another host, or an https -> http downgrade, is cross-origin. A redirect back to the
+    // URL the visitor requested is followed, since the browser could only loop on it.
     if (
-      (next.host !== prev.host && next.host !== publicHost) ||
+      (next.host !== prev.host && next.href !== requested) ||
       (prev.protocol === "https:" && next.protocol === "http:")
     ) {
       if (!config.followCrossOriginRedirects) break;
