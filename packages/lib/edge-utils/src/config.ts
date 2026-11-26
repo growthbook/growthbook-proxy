@@ -15,6 +15,7 @@ export const defaultContext: Context<Req, Res> = {
     proxyTarget: "/",
     forwardProxyHeaders: true,
     followRedirects: true,
+    followCrossOriginRedirects: false,
     useDefaultContentType: false,
     processTextHtmlOnly: true,
     autoInflate: false,
@@ -82,6 +83,7 @@ export interface ConfigEnv {
   PROXY_TARGET?: string;
   FORWARD_PROXY_HEADERS?: string;
   FOLLOW_REDIRECTS?: string;
+  FOLLOW_CROSS_ORIGIN_REDIRECTS?: string;
   USE_DEFAULT_CONTENT_TYPE?: string;
   PROCESS_TEXT_HTML_ONLY?: string;
   AUTO_INFLATE?: string;
@@ -139,6 +141,10 @@ export function getConfig(env: ConfigEnv): Config {
   );
   config.followRedirects = ["true", "1"].includes(
     env.FOLLOW_REDIRECTS ?? "" + defaultContext.config.followRedirects,
+  );
+  config.followCrossOriginRedirects = ["true", "1"].includes(
+    env.FOLLOW_CROSS_ORIGIN_REDIRECTS ??
+      "" + defaultContext.config.followCrossOriginRedirects,
   );
   config.useDefaultContentType = ["true", "1"].includes(
     env.USE_DEFAULT_CONTENT_TYPE ??

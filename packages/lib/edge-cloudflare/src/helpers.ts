@@ -1,4 +1,10 @@
-import { Context, FetchOptions, getOriginUrl } from "@growthbook/edge-utils";
+import {
+  Context,
+  FetchOptions,
+  fetchFollowingRedirects,
+  getOriginUrl,
+  objectToHeaders,
+} from "@growthbook/edge-utils";
 import { parse } from "cookie";
 
 export function getRequestURL(req: Request) {
@@ -22,7 +28,10 @@ export function sendResponse(
   cookies?: Record<string, string>,
   status?: number,
 ) {
-  const resp = new Response(body, { headers, status });
+  const resp = new Response(body, {
+    headers: objectToHeaders(headers),
+    status,
+  });
   if (cookies) {
     for (const key in cookies) {
       ctx.helpers.setCookie?.(resp, key, cookies[key]);
@@ -51,13 +60,22 @@ export function fetchFn(
     });
   }
 
-  const newRequest = new Request(url, {
-    method: req.method,
-    headers: newHeaders,
-    body: req.body,
-    redirect: ctx.config.followRedirects ? "follow" : "manual",
-  });
-  return fetch(newRequest);
+  return fetchFollowingRedirects(
+    ctx.config,
+    url,
+    req.method,
+    newHeaders,
+    ctx.helpers.getRequestURL(req),
+    (u, headers) =>
+      fetch(
+        new Request(u, {
+          method: req.method,
+          headers,
+          body: req.body,
+          redirect: "manual",
+        }),
+      ),
+  );
 }
 
 export function proxyRequest(ctx: Context<Request, Response>, req: Request) {

@@ -1,6 +1,10 @@
 import { NextFunction, Request, Response } from "express";
-import { Context } from "@growthbook/edge-utils";
-import { createProxyMiddleware } from "http-proxy-middleware";
+import {
+  Context,
+  getOriginUrl,
+  publicRedirectLocation,
+} from "@growthbook/edge-utils";
+import { createProxyMiddleware, RequestHandler } from "http-proxy-middleware";
 
 export function getRequestURL(req: Request) {
   return req.protocol + "://" + req.get("host") + req.originalUrl;
@@ -49,7 +53,7 @@ export async function fetchFn(
 }
 
 // cache proxy function
-let proxyFn: ReturnType<typeof createProxyMiddleware> | undefined = undefined;
+let proxyFn: RequestHandler<Request, Response> | undefined = undefined;
 export async function proxyRequest(
   ctx: Context<Request, Response>,
   req: Request,
@@ -57,10 +61,27 @@ export async function proxyRequest(
   next: NextFunction,
 ) {
   if (!proxyFn) {
-    proxyFn = createProxyMiddleware({
+    proxyFn = createProxyMiddleware<Request, Response>({
       target: ctx.config.proxyTarget,
       changeOrigin: true,
-      followRedirects: ctx.config.followRedirects,
+      // http-proxy-middleware follows any host, so only when cross-origin is allowed
+      followRedirects:
+        ctx.config.followRedirects && !!ctx.config.followCrossOriginRedirects,
+      on: {
+        // Runs before headers are copied to `res`; keeps redirects on the public host
+        proxyRes: (proxyRes, proxiedReq) => {
+          const status = proxyRes.statusCode ?? 0;
+          const location = proxyRes.headers.location;
+          if (status < 300 || status >= 400 || !location) return;
+          const requestUrl = getRequestURL(proxiedReq);
+          proxyRes.headers.location = publicRedirectLocation(
+            ctx,
+            location,
+            getOriginUrl(ctx, requestUrl),
+            requestUrl,
+          );
+        },
+      },
     });
   }
   return proxyFn(req, res, next);

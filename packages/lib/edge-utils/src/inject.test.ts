@@ -23,9 +23,15 @@ function makeCtx() {
   } as any;
 }
 
-function render(url: string, oldUrl: string) {
+function render(
+  url: string,
+  oldUrl: string,
+  name = VALUE,
+  trackingCallback?: string,
+) {
   const ctx = makeCtx();
-  const attributes = { id: "uuid-1", name: VALUE };
+  ctx.config.trackingCallback = trackingCallback;
+  const attributes = { id: "uuid-1", name };
   const growthbook = {
     getPayload: () => ({ features: { f: { defaultValue: VALUE } } }),
     getExperiments: () => [],
@@ -78,5 +84,28 @@ describe("injectScript", () => {
     expect(parsed.attributes.name).toBe(VALUE);
     expect(parsed.payload.features.f.defaultValue).toBe(VALUE);
     expect(JSON.parse(tracking ?? "")[0].experiment.key).toBe(VALUE);
+  });
+
+  it("keeps attribute values from displacing the tracking callback", () => {
+    const cb = `(k) => window.calls.push("$&" + k)`;
+    for (const name of ["__TRACKING_CALLBACK__", 'x"__TRACKING_CALLBACK__']) {
+      const html = render(
+        "https://site.example/",
+        "https://site.example/",
+        name,
+        cb,
+      );
+      const js = html
+        .split("\n")
+        .filter((l) => l.startsWith("  window.growthbook_config"))
+        .join("\n");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const win: any = { calls: [] };
+      new Function("window", js)(win);
+
+      expect(win.growthbook_config.attributes.name).toBe(name);
+      win.growthbook_config.trackingCallback("k");
+      expect(win.calls).toEqual(["$&k"]);
+    }
   });
 });

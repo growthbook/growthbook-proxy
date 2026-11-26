@@ -48,7 +48,7 @@ export async function edgeApp<Req, Res>(
   let originUrl = getOriginUrl(context, requestUrl);
   // Response vars:
   let originResponse: (OriginResponse & Res) | undefined = undefined;
-  let resHeaders: Record<string, string | undefined> = {};
+  let resHeaders: Record<string, string | string[] | undefined> = {};
   const respCookies: Record<string, string> = {};
   const setRespCookie = (key: string, value: string) => {
     respCookies[key] = value;
@@ -97,7 +97,7 @@ export async function edgeApp<Req, Res>(
    */
   // Non GET requests are proxied
   if (context.helpers.getRequestMethod(req) !== "GET") {
-    return context.helpers.proxyRequest(context, req, res, next);
+    return proxy(context, req, res, next, requestUrl);
   }
   // Check the url for routing rules (default behavior is intercept)
   const route = getRoute(context, requestUrl);
@@ -112,7 +112,7 @@ export async function edgeApp<Req, Res>(
     );
   }
   if (route.behavior === "proxy") {
-    return context.helpers.proxyRequest(context, req, res, next);
+    return proxy(context, req, res, next, requestUrl);
   }
   // Custom route behavior via hook:
   const onRouteParams: OnRouteParams<Req, Res> = { ...onRequestParams, route };
@@ -272,12 +272,22 @@ export async function edgeApp<Req, Res>(
       500,
     );
   }
+  const originHeaders = headersToObject(originResponse.headers);
   if (originStatus >= 400) {
     return originResponse;
   }
+  // Redirects we didn't follow go back to the browser
+  if (originStatus >= 300 && originHeaders.location) {
+    return passThroughRedirect(
+      context,
+      originResponse as unknown as Response,
+      originUrl,
+      requestUrl,
+      respCookies,
+    );
+  }
 
   // Got a valid response, begin processing
-  const originHeaders = headersToObject(originResponse.headers);
   if (context.config.forwardProxyHeaders) {
     resHeaders = { ...originHeaders, ...resHeaders };
   }
@@ -291,7 +301,7 @@ export async function edgeApp<Req, Res>(
     context.config.processTextHtmlOnly &&
     !(resHeaders["content-type"] ?? "").includes("text/html")
   ) {
-    return context.helpers.proxyRequest(context, req, res, next);
+    return proxy(context, req, res, next, requestUrl);
   }
 
   const { csp, nonce } = getCspInfo(context);
@@ -440,7 +450,102 @@ export function getOriginUrl<Req, Res>(
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function headersToObject(headers: any) {
   if (headers && typeof headers.entries === "function") {
-    return Object.fromEntries(headers.entries());
+    const obj = Object.fromEntries(headers.entries());
+    // fromEntries keeps only the last Set-Cookie, so list them all when there are several
+    const setCookies: string[] = headers.getSetCookie?.() ?? [];
+    if (setCookies.length > 1) obj["set-cookie"] = setCookies;
+    return obj;
   }
   return headers || {};
+}
+
+// Builds Headers from a header record, adding each value of a list (like several Set-Cookies)
+export function objectToHeaders(
+  record: Record<string, string | string[] | undefined> = {},
+): Headers {
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(record)) {
+    for (const v of Array.isArray(value) ? value : [value]) {
+      if (v != null) headers.append(key, v);
+    }
+  }
+  return headers;
+}
+
+// Where an origin redirect should send the browser: Location is resolved against the URL
+// fetched, and one on the origin's host moves to the same path on the public host.
+export function publicRedirectLocation<Req, Res>(
+  context: Context<Req, Res>,
+  location: string,
+  fetchedUrl: string,
+  requestUrl: string,
+): string {
+  try {
+    const target = new URL(location, fetchedUrl);
+    if (target.host !== new URL(getOriginUrl(context, requestUrl)).host) {
+      return target.href;
+    }
+    // set via URL so a `//` path can't become a host
+    const publicUrl = new URL(requestUrl);
+    publicUrl.pathname = target.pathname;
+    publicUrl.search = target.search;
+    publicUrl.hash = target.hash;
+    return publicUrl.href;
+  } catch {
+    return location;
+  }
+}
+
+// Copies the origin's redirect (keeping all its headers), fixes its Location and adds our cookies.
+function passThroughRedirect<Req, Res>(
+  context: Context<Req, Res>,
+  response: Response,
+  originUrl: string,
+  requestUrl: string,
+  cookies: Record<string, string>,
+): Res {
+  const redirect = new Response(response.body, response);
+  const location = redirect.headers.get("location");
+  if (location) {
+    redirect.headers.set(
+      "location",
+      publicRedirectLocation(
+        context,
+        location,
+        response.url || originUrl,
+        requestUrl,
+      ),
+    );
+  }
+  for (const key in cookies) {
+    context.helpers.setCookie?.(redirect as unknown as Res, key, cookies[key]);
+  }
+  return redirect as unknown as Res;
+}
+
+// Proxies the request, giving a redirect the same Location handling as passThroughRedirect
+async function proxy<Req, Res>(
+  context: Context<Req, Res>,
+  req: Req,
+  res: Res | undefined,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  next: any,
+  requestUrl: string,
+): Promise<unknown> {
+  const response = await context.helpers.proxyRequest(context, req, res, next);
+  if (
+    response instanceof Response &&
+    response.status >= 300 &&
+    response.status < 400 &&
+    response.headers.get("location")
+  ) {
+    return passThroughRedirect(
+      context,
+      response,
+      getOriginUrl(context, requestUrl),
+      requestUrl,
+      {},
+    );
+  }
+  return response;
 }

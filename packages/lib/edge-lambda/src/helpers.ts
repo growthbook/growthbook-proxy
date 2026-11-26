@@ -1,7 +1,17 @@
-import { Context, FetchOptions, getOriginUrl } from "@growthbook/edge-utils";
+import {
+  Context,
+  FetchOptions,
+  fetchFollowingRedirects,
+  getOriginUrl,
+} from "@growthbook/edge-utils";
 import type { CloudFrontRequest, CloudFrontResultResponse } from "aws-lambda";
-import cookie from "cookie";
+import { parse, serialize } from "cookie";
 import { Env } from "./init";
+
+// CloudFront rejects these in a generated response. The body is already decoded (and may
+// be rewritten), so the origin's content-length and content-encoding don't apply either.
+const DROPPED_HEADERS =
+  /^(connection|keep-alive|proxy-connection|transfer-encoding|upgrade|trailer|expect|proxy-authenticate|proxy-authorization|via|x-cache|x-real-ip|x-forwarded-proto|content-length|content-encoding|x-amz-cf-.*|x-edge-.*|x-accel-.*)$/i;
 
 function cloudFrontHeadersToRecord(
   headers: CloudFrontRequest["headers"],
@@ -50,7 +60,7 @@ export function getRequestHeader(
 export function sendResponse(
   ctx: Context<CloudFrontRequest, CloudFrontResultResponse>,
   _res?: CloudFrontResultResponse,
-  headers?: Record<string, string | undefined>,
+  headers?: Record<string, string | string[] | undefined>,
   body?: string,
   cookies?: Record<string, string>,
   status?: number,
@@ -63,7 +73,13 @@ export function sendResponse(
     const headersObj: CloudFrontResultResponse["headers"] = {};
     for (const key in headers) {
       const v = headers[key];
-      if (v != null) headersObj[key] = [{ key, value: v }];
+      if (v != null && !DROPPED_HEADERS.test(key)) {
+        // a list (like several Set-Cookies) gets one entry per value
+        headersObj[key] = (Array.isArray(v) ? v : [v]).map((value) => ({
+          key,
+          value,
+        }));
+      }
     }
     res.headers = headersObj;
   }
@@ -81,7 +97,6 @@ export async function fetchFn(
   req: CloudFrontRequest,
   options?: FetchOptions,
 ): Promise<Response> {
-  const maxRedirects = 5;
   const headerRecord = cloudFrontHeadersToRecord(req.headers);
   const newHeaders = new Headers(headerRecord);
   if (ctx.config.nocacheOrigin) {
@@ -97,34 +112,15 @@ export async function fetchFn(
   }
 
   const body = req.body?.data ?? undefined;
-  let response = await fetch(url, {
-    method: req.method,
-    headers: newHeaders,
-    body,
-  });
-  if (!ctx.config.followRedirects) {
-    return response;
-  }
-
-  let location = response.headers.get("location");
-  let redirectCount = 0;
-
-  while (
-    response.status >= 300 &&
-    response.status < 400 &&
-    location &&
-    redirectCount < maxRedirects
-  ) {
-    response = await fetch(location, {
-      method: req.method,
-      headers: newHeaders,
-      body,
-    });
-    location = response.headers.get("location");
-    redirectCount++;
-  }
-
-  return response;
+  return fetchFollowingRedirects(
+    ctx.config,
+    url,
+    req.method,
+    newHeaders,
+    ctx.helpers.getRequestURL(req),
+    (u, headers) =>
+      fetch(u, { method: req.method, headers, body, redirect: "manual" }),
+  );
 }
 
 export async function proxyRequest(
@@ -148,41 +144,54 @@ export async function responseToCloudFrontFormat(
   if (response.headers) {
     const headersObj: CloudFrontResultResponse["headers"] = {};
     response.headers.forEach((value, key) => {
-      headersObj[key] = [{ key, value }];
+      if (key !== "set-cookie" && !DROPPED_HEADERS.test(key)) {
+        headersObj[key] = [{ key, value }];
+      }
     });
+    // headersObj[key] keeps one value per name, so give each Set-Cookie its own entry
+    const setCookies = response.headers.getSetCookie();
+    if (setCookies.length) {
+      headersObj["set-cookie"] = setCookies.map((value) => ({
+        key: "Set-Cookie",
+        value,
+      }));
+    }
     res.headers = headersObj;
   }
   return res;
 }
 
 export function getCookie(req: CloudFrontRequest, key: string): string {
-  const parsedCookie: Record<string, string> = {};
-  const cookieHeader = req?.headers?.cookie;
-  if (cookieHeader) {
-    for (const entry of cookieHeader) {
-      const raw = entry?.value;
-      if (!raw) continue;
-      raw.split(";").forEach((part: string) => {
-        const [c0, c1] = part.split("=");
-        if (c0) {
-          parsedCookie[c0.trim()] = c1 ? decodeURIComponent(c1.trim()) : "";
-        }
-      });
-    }
-  }
-  return parsedCookie[key] ?? "";
+  const header = (req?.headers?.cookie ?? [])
+    .map((entry) => entry?.value)
+    .filter(Boolean)
+    .join("; ");
+  return parse(header)[key] ?? "";
 }
 
+// Takes a CloudFront response, or a fetch Response that index.ts converts later.
 export function setCookie(
-  res: CloudFrontResultResponse,
+  res: CloudFrontResultResponse | Response,
   key: string,
   value: string,
 ): void {
   const COOKIE_DAYS = 400; // max cookie duration (days) for Chrome
-  const serialized = cookie.serialize(key, value, {
-    maxAge: 24 * 60 * 60 * 1000 * COOKIE_DAYS,
+  const serialized = serialize(key, value, {
+    maxAge: 24 * 60 * 60 * COOKIE_DAYS,
+    path: "/",
   });
+  if (res instanceof Response) {
+    try {
+      res.headers.append("Set-Cookie", serialized);
+    } catch {
+      // A fetched Response has read-only headers, so swap in a writable copy
+      const headers = new Headers(res.headers);
+      headers.append("Set-Cookie", serialized);
+      Object.defineProperty(res, "headers", { value: headers });
+    }
+    return;
+  }
   if (!res.headers) res.headers = {};
-  if (!res.headers["cookie"]) res.headers["cookie"] = [];
-  res.headers["cookie"].push({ key, value: serialized });
+  if (!res.headers["set-cookie"]) res.headers["set-cookie"] = [];
+  res.headers["set-cookie"].push({ key: "Set-Cookie", value: serialized });
 }
