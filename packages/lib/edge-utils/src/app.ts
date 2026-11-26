@@ -472,8 +472,31 @@ export function objectToHeaders(
   return headers;
 }
 
-// Copies the origin's redirect (keeping all its headers) and adds our cookies. Its Location
-// is resolved against the URL we fetched and, if it's on the origin's host, moved to the public host.
+// Where an origin redirect should send the browser: Location is resolved against the URL
+// fetched, and one on the origin's host moves to the same path on the public host.
+export function publicRedirectLocation<Req, Res>(
+  context: Context<Req, Res>,
+  location: string,
+  fetchedUrl: string,
+  requestUrl: string,
+): string {
+  try {
+    const target = new URL(location, fetchedUrl);
+    if (target.host !== new URL(getOriginUrl(context, requestUrl)).host) {
+      return target.href;
+    }
+    // set via URL so a `//` path can't become a host
+    const publicUrl = new URL(requestUrl);
+    publicUrl.pathname = target.pathname;
+    publicUrl.search = target.search;
+    publicUrl.hash = target.hash;
+    return publicUrl.href;
+  } catch {
+    return location;
+  }
+}
+
+// Copies the origin's redirect (keeping all its headers), fixes its Location and adds our cookies.
 function passThroughRedirect<Req, Res>(
   context: Context<Req, Res>,
   response: Response,
@@ -484,21 +507,15 @@ function passThroughRedirect<Req, Res>(
   const redirect = new Response(response.body, response);
   const location = redirect.headers.get("location");
   if (location) {
-    try {
-      const target = new URL(location, response.url || originUrl);
-      // Same path on the public host; set via URL so a `//` path can't become a host
-      if (target.host === new URL(getOriginUrl(context, requestUrl)).host) {
-        const publicUrl = new URL(requestUrl);
-        publicUrl.pathname = target.pathname;
-        publicUrl.search = target.search;
-        publicUrl.hash = target.hash;
-        redirect.headers.set("location", publicUrl.href);
-      } else {
-        redirect.headers.set("location", target.href);
-      }
-    } catch {
-      // leave an unparseable Location as-is
-    }
+    redirect.headers.set(
+      "location",
+      publicRedirectLocation(
+        context,
+        location,
+        response.url || originUrl,
+        requestUrl,
+      ),
+    );
   }
   for (const key in cookies) {
     context.helpers.setCookie?.(redirect as unknown as Res, key, cookies[key]);
