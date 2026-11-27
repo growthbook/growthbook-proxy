@@ -15,7 +15,11 @@ import {
 } from "../services/remoteSavedGroups";
 import { registrar } from "../services/registrar";
 import { apiKeyMiddleware } from "../middleware/apiKeyMiddleware";
-import webhookVerificationMiddleware from "../middleware/webhookVerificationMiddleware";
+import webhookVerificationMiddleware, {
+  verifyWebhookSignature,
+  webhookSignatureErrorHandler,
+} from "../middleware/webhookVerificationMiddleware";
+import { stalePushMiddleware } from "../middleware/stalePushMiddleware";
 import { reencryptionMiddleware } from "../middleware/reencryptionMiddleware";
 import { broadcastEventStreamMiddleware } from "../middleware/eventStream/broadcastEventStreamMiddleware";
 import { sseSupportMiddleware } from "../middleware/sseSupportMiddleware";
@@ -263,12 +267,15 @@ export const featuresRouter = (ctx: Context) => {
   router.post(
     "/proxy/features",
     apiKeyMiddleware,
+    // Unsigned requests are turned away before their body is read, and a bad
+    // signature before it is parsed.
+    webhookVerificationMiddleware,
     express.json({
       limit: getMaxFeaturesPayloadSize(),
-      verify: (req: Request, res: Response, buf: Buffer) =>
-        (res.locals.rawBody = buf),
+      verify: verifyWebhookSignature,
     }),
-    webhookVerificationMiddleware,
+    webhookSignatureErrorHandler,
+    stalePushMiddleware,
     reencryptionMiddleware,
     broadcastEventStreamMiddleware,
     postFeatures,

@@ -3,6 +3,7 @@ import { AddressInfo } from "net";
 import express from "express";
 import logger from "../services/logger";
 import { featuresRouter } from "../controllers/featuresController";
+import { registrar } from "../services/registrar";
 import { Context } from "../types";
 import { payloadTooLargeMiddleware } from "./payloadTooLargeMiddleware";
 
@@ -80,16 +81,22 @@ describe("limits on the proxy's routes", () => {
   const servers: http.Server[] = [];
   const env = { ...process.env };
   beforeEach(() => {
+    // Only a push that could be signed gets its body read
+    registrar.setConnection("sdk-abc", {
+      apiKey: "sdk-abc",
+      signingKey: "secret",
+    });
     delete process.env.MAX_PAYLOAD_SIZE;
     delete process.env.MAX_FEATURES_PAYLOAD_SIZE;
   });
   afterEach(() => {
+    registrar.deleteConnection("sdk-abc");
     process.env = { ...env };
     servers.splice(0).forEach((server) => server.close());
   });
 
   // Built per test, since the routes read the limits when they're created
-  const send = (path: string, bytes: number) => {
+  const send = (path: string, bytes: number, signature = "0".repeat(64)) => {
     const app = express();
     app.use("/", featuresRouter(ctx));
     app.use(payloadTooLargeMiddleware);
@@ -102,6 +109,7 @@ describe("limits on the proxy's routes", () => {
         headers: {
           "Content-Type": "application/json",
           "X-GrowthBook-Api-Key": "sdk-abc",
+          ...(signature ? { "X-GrowthBook-Signature": signature } : {}),
         },
         body: JSON.stringify({ attributes: { a: "x".repeat(bytes) } }),
       },
@@ -111,8 +119,18 @@ describe("limits on the proxy's routes", () => {
   const evaluate = (bytes: number) => send("/api/eval/sdk-abc", bytes);
 
   test("accepts a pushed payload between 2 MB and 16 MB", async () => {
-    // Past the size check: rejected later only for the missing signing key
-    expect((await push(3 * MB)).status).not.toBe(413);
+    // Past the size check: rejected only for the wrong signature
+    expect((await push(3 * MB)).status).toBe(401);
+  });
+
+  test("turns away an unsigned push without reading its body", async () => {
+    expect((await send("/proxy/features", 17 * MB, "")).status).toBe(401);
+    expect((await send("/proxy/features", 17 * MB, "abc")).status).toBe(401);
+  });
+
+  test("turns away a push for a key with no signing key", async () => {
+    registrar.deleteConnection("sdk-abc");
+    expect((await push(17 * MB)).status).toBe(400);
   });
 
   test("rejects a pushed payload over 16 MB, naming the setting to change", async () => {
