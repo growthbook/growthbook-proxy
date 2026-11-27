@@ -10,11 +10,11 @@ const getSubscribeToEventStream = async (req: Request, res: Response) => {
 };
 
 export const eventStreamRouter = express.Router();
-eventStreamRouter.use(apiKeyMiddleware);
 
 // subscribe clients to streaming updates
 eventStreamRouter.get(
   "/:apiKey",
+  apiKeyMiddleware,
   validateEventStreamChannelMiddleware,
   getSubscribeToEventStream,
 );

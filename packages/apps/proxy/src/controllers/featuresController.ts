@@ -15,7 +15,12 @@ import {
 } from "../services/remoteSavedGroups";
 import { registrar } from "../services/registrar";
 import { apiKeyMiddleware } from "../middleware/apiKeyMiddleware";
-import webhookVerificationMiddleware from "../middleware/webhookVerificationMiddleware";
+import webhookVerificationMiddleware, {
+  requireVerifiedSignature,
+  verifyWebhookSignature,
+  webhookSignatureErrorHandler,
+} from "../middleware/webhookVerificationMiddleware";
+import { stalePushMiddleware } from "../middleware/stalePushMiddleware";
 import { reencryptionMiddleware } from "../middleware/reencryptionMiddleware";
 import { broadcastEventStreamMiddleware } from "../middleware/eventStream/broadcastEventStreamMiddleware";
 import { sseSupportMiddleware } from "../middleware/sseSupportMiddleware";
@@ -240,7 +245,7 @@ export const featuresRouter = (ctx: Context) => {
 
   // proxy clients' "get features" endpoint call to GrowthBook, with cache layer
   router.get(
-    "/api/features/*path",
+    "/api/features/:apiKey",
     apiKeyMiddleware,
     sseSupportMiddleware,
     getFeatures,
@@ -249,7 +254,7 @@ export const featuresRouter = (ctx: Context) => {
   // get evaluated features for user, with cache layer for raw feature definitions. Uses a POST to encode attributes
   if (ctx.enableRemoteEval) {
     router.post(
-      "/api/eval/*path",
+      "/api/eval/:apiKey",
       apiKeyMiddleware,
       express.json({
         limit: process.env.MAX_PAYLOAD_SIZE ?? MAX_PAYLOAD_SIZE,
@@ -263,12 +268,16 @@ export const featuresRouter = (ctx: Context) => {
   router.post(
     "/proxy/features",
     apiKeyMiddleware,
+    // Unsigned requests are turned away before their body is read, and a bad
+    // signature before it is parsed.
+    webhookVerificationMiddleware,
     express.json({
       limit: getMaxFeaturesPayloadSize(),
-      verify: (req: Request, res: Response, buf: Buffer) =>
-        (res.locals.rawBody = buf),
+      verify: verifyWebhookSignature,
     }),
-    webhookVerificationMiddleware,
+    webhookSignatureErrorHandler,
+    requireVerifiedSignature,
+    stalePushMiddleware,
     reencryptionMiddleware,
     broadcastEventStreamMiddleware,
     postFeatures,
