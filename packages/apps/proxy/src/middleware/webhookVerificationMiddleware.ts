@@ -64,6 +64,18 @@ export const verifyWebhookSignature = (
   ) {
     throw new Error("Signatures do not match!");
   }
+  res.locals.signatureVerified = true;
+};
+
+/**
+ * express.json() skips `verify` when it doesn't parse the body (not sent as
+ * JSON, or no body at all). Returns 401 unless the signature was verified.
+ **/
+export const requireVerifiedSignature: RequestHandler = (req, res, next) => {
+  if (!res.locals.signatureVerified) {
+    return res.status(401).json({ message: "Signatures do not match!" });
+  }
+  next();
 };
 
 /** body-parser reports a failed `verify` as a 403; keep the route's 401. */

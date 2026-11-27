@@ -16,6 +16,7 @@ import {
 import { registrar } from "../services/registrar";
 import { apiKeyMiddleware } from "../middleware/apiKeyMiddleware";
 import webhookVerificationMiddleware, {
+  requireVerifiedSignature,
   verifyWebhookSignature,
   webhookSignatureErrorHandler,
 } from "../middleware/webhookVerificationMiddleware";
@@ -275,6 +276,7 @@ export const featuresRouter = (ctx: Context) => {
       verify: verifyWebhookSignature,
     }),
     webhookSignatureErrorHandler,
+    requireVerifiedSignature,
     stalePushMiddleware,
     reencryptionMiddleware,
     broadcastEventStreamMiddleware,
