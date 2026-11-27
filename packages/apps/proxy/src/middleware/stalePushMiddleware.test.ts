@@ -1,46 +1,82 @@
-import { Request, Response } from "express";
-import logger from "../services/logger";
-import { stalePushMiddleware } from "./stalePushMiddleware";
+import { createHmac } from "crypto";
+import http from "http";
+import { AddressInfo } from "net";
+import express from "express";
+import { featuresRouter } from "../controllers/featuresController";
+import { Context } from "../types";
 
-let cached: unknown;
+type Payload = { dateUpdated?: string };
+const store = new Map<string, Payload>();
 jest.mock("../services/cache", () => ({
   featuresCache: {
-    get: async () => (cached ? { payload: cached } : undefined),
+    get: async (k: string) =>
+      store.has(k) ? { payload: store.get(k) } : undefined,
+    set: async (k: string, v: Payload) => void store.set(k, v),
   },
 }));
+jest.mock("../services/registrar", () => ({
+  registrar: { getConnection: () => ({ signingKey: "secret" }) },
+}));
+jest.mock("../services/logger", () => ({
+  __esModule: true,
+  default: { warn() {}, info() {}, error() {}, debug() {} },
+}));
 
-const OLD = "2026-01-01T00:00:00.000Z";
-const NEW = "2026-01-02T00:00:00.000Z";
+const OLD = { dateUpdated: "2026-01-01T00:00:00.000Z" };
+const NEW = { dateUpdated: "2026-01-02T00:00:00.000Z" };
 
-const push = async (body: unknown) => {
-  const next = jest.fn();
-  const res = { locals: { apiKey: "sdk-abc" }, status: jest.fn(), json() {} };
-  res.status.mockReturnValue(res);
-  await stalePushMiddleware(
-    { body } as Request,
-    res as unknown as Response,
-    next,
+let server: http.Server;
+beforeAll(() => {
+  const app = express();
+  app.use("/", featuresRouter({} as Context));
+  server = http.createServer(app).listen(0);
+});
+afterAll(() => server.close());
+beforeEach(() => store.clear());
+
+const push = async (apiKey: string, payload: Payload) => {
+  const body = JSON.stringify(payload);
+  const res = await fetch(
+    `http://127.0.0.1:${(server.address() as AddressInfo).port}/proxy/features`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-GrowthBook-Api-Key": apiKey,
+        "X-GrowthBook-Signature": createHmac("sha256", "secret")
+          .update(body)
+          .digest("hex"),
+      },
+      body,
+    },
   );
-  return { accepted: next.mock.calls.length === 1, status: res.status };
+  expect(res.status).toBe(200);
 };
 
-beforeEach(() => jest.spyOn(logger, "warn").mockImplementation(() => {}));
-afterEach(() => jest.restoreAllMocks());
-
 test("ignores a push older than the cached payload", async () => {
-  cached = { dateUpdated: NEW };
-  const { accepted, status } = await push({ dateUpdated: OLD });
-  expect(accepted).toBe(false);
-  expect(status).toHaveBeenCalledWith(200);
+  await push("sdk-a", NEW);
+  await push("sdk-a", OLD);
+  expect(store.get("sdk-a")).toEqual(NEW);
 });
 
-test.each([
-  ["newer", { dateUpdated: OLD }, { dateUpdated: NEW }],
-  ["the same age", { dateUpdated: NEW }, { dateUpdated: NEW }],
-  ["undated", { dateUpdated: NEW }, { features: {} }],
-  ["first, with an empty cache", undefined, { dateUpdated: OLD }],
-  ["newer than an undated cache", { features: {} }, { dateUpdated: OLD }],
-])("accepts a push that is %s", async (_, cache, body) => {
-  cached = cache;
-  expect((await push(body)).accepted).toBe(true);
+test("accepts a newer push, and the same one again", async () => {
+  await push("sdk-b", OLD);
+  await push("sdk-b", NEW);
+  await push("sdk-b", NEW);
+  expect(store.get("sdk-b")).toEqual(NEW);
+});
+
+test("still ignores an older push after the cache entry is gone", async () => {
+  await push("sdk-d", NEW);
+  store.clear();
+  await push("sdk-d", OLD);
+  expect(store.has("sdk-d")).toBe(false);
+});
+
+test("ignores an undated push once a dated one is known", async () => {
+  await push("sdk-e", {});
+  expect(store.get("sdk-e")).toEqual({});
+  await push("sdk-e", NEW);
+  await push("sdk-e", {});
+  expect(store.get("sdk-e")).toEqual(NEW);
 });
